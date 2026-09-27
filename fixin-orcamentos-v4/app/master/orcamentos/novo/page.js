@@ -1,0 +1,30 @@
+import { redirect } from 'next/navigation';
+import { getProfile } from '@/lib/getProfile';
+import AppShell from '@/components/AppShell';
+import { MASTER_TABS } from '@/lib/navTabs';
+import NovoOrcamentoForm from '@/components/NovoOrcamentoForm';
+
+export default async function NovoOrcamentoPage({ searchParams }) {
+  const { user, profile, supabase } = await getProfile();
+  if (!user) redirect('/login');
+  if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
+
+  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').order('nome_empresa');
+  const { data: catalogo } = await supabase.from('catalogo_itens').select('*').order('ambiente').order('servico');
+  const tipoInicial = searchParams?.tipo === 'manutencao' ? 'manutencao' : 'rescisao';
+  const enderecoInicial = searchParams?.endereco || '';
+  const clienteIdInicial = searchParams?.cliente_id || '';
+
+  return (
+    <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
+      <h1 className="font-slab text-2xl font-semibold mb-6">{tipoInicial === 'manutencao' ? 'Nova solicitação de manutenção' : 'Novo orçamento'}</h1>
+      <NovoOrcamentoForm
+        clientes={clientes || []}
+        catalogo={catalogo || []}
+        tipoInicial={tipoInicial}
+        enderecoInicial={enderecoInicial}
+        clienteIdInicial={clienteIdInicial}
+      />
+    </AppShell>
+  );
+}
