@@ -22,18 +22,18 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
 
   return (
     <div className="mb-6">
-      <div className="grid md:grid-cols-2 gap-4 mb-4">
-        <div className="card p-4 rounded-md">
-          <h3 className="text-sm font-semibold mb-2">Onde estão seus orçamentos agora</h3>
+      <div className="grid xl:grid-cols-2 gap-5 mb-5">
+        <div className="card p-6 rounded-md">
+          <h3 className="text-base font-semibold mb-3">Onde estão seus orçamentos agora</h3>
           <div className="flex flex-col gap-1 mb-2">
             {dados.filter((d) => d.qtd > 0).map((d) => (
-              <span key={d.nome} className="flex items-center gap-1.5 text-[11.5px] text-marinho/70">
+              <span key={d.nome} className="flex items-center gap-1.5 text-sm text-marinho/70">
                 <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: d.cor }} />
                 {d.nome} — {d.qtd} ({totalQtd ? Math.round((d.qtd / totalQtd) * 100) : 0}%) · {fmtBRL(d.valor)}
               </span>
             ))}
           </div>
-          <div style={{ height: 230 }}>
+          <div style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={dados} dataKey="qtd" nameKey="nome" innerRadius="50%" outerRadius="90%" paddingAngle={1} stroke="#fff">
@@ -45,9 +45,9 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
           </div>
         </div>
 
-        <div className="card p-4 rounded-md">
-          <h3 className="text-sm font-semibold mb-2">{titulos.valor}</h3>
-          <div style={{ height: 290 }}>
+        <div className="card p-6 rounded-md">
+          <h3 className="text-base font-semibold mb-3">{titulos.valor}</h3>
+          <div style={{ height: 340 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#DADCD3" horizontal={false} />
@@ -63,9 +63,9 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
         </div>
       </div>
 
-      <div className="card p-4 rounded-md">
-        <h3 className="text-sm font-semibold mb-2">{titulos.tendencia}</h3>
-        <div style={{ height: 240 }}>
+      <div className="card p-6 rounded-md">
+        <h3 className="text-base font-semibold mb-3">{titulos.tendencia}</h3>
+        <div style={{ height: 320 }}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={meses} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#DADCD3" />

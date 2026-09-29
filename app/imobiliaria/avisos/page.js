@@ -16,7 +16,7 @@ export default async function ImobiliariaAvisos() {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-1">Avisos</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-1">Avisos</h1>
       <div className="text-sm text-marinho/60 mb-6">Clique num aviso para dispensá-lo</div>
       <AvisosList visitas={visitas} atrasos={atrasos} mensagens={mensagens} />
     </AppShell>

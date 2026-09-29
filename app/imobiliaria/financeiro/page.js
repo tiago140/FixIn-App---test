@@ -22,7 +22,7 @@ export default async function ImobiliariaFinanceiro() {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-1">Financeiro</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-1">Financeiro</h1>
       <div className="text-sm text-marinho/60 mb-6">Situação dos seus orçamentos</div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-linha border border-linha mb-8">
@@ -32,7 +32,7 @@ export default async function ImobiliariaFinanceiro() {
         <Kpi num={fmtBRL(totalFaltaPagar)} lbl="falta pagar" />
       </div>
 
-      <h2 className="font-semibold text-sm mb-2">Orçamentos aprovados</h2>
+      <h2 className="font-semibold text-xl mb-2">Orçamentos aprovados</h2>
       {aprovados.length === 0 && <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum orçamento aprovado ainda.</div>}
       {aprovados.map((o) => {
         const pend = Math.max(0, o.total - (o.valor_pago || 0));

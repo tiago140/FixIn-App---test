@@ -29,7 +29,7 @@ export default async function ImobiliariaDashboard() {
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Seus orçamentos</h1>
+        <h1 className="font-slab text-3xl font-semibold">Seus orçamentos</h1>
         {nomeEmpresa && <div className="text-sm text-marinho/60">{nomeEmpresa}</div>}
       </div>
       <PainelConteudo orcamentos={todos} papel="imobiliaria" />

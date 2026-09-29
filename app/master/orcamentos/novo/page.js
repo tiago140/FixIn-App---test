@@ -17,7 +17,7 @@ export default async function NovoOrcamentoPage({ searchParams }) {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-6">{tipoInicial === 'manutencao' ? 'Nova solicitação de manutenção' : 'Novo orçamento'}</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-6">{tipoInicial === 'manutencao' ? 'Nova solicitação de manutenção' : 'Novo orçamento'}</h1>
       <NovoOrcamentoForm
         clientes={clientes || []}
         catalogo={catalogo || []}

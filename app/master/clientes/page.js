@@ -17,7 +17,7 @@ export default async function ClientesPage() {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">Imobiliárias</h1>
+          <h1 className="font-slab text-3xl font-semibold">Imobiliárias</h1>
           <div className="text-sm text-marinho/60">Clientes cadastrados</div>
         </div>
         <Link href="/master/clientes/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">

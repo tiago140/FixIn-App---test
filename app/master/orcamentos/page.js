@@ -21,7 +21,7 @@ export default async function OrcamentosPage() {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">Kanban de orçamentos</h1>
+          <h1 className="font-slab text-3xl font-semibold">Kanban de orçamentos</h1>
           <div className="text-sm text-marinho/60">Arraste o cartão ou use as setinhas para mudar de etapa</div>
         </div>
         <div className="flex gap-2">

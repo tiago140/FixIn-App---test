@@ -52,7 +52,7 @@ export default function PainelConteudo({ orcamentos, papel = 'master', agora }) 
       )}
 
       {master ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <KpiIcone icone="📋" num={String(lista.length)} lbl="orçamentos no total" />
           <KpiIcone icone="💰" num={fmtBRL(valorAprovado)} lbl="valor aprovado" />
           <KpiIcone icone="⏳" num={String(aguardandoAprovacao)} lbl="aguardando aprovação" />
@@ -60,7 +60,7 @@ export default function PainelConteudo({ orcamentos, papel = 'master', agora }) 
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-px bg-linha border border-linha mb-5">
+          <div className="grid grid-cols-3 gap-px bg-linha border border-linha mb-6">
             <Kpi num={String(lista.length)} lbl="no total" />
             <Kpi num={String(aguardandoAprovacao)} lbl="aguardando você" />
             <Kpi num={fmtBRL(valorAprovado)} lbl="aprovado" />
@@ -104,11 +104,11 @@ export default function PainelConteudo({ orcamentos, papel = 'master', agora }) 
 
 function KpiIcone({ icone, num, lbl }) {
   return (
-    <div className="card rounded-md p-3.5 flex items-center gap-2.5">
-      <span className="text-2xl leading-none">{icone}</span>
+    <div className="card rounded-md p-5 flex items-center gap-4">
+      <span className="text-4xl leading-none">{icone}</span>
       <div>
-        <span className="block font-semibold text-[1.05rem]">{num}</span>
-        <span className="block text-[11px] text-marinho/60">{lbl}</span>
+        <span className="block font-bold text-2xl xl:text-3xl">{num}</span>
+        <span className="block text-sm text-marinho/60">{lbl}</span>
       </div>
     </div>
   );
@@ -116,9 +116,9 @@ function KpiIcone({ icone, num, lbl }) {
 
 function Kpi({ num, lbl }) {
   return (
-    <div className="bg-white p-4">
-      <span className="block font-mono text-xl font-semibold">{num}</span>
-      <span className="text-xs text-marinho/50">{lbl}</span>
+    <div className="bg-white p-6">
+      <span className="block font-mono text-2xl xl:text-3xl font-semibold">{num}</span>
+      <span className="text-sm text-marinho/50">{lbl}</span>
     </div>
   );
 }

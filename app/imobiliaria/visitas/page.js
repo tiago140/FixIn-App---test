@@ -20,7 +20,7 @@ export default async function ImobiliariaVisitas() {
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">Visitas</h1>
+          <h1 className="font-slab text-3xl font-semibold">Visitas</h1>
           <div className="text-sm text-marinho/60">Agende uma visita — passa por aprovação da FixIn</div>
         </div>
         <Link href="/imobiliaria/visitas/nova" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">

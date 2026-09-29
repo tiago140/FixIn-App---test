@@ -9,7 +9,7 @@ export default function SecaoOrcamentos({ titulo, cor, lista, basePath, verTodos
 
   return (
     <section className="mb-6">
-      <h2 className="font-semibold text-sm mb-1 flex items-center gap-1.5">
+      <h2 className="font-semibold text-xl mb-1 flex items-center gap-1.5">
         <span className="inline-block w-2 h-2 rounded-full" style={{ background: cor }} />
         {titulo} <span className="font-normal text-marinho/50">({lista.length})</span>
       </h2>

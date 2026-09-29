@@ -23,7 +23,7 @@ export default async function VisitasPage() {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">Visitas</h1>
+          <h1 className="font-slab text-3xl font-semibold">Visitas</h1>
           <div className="text-sm text-marinho/60">Confirmadas por você, ou solicitadas pelas imobiliárias</div>
         </div>
         <Link href="/master/visitas/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">
@@ -37,19 +37,19 @@ export default async function VisitasPage() {
 
       {pendentes.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2 mt-6">Aguardando sua aprovação</h2>
+          <h2 className="font-semibold text-xl mb-2 mt-6">Aguardando sua aprovação</h2>
           {pendentes.map((v) => <VisitaRow key={v.id} visita={v} cliente={v.clientes} role="master" />)}
         </>
       )}
       {confirmadas.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2 mt-6">Confirmadas</h2>
+          <h2 className="font-semibold text-xl mb-2 mt-6">Confirmadas</h2>
           {confirmadas.map((v) => <VisitaRow key={v.id} visita={v} cliente={v.clientes} role="master" />)}
         </>
       )}
       {canceladas.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2 mt-6">Canceladas</h2>
+          <h2 className="font-semibold text-xl mb-2 mt-6">Canceladas</h2>
           {canceladas.map((v) => <VisitaRow key={v.id} visita={v} cliente={v.clientes} role="master" />)}
         </>
       )}

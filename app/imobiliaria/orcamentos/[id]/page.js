@@ -51,7 +51,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
 
       <div className="border-b-2 border-marinho pb-3 flex items-end justify-between mt-3 mb-6">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">{orcamento.numero}</h1>
+          <h1 className="font-slab text-3xl font-semibold">{orcamento.numero}</h1>
           <div className="text-sm text-marinho/60">{orcamento.endereco}</div>
           <div className="text-xs text-marinho/40">Criado em {fmtDate(orcamento.criado_em)}</div>
         </div>

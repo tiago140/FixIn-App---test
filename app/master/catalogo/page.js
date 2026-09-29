@@ -17,7 +17,7 @@ export default async function CatalogoPage() {
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Catálogo de itens</h1>
+        <h1 className="font-slab text-3xl font-semibold">Catálogo de itens</h1>
         <div className="text-sm text-marinho/60">Valores de referência de mão de obra e material, reutilizáveis em qualquer orçamento</div>
       </div>
 

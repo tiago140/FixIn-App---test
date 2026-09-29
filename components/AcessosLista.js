@@ -23,7 +23,7 @@ export default function AcessosLista({ equipe, imobiliarias, outros, meuId, souD
 function Secao({ titulo, lista, vazio, meuId, souDono }) {
   return (
     <section className="mb-8">
-      <h2 className="font-semibold text-sm mb-1">
+      <h2 className="font-semibold text-xl mb-1">
         {titulo} <span className="font-normal text-marinho/50">({lista.length})</span>
       </h2>
       {lista.length === 0 ? (

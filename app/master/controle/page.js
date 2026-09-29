@@ -42,7 +42,7 @@ export default async function ControlePage() {
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard" fullWidth>
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Controle</h1>
+        <h1 className="font-slab text-3xl font-semibold">Controle</h1>
         <div className="text-sm text-marinho/60">Visão em planilha — mesmo formato do seu controle de manutenção</div>
       </div>
       <ControleTabela linhas={linhas} role="master" podeEditar />

@@ -28,13 +28,13 @@ export default async function ClienteDetalhePage({ params }) {
       <Link href="/master/clientes" className="text-sm text-marinho/50">← voltar</Link>
 
       <div className="border-b-2 border-marinho pb-3 mt-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">{cliente.nome_empresa}</h1>
+        <h1 className="font-slab text-3xl font-semibold">{cliente.nome_empresa}</h1>
         <div className="text-sm text-marinho/60">
           {cliente.nome} {cliente.email ? `· ${cliente.email}` : ''} {cliente.cnpj ? `· CNPJ ${cliente.cnpj}` : ''}
         </div>
       </div>
 
-      <h2 className="font-semibold text-sm mb-2">Orçamentos ({orcamentos.length})</h2>
+      <h2 className="font-semibold text-xl mb-2">Orçamentos ({orcamentos.length})</h2>
       {orcamentos.length === 0 ? (
         <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum orçamento ainda.</div>
       ) : (

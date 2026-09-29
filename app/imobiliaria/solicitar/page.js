@@ -11,7 +11,7 @@ export default async function SolicitarPage() {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-6">Nova solicitação</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-6">Nova solicitação</h1>
       <SolicitarOrcamentoForm />
     </AppShell>
   );

@@ -18,7 +18,7 @@ export default async function EquipePage() {
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">Equipe</h1>
+          <h1 className="font-slab text-3xl font-semibold">Equipe</h1>
           <div className="text-sm text-marinho/60">Usuários com acesso ao painel da sua imobiliária</div>
         </div>
         <Link href="/imobiliaria/equipe/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">

@@ -11,7 +11,7 @@ export default async function NovoPrestadorPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-6">Novo prestador</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-6">Novo prestador</h1>
       <NovoPrestadorForm />
     </AppShell>
   );

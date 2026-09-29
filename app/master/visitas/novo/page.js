@@ -14,7 +14,7 @@ export default async function NovaVisitaPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-6">Agendar visita</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-6">Agendar visita</h1>
       <NovaVisitaForm clientes={clientes || []} prestadores={prestadores || []} />
     </AppShell>
   );

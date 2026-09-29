@@ -75,14 +75,14 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="app-topbar flex items-center justify-between px-4 py-2.5 border-b border-linha bg-white sticky top-0 z-30 gap-3">
+      <div className="app-topbar flex items-center justify-between px-5 py-3.5 border-b border-linha bg-white sticky top-0 z-30 gap-3">
         <div className="flex items-center gap-2">
           <button className="md:hidden border border-linha rounded px-2.5 py-1.5" onClick={() => setOpen((v) => !v)}>
             <Menu size={16} />
           </button>
-          <Link href={homeHref} className="flex items-baseline gap-2 cursor-pointer">
-            <span className="font-slab font-bold text-lg text-marinho">FixIn</span>
-            <span className="text-[10px] font-mono text-verde">REFORMAS</span>
+          <Link href={homeHref} className="flex items-baseline gap-2.5 cursor-pointer">
+            <span className="font-slab font-bold text-3xl text-marinho tracking-tight">FixIn</span>
+            <span className="text-sm font-mono font-semibold text-verde tracking-wide">REFORMAS</span>
           </Link>
         </div>
         <div className="flex items-center gap-3 text-sm">
@@ -98,8 +98,8 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
 
       <div className="flex flex-1 items-stretch">
         <aside
-          className={`app-aside fixed md:static top-[49px] md:top-0 bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-56'} flex-shrink-0 bg-white border-r border-linha py-3 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
-            open ? 'translate-x-0 w-56' : '-translate-x-full md:translate-x-0'
+          className={`app-aside fixed md:static top-[49px] md:top-0 bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-64'} flex-shrink-0 bg-white border-r border-linha py-3 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
+            open ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
           }`}
         >
           <div className="flex-1">
@@ -112,9 +112,9 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
                   href={t.href}
                   onClick={() => setOpen(false)}
                   title={collapsed ? t.label : undefined}
-                  className={`block px-5 py-2.5 text-sm border-l-2 whitespace-nowrap overflow-hidden ${
+                  className={`block px-5 py-3 text-base border-l-2 whitespace-nowrap overflow-hidden ${
                     collapsed ? 'md:px-0 md:text-center' : ''
-                  } ${active ? 'border-marinho text-marinho font-semibold bg-papel' : 'border-transparent text-marinho/60 hover:bg-papel'}`}
+                  } ${active ? 'border-marinho text-marinho font-semibold bg-papel' : 'border-transparent text-marinho/70 hover:bg-papel'}`}
                 >
                   <span className={collapsed ? 'md:hidden' : ''}>{t.label}</span>
                   <span className={collapsed ? 'hidden md:inline text-[11px]' : 'hidden'}>{t.label.slice(0, 3).toUpperCase()}</span>
@@ -137,7 +137,7 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
 
         {open && <div className="fixed inset-0 top-[49px] bg-black/30 z-10 md:hidden" onClick={() => setOpen(false)} />}
 
-        <main className={`flex-1 min-w-0 px-4 sm:px-7 py-5 pb-16 ${fullWidth ? '' : 'max-w-6xl'}`}>{children}</main>
+        <main className="flex-1 min-w-0 px-4 sm:px-8 py-5 pb-16">{children}</main>
       </div>
     </div>
   );

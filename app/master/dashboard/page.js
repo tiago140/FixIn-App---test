@@ -23,7 +23,7 @@ export default async function MasterDashboard() {
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Painel geral</h1>
+        <h1 className="font-slab text-3xl font-semibold">Painel geral</h1>
         <div className="text-sm text-marinho/60">Visão consolidada de todas as imobiliárias</div>
       </div>
       <PainelConteudo orcamentos={comTotal} papel="master" />

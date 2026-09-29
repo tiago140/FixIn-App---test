@@ -16,7 +16,7 @@ export default async function NovoAcessoPage({ searchParams }) {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-6">{pedeMaster ? 'Novo funcionário' : 'Novo acesso'}</h1>
+      <h1 className="font-slab text-3xl font-semibold mb-6">{pedeMaster ? 'Novo funcionário' : 'Novo acesso'}</h1>
       <NovoAcessoForm clientes={clientes || []} podeCriarMaster={!!profile.dono} tipoInicial={pedeMaster ? 'master' : 'imobiliaria'} />
     </AppShell>
   );

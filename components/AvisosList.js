@@ -38,7 +38,7 @@ export default function AvisosList({ visitas, atrasos, mensagens }) {
     <div>
       {mensagensVisiveis.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2">Novas mensagens no chat</h2>
+          <h2 className="font-semibold text-xl mb-2">Novas mensagens no chat</h2>
           {mensagensVisiveis.map((m) => (
             <div key={m.key} onClick={() => dispensar(m.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-info">
               <div className="text-[11px] font-mono text-marinho/50">{m.subtitulo}</div>
@@ -56,7 +56,7 @@ export default function AvisosList({ visitas, atrasos, mensagens }) {
       )}
       {visitasVisiveis.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2 mt-5">Visitas aguardando aprovação</h2>
+          <h2 className="font-semibold text-xl mb-2 mt-5">Visitas aguardando aprovação</h2>
           {visitasVisiveis.map((v) => (
             <div key={v.key} onClick={() => dispensar(v.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-alerta">
               <div className="font-semibold">{v.titulo}</div>
@@ -75,7 +75,7 @@ export default function AvisosList({ visitas, atrasos, mensagens }) {
       )}
       {atrasosVisiveis.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2 mt-5">Pagamentos em atraso</h2>
+          <h2 className="font-semibold text-xl mb-2 mt-5">Pagamentos em atraso</h2>
           {atrasosVisiveis.map((a) => (
             <div key={a.key} onClick={() => dispensar(a.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-erro">
               <div className="flex justify-between">

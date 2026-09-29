@@ -27,7 +27,7 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath }) {
         return (
           <div
             key={status}
-            className="flex-shrink-0 w-60 bg-white border border-linha rounded max-h-[70vh] flex flex-col"
+            className="flex-shrink-0 w-72 bg-white border border-linha rounded max-h-[70vh] flex flex-col"
             onDragOver={(e) => !readOnly && e.preventDefault()}
             onDrop={(e) => {
               if (readOnly) return;

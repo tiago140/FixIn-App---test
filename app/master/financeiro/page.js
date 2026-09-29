@@ -54,8 +54,8 @@ export default async function FinanceiroPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-2xl font-semibold mb-1">Financeiro</h1>
-      <div className="text-sm text-marinho/60 mb-6">Visão completa — pagamentos, aprovação e margem interna</div>
+      <h1 className="font-slab text-3xl font-semibold mb-1">Financeiro</h1>
+      <div className="text-base text-marinho/60 mb-6">Visão completa — pagamentos, aprovação e margem interna</div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-linha border border-linha mb-6">
         <Kpi num={fmtBRL(totalAprovadoGeral)} lbl="total aprovado" />
@@ -69,23 +69,23 @@ export default async function FinanceiroPage() {
         <div className="text-2xl font-bold">{fmtBRL(margemGeral)}</div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        <div className="card p-4">
-          <h3 className="font-semibold text-sm mb-2">Orçamentos por etapa</h3>
+      <div className="grid xl:grid-cols-2 gap-5 mb-10">
+        <div className="card p-6">
+          <h3 className="font-semibold text-base mb-3">Orçamentos por etapa</h3>
           <GraficoPizzaStatus dados={dadosPizzaStatus} />
         </div>
-        <div className="card p-4">
-          <h3 className="font-semibold text-sm mb-2">Aprovado x reprovado por tipo</h3>
+        <div className="card p-6">
+          <h3 className="font-semibold text-base mb-3">Aprovado x reprovado por tipo</h3>
           <GraficoBarrasAprovadoReprovado dados={dadosAprovadoReprovado} />
         </div>
       </div>
 
-      <div className="card p-4 mb-8">
-        <h3 className="font-semibold text-sm mb-2">Valor aprovado por imobiliária</h3>
+      <div className="card p-6 mb-10">
+        <h3 className="font-semibold text-base mb-3">Valor aprovado por imobiliária</h3>
         <GraficoBarrasClientes dados={dadosBarrasClientes} />
       </div>
 
-      <h2 className="font-semibold text-sm mb-2">Por tipo de serviço</h2>
+      <h2 className="font-semibold text-xl mb-3">Por tipo de serviço</h2>
       {['rescisao', 'manutencao'].map((tipo) => {
         const doTipo = comTotal.filter((o) => (o.tipo || 'rescisao') === tipo);
         const aprovadosTipo = doTipo.filter((o) => ['aprovado', 'em_execucao', 'finalizado'].includes(o.status));
@@ -104,7 +104,7 @@ export default async function FinanceiroPage() {
         );
       })}
 
-      <h2 className="font-semibold text-sm mb-2 mt-6">Por imobiliária</h2>
+      <h2 className="font-semibold text-xl mb-3 mt-8">Por imobiliária</h2>
       {(clientes || []).map((c) => {
         const os = aprovados.filter((o) => o.cliente_id === c.id);
         const reprovadosCliente = reprovados.filter((o) => o.cliente_id === c.id);
@@ -130,7 +130,7 @@ export default async function FinanceiroPage() {
         );
       })}
 
-      <h2 className="font-semibold text-sm mb-2 mt-6">Orçamentos aprovados — detalhe e flags de atraso</h2>
+      <h2 className="font-semibold text-xl mb-3 mt-8">Orçamentos aprovados — detalhe e flags de atraso</h2>
       {aprovados.length === 0 && <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum orçamento aprovado ainda.</div>}
       {aprovados.map((o) => {
         const pend = Math.max(0, o.total - (o.valor_pago || 0));
@@ -157,7 +157,7 @@ export default async function FinanceiroPage() {
 
       {reprovados.length > 0 && (
         <>
-          <h2 className="font-semibold text-sm mb-2 mt-6">Reprovados</h2>
+          <h2 className="font-semibold text-xl mb-3 mt-8">Reprovados</h2>
           {reprovados.map((o) => (
             <div key={o.id} className="flex justify-between items-center py-3 border-b border-linha">
               <div>

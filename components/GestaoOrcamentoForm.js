@@ -20,6 +20,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const [itens, setItens] = useState(itensIniciais.map((it) => ({ ...it })));
   const [salvando, setSalvando] = useState(false);
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [gerandoPdfPrestador, setGerandoPdfPrestador] = useState(false);
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
 
@@ -78,6 +79,23 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       return;
     }
     router.refresh();
+  }
+
+  // Ordem de serviço interna — só o custo base, sem a margem. Abre numa aba nova, sem salvar link público.
+  async function gerarPdfPrestador() {
+    setGerandoPdfPrestador(true);
+    setErro('');
+    const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf-prestador`, { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setErro(data.error || 'Erro ao gerar a ordem de serviço');
+      setGerandoPdfPrestador(false);
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setGerandoPdfPrestador(false);
   }
 
   return (
@@ -202,6 +220,15 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             {gerandoPdf ? 'Gerando…' : 'Gerar PDF e notificar'}
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={gerarPdfPrestador}
+          disabled={gerandoPdfPrestador}
+          className="sm:col-span-2 w-full border border-linha text-marinho rounded py-2.5 font-semibold disabled:opacity-50 hover:bg-papel"
+        >
+          📄 {gerandoPdfPrestador ? 'Gerando…' : 'Ordem de serviço do prestador (sem margem)'}
+        </button>
 
         {orcamento.pdf_url && (
           <div className="sm:col-span-2">

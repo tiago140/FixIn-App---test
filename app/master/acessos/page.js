@@ -26,7 +26,7 @@ export default async function AcessosPage() {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-slab text-2xl font-semibold">Equipe e acessos</h1>
+          <h1 className="font-slab text-3xl font-semibold">Equipe e acessos</h1>
           <div className="text-sm text-marinho/60">Cada pessoa com o seu próprio login — a Auditoria mostra quem fez o quê</div>
         </div>
         <div className="flex gap-2">

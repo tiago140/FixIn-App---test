@@ -16,7 +16,7 @@ export default async function MinhaConta() {
   return (
     <AppShell profile={profile} tabs={master ? MASTER_TABS : imobiliariaTabs(profile)} homeHref={master ? '/master/dashboard' : '/imobiliaria/dashboard'}>
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Minha conta</h1>
+        <h1 className="font-slab text-3xl font-semibold">Minha conta</h1>
         <div className="text-sm text-marinho/60">
           {profile.nome_completo} · {profile.email || user.email} · {tipo}
         </div>

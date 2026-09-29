@@ -36,7 +36,7 @@ export default async function ControleImobiliariaPage() {
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard" fullWidth>
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Controle</h1>
+        <h1 className="font-slab text-3xl font-semibold">Controle</h1>
         <div className="text-sm text-marinho/60">Visão em planilha dos seus orçamentos</div>
       </div>
       <ControleTabela linhas={linhas} role="imobiliaria" podeEditar={false} />

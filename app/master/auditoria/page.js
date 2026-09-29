@@ -20,7 +20,7 @@ export default async function AuditoriaPage() {
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-2xl font-semibold">Auditoria</h1>
+        <h1 className="font-slab text-3xl font-semibold">Auditoria</h1>
         <div className="text-sm text-marinho/60">Registro de quem fez o quê e quando — protege você e sua equipe</div>
       </div>
       <AuditoriaLista registros={registros || []} />
