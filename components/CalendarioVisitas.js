@@ -60,8 +60,10 @@ export default function CalendarioVisitas({ visitas }) {
             <div key={i} className="cal-cell">
               <div className="cal-num">{dia}</div>
               {(porDia[dia] || []).map((v) => (
-                <div key={v.id} className={`cal-pill ${STATUS_COR[v.status] || 'bg-marinho'}`} title={`${v.endereco} — ${v.status}`}>
-                  {fmtDataHora(v.data_hora).split(' ')[1]}
+                <div key={v.id} className={`cal-pill ${STATUS_COR[v.status] || 'bg-marinho'}`}>
+                  <div className="font-semibold">{fmtDataHora(v.data_hora).split(' ')[1]}</div>
+                  <div>Endereço: {v.endereco}</div>
+                  <div>Prestador: {v.prestadores?.nome || '—'}</div>
                 </div>
               ))}
             </div>

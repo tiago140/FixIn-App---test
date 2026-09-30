@@ -38,9 +38,9 @@ html, body {
 .tag-em_execucao { background: rgba(59,107,140,.15); color: #2c5570; }
 .tag-finalizado { background: rgba(90,100,89,.15); color: #5a6459; }
 
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-.cal-head { font-size: .62rem; text-align: center; color: #5a6459; padding: 4px 0; font-weight: 600; }
-.cal-cell { min-height: 60px; border: 1px solid var(--linha); border-radius: 3px; padding: 3px; font-size: .68rem; overflow: hidden; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-head { font-size: .68rem; text-align: center; color: #5a6459; padding: 4px 0; font-weight: 600; }
+.cal-cell { min-height: 108px; border: 1px solid var(--linha); border-radius: 4px; padding: 5px; font-size: .72rem; overflow: hidden; }
 .cal-cell.empty { border: none; }
-.cal-num { font-weight: 600; margin-bottom: 2px; color: #5a6459; }
-.cal-pill { color: #fff; border-radius: 2px; padding: 1px 4px; margin-bottom: 2px; font-size: .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-num { font-weight: 600; margin-bottom: 3px; color: #5a6459; }
+.cal-pill { color: #fff; border-radius: 3px; padding: 3px 5px; margin-bottom: 3px; font-size: .66rem; line-height: 1.25; overflow: hidden; white-space: normal; }
