@@ -82,7 +82,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
           )}
         </div>
 
-        {orcamento.status === 'enviado' && <ResponderOrcamentoButtons orcamentoId={orcamento.id} />}
+        {['pendente', 'em_preparacao', 'enviado'].includes(orcamento.status) && <ResponderOrcamentoButtons orcamentoId={orcamento.id} />}
 
         {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && (
           <ComprovantesPagamento

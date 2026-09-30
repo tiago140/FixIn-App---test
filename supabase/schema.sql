@@ -175,19 +175,41 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 
 create or replace function public.responder_orcamento(p_orcamento_id uuid, p_novo_status text)
-returns void language plpgsql security definer set search_path = public as $$
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   v_cliente_id uuid;
   v_status_atual text;
 begin
-  if p_novo_status not in ('aprovado','rejeitado') then raise exception 'status inválido'; end if;
-  select cliente_id, status into v_cliente_id, v_status_atual from public.orcamentos where id = p_orcamento_id;
-  if v_cliente_id is null then raise exception 'orçamento não encontrado'; end if;
-  if v_cliente_id <> public.current_cliente_id() then raise exception 'sem permissão para este orçamento'; end if;
-  if v_status_atual <> 'enviado' then raise exception 'orçamento não está mais aguardando decisão'; end if;
-  update public.orcamentos set status = p_novo_status,
-    aprovado_em = case when p_novo_status = 'aprovado' then now() else aprovado_em end,
-    atualizado_em = now() where id = p_orcamento_id;
+  if p_novo_status not in ('aprovado','rejeitado') then
+    raise exception 'status inválido';
+  end if;
+
+  select cliente_id, status into v_cliente_id, v_status_atual
+  from public.orcamentos where id = p_orcamento_id;
+
+  if v_cliente_id is null then
+    raise exception 'orçamento não encontrado';
+  end if;
+
+  if v_cliente_id <> public.current_cliente_id() then
+    raise exception 'sem permissão para este orçamento';
+  end if;
+
+  -- antes só deixava responder com status 'enviado'; agora também libera 'pendente' e 'em_preparacao',
+  -- porque nem sempre o dono passa pelo botão "Gerar PDF" antes da imobiliária decidir.
+  if v_status_atual not in ('pendente', 'em_preparacao', 'enviado') then
+    raise exception 'orçamento não está mais aguardando decisão';
+  end if;
+
+  update public.orcamentos
+    set status = p_novo_status,
+        aprovado_em = case when p_novo_status = 'aprovado' then now() else aprovado_em end,
+        atualizado_em = now()
+    where id = p_orcamento_id;
 end;
 $$;
 revoke execute on function public.responder_orcamento(uuid, text) from public, anon;
