@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { calcularProximoStatusAutomatico, STATUS_LABEL } from '@/lib/format';
+import { enviarEmailStatusOrcamento } from '@/lib/email';
 
 export async function PATCH(req, { params }) {
   const { user, profile, supabase } = await getProfile();
@@ -27,6 +28,7 @@ export async function PATCH(req, { params }) {
       }
       if (camposOrcamento.status && camposOrcamento.status !== antes.status) {
         await registrarAuditoria(supabase, user, profile, 'Mudou status', `${antes.numero}: ${STATUS_LABEL[antes.status]} → ${STATUS_LABEL[camposOrcamento.status]}`, 'orcamento', id);
+        await enviarEmailPorMudancaDeStatus(supabase, id, camposOrcamento.status);
       }
       const camposControle = ['numero_contrato', 'data_deposito', 'data_inicio', 'comissao_percentual'].filter((c) => c in camposOrcamento);
       if (camposControle.length) {
@@ -38,11 +40,13 @@ export async function PATCH(req, { params }) {
       if (camposOrcamento.prestador_id !== undefined) {
         await registrarAuditoria(supabase, user, profile, 'Atribuiu prestador', `${antes.numero}`, 'orcamento', id);
         const orcAtualizado = { ...antes, prestador_id: camposOrcamento.prestador_id };
-        await aplicarMigracaoAutomatica(supabase, orcAtualizado, 'prestador');
+        const novoStatus = await aplicarMigracaoAutomatica(supabase, orcAtualizado, 'prestador');
+        if (novoStatus) await enviarEmailPorMudancaDeStatus(supabase, id, novoStatus);
       }
       if (camposOrcamento.valor_pago != null) {
         const orcAtualizado = { ...antes, valor_pago: camposOrcamento.valor_pago };
-        await aplicarMigracaoAutomatica(supabase, orcAtualizado, 'pagamento');
+        const novoStatus = await aplicarMigracaoAutomatica(supabase, orcAtualizado, 'pagamento');
+        if (novoStatus) await enviarEmailPorMudancaDeStatus(supabase, id, novoStatus);
       }
     }
   }
@@ -72,8 +76,29 @@ export async function PATCH(req, { params }) {
 
 async function aplicarMigracaoAutomatica(supabase, orcamento, gatilho) {
   const novoStatus = calcularProximoStatusAutomatico(orcamento, gatilho);
-  if (!novoStatus) return;
+  if (!novoStatus) return null;
   await supabase.from('orcamentos').update({ status: novoStatus, atualizado_em: new Date().toISOString(), migrado_automaticamente: true }).eq('id', orcamento.id);
+  return novoStatus;
+}
+
+// "enviado" já dispara pelo botão de gerar PDF (enviarEmailOrcamentoPronto, com o link do PDF).
+// Aqui cobrimos os outros 3: aprovado, em_execucao, finalizado — venha a mudança manual do dono
+// ou de uma migração automática (prestador atribuído, pagamento completo).
+async function enviarEmailPorMudancaDeStatus(supabase, orcamentoId, novoStatus) {
+  if (!['aprovado', 'em_execucao', 'finalizado'].includes(novoStatus)) return;
+  const { data: orc } = await supabase
+    .from('orcamentos')
+    .select('numero, endereco, clientes(nome_empresa, email)')
+    .eq('id', orcamentoId)
+    .single();
+  if (!orc) return;
+  await enviarEmailStatusOrcamento({
+    paraEmail: orc.clientes?.email,
+    nomeImobiliaria: orc.clientes?.nome_empresa,
+    numero: orc.numero,
+    endereco: orc.endereco,
+    status: novoStatus,
+  }).catch(() => {});
 }
 
 async function registrarAuditoria(supabase, user, profile, acao, detalhe, alvoTipo, alvoId) {

@@ -2,24 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 
 export default function ResponderOrcamentoButtons({ orcamentoId }) {
   const router = useRouter();
-  const supabase = createClient();
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
 
   async function responder(status) {
     setErro('');
     setEnviando(true);
-    const { error } = await supabase.rpc('responder_orcamento', {
-      p_orcamento_id: orcamentoId,
-      p_novo_status: status,
+    const res = await fetch(`/api/orcamentos/${orcamentoId}/responder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
     });
     setEnviando(false);
-    if (error) {
-      setErro(error.message);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setErro(d.error || 'Não foi possível salvar.');
       return;
     }
     router.refresh();

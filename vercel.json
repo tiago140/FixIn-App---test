@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/cron/pendencia-financeira", "schedule": "0 13 * * *" }
+  ]
+}
