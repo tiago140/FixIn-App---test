@@ -332,3 +332,43 @@ create policy "leitura publica chatanexos" on storage.objects for select using (
 create policy "upload autenticado chatanexos" on storage.objects for insert with check (bucket_id = 'chat-anexos' and auth.role() = 'authenticated');
 create policy "leitura autenticada vistorias" on storage.objects for select using (bucket_id = 'vistorias' and auth.role() = 'authenticated');
 create policy "upload autenticado vistorias" on storage.objects for insert with check (bucket_id = 'vistorias' and auth.role() = 'authenticated');
+
+-- A imobiliária não tem permissão de UPDATE direto em visitas (só o dono tem, por segurança).
+-- Esta função permite só duas ações da imobiliária, cada uma validando a transição de status:
+--   1) cancelar uma visita que ela mesma pediu, ainda pendente
+--   2) aceitar ou recusar uma contraproposta de data que o dono sugeriu
+create or replace function public.responder_visita_imobiliaria(p_visita_id uuid, p_novo_status text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_visita record;
+begin
+  if p_novo_status not in ('confirmada', 'cancelada') then
+    raise exception 'status inválido';
+  end if;
+
+  select * into v_visita from public.visitas where id = p_visita_id;
+  if v_visita is null then
+    raise exception 'visita não encontrada';
+  end if;
+  if v_visita.cliente_id <> current_cliente_id() then
+    raise exception 'esta visita não é da sua imobiliária';
+  end if;
+
+  if v_visita.status = 'pendente' and p_novo_status = 'cancelada' then
+    update public.visitas set status = 'cancelada', atualizado_em = now() where id = p_visita_id;
+  elsif v_visita.status = 'sugerida' and p_novo_status = 'confirmada' then
+    update public.visitas set status = 'confirmada', data_hora = v_visita.data_hora_sugerida, atualizado_em = now() where id = p_visita_id;
+  elsif v_visita.status = 'sugerida' and p_novo_status = 'cancelada' then
+    update public.visitas set status = 'cancelada', atualizado_em = now() where id = p_visita_id;
+  else
+    raise exception 'essa mudança de status não é permitida nesse momento';
+  end if;
+end;
+$$;
+
+revoke execute on function public.responder_visita_imobiliaria(uuid, text) from public, anon;
+grant execute on function public.responder_visita_imobiliaria(uuid, text) to authenticated;

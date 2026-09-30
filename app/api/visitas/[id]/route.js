@@ -36,18 +36,17 @@ export async function PATCH(req, { params }) {
   }
 
   // imobiliária: cancelar a própria visita pendente, ou responder a uma contraproposta ('sugerida')
-  if (visita.status === 'sugerida' && ['confirmada', 'cancelada'].includes(status)) {
-    const patch = { status, atualizado_em: new Date().toISOString() };
-    if (status === 'confirmada') patch.data_hora = visita.data_hora_sugerida;
-    const { error } = await supabase.from('visitas').update(patch).eq('id', id);
+  if (status === 'confirmada' || status === 'cancelada') {
+    const { error } = await supabase.rpc('responder_visita_imobiliaria', { p_visita_id: id, p_novo_status: status });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await supabase.from('auditoria').insert({
+      acao: status === 'confirmada' ? 'Aceitou nova data de visita' : 'Recusou/cancelou visita',
+      detalhe: visita.endereco || '',
+      alvo_tipo: 'visita', alvo_id: id,
+      autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
+    });
     return NextResponse.json({ ok: true });
   }
 
-  if (status !== 'cancelada') {
-    return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
-  }
-  const { error } = await supabase.rpc('cancelar_visita_propria', { p_visita_id: id });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 }
