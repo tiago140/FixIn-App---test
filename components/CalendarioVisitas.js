@@ -3,12 +3,26 @@
 import { useState } from 'react';
 import { fmtDataHora } from '@/lib/format';
 
-const STATUS_COR = { pendente: 'bg-alerta', confirmada: 'bg-sucesso', cancelada: 'bg-erro' };
+const STATUS_COR = { pendente: 'bg-alerta', confirmada: 'bg-sucesso', cancelada: 'bg-erro', sugerida: 'bg-info' };
 const NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 export default function CalendarioVisitas({ visitas }) {
-  const [offset, setOffset] = useState(0);
   const base = new Date();
+
+  // abre direto no mês da próxima visita (confirmada ou pendente) mais próxima de hoje,
+  // em vez de sempre abrir no mês atual — assim uma visita aprovada pra outro mês já aparece.
+  function offsetInicial() {
+    const futuras = (visitas || [])
+      .filter((v) => v.data_hora && v.status !== 'cancelada')
+      .map((v) => new Date(v.data_hora))
+      .filter((d) => d >= new Date(base.getFullYear(), base.getMonth(), 1))
+      .sort((a, b) => a - b);
+    if (!futuras.length) return 0;
+    const alvo = futuras[0];
+    return (alvo.getFullYear() - base.getFullYear()) * 12 + (alvo.getMonth() - base.getMonth());
+  }
+
+  const [offset, setOffset] = useState(offsetInicial);
   const mesRef = new Date(base.getFullYear(), base.getMonth() + offset, 1);
   const ano = mesRef.getFullYear();
   const mesIdx = mesRef.getMonth();

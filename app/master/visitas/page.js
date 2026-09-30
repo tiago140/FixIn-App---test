@@ -13,7 +13,7 @@ export default async function VisitasPage() {
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
-  const { data: visitas } = await supabase.from('visitas').select('*, clientes(nome_empresa)').order('data_hora');
+  const { data: visitas } = await supabase.from('visitas').select('*, clientes(nome_empresa), prestadores(nome, telefone)').order('data_hora');
   const lista = visitas || [];
   const pendentes = lista.filter((v) => v.status === 'pendente');
   const confirmadas = lista.filter((v) => v.status === 'confirmada');

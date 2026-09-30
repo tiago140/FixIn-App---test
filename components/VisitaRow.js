@@ -52,6 +52,11 @@ export default function VisitaRow({ visita, cliente, role }) {
             </div>
           )}
           {visita.observacoes && <div className="text-xs text-marinho/50 mt-1">{visita.observacoes}</div>}
+          {visita.prestadores?.nome && (
+            <div className="text-xs text-marinho font-medium mt-2 bg-papel inline-block px-2 py-1 rounded">
+              👷 Prestador: {visita.prestadores.nome}{visita.prestadores.telefone ? ` · ${visita.prestadores.telefone}` : ''}
+            </div>
+          )}
         </div>
         <span className={`tag ${STATUS_CLASS[visita.status]}`}>{STATUS_LABEL_VISITA[visita.status]}</span>
       </div>

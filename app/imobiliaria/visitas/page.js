@@ -13,7 +13,7 @@ export default async function ImobiliariaVisitas() {
   if (!user) redirect('/login');
   if (profile.role === 'master') redirect('/master/dashboard');
 
-  const { data: visitas } = await supabase.from('visitas').select('*').order('data_hora');
+  const { data: visitas } = await supabase.from('visitas').select('*, prestadores(nome, telefone)').order('data_hora');
   const lista = visitas || [];
 
   return (
