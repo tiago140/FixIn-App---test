@@ -89,6 +89,15 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
           <Link href="/conta" title="Minha conta (trocar senha)" className="text-marinho/70 hover:text-marinho hover:underline hidden sm:inline">{profile.nome_completo}</Link>
           <Link href="/conta" title="Minha conta" className="sm:hidden text-marinho/60 border border-linha rounded px-2 py-1"><User size={13} /></Link>
           <span className="text-[10px] font-mono border border-linha rounded px-2 py-0.5 text-marinho/60">{ROLE_LABEL[roleKey]}</span>
+          <a
+            href="https://wa.me/5515996540710?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20sistema%20de%20or%C3%A7amentos%20FixIn."
+            target="_blank"
+            rel="noreferrer"
+            className="text-marinho/60 hover:text-verde text-xs border border-linha rounded px-2 py-1 flex items-center gap-1 whitespace-nowrap"
+            title="Falar com o suporte pelo WhatsApp"
+          >
+            💬 <span className="hidden sm:inline">Suporte</span>
+          </a>
           <ThemeToggle />
           <button onClick={sair} className="text-marinho/60 hover:text-erro text-xs border border-linha rounded px-2 py-1 flex items-center gap-1">
             <LogOut size={13} /> <span className="hidden sm:inline">Sair</span>
