@@ -15,7 +15,7 @@ const CLASSE_STATUS = {
 const numeroCsv = (n) => Number(n || 0).toFixed(2).replace('.', ',');
 
 // Comissão e valor da imobiliária são internos da FixIn — só o dono vê.
-export default function ControleTabela({ linhas, role = 'master', podeEditar = true }) {
+export default function ControleTabela({ linhas, role = 'master', podeEditar = true, veValores = true }) {
   const veMargem = role === 'master';
   const basePath = role === 'master' ? '/master/orcamentos' : '/imobiliaria/orcamentos';
   const router = useRouter();
@@ -62,13 +62,15 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
   }
 
   function exportarCsv() {
-    const cabecalho = ['Imobiliária', 'Nº Contrato', 'Endereço', 'Orçamento', 'Aprovado', 'Data Depósito', 'Valor Orçamento'];
+    const cabecalho = ['Imobiliária', 'Nº Contrato', 'Endereço', 'Orçamento', 'Aprovado', 'Data Depósito'];
+    if (veValores) cabecalho.push('Valor Orçamento');
     if (veMargem) cabecalho.push('Comissão %', 'Valor Imob.', 'Valor Prest.');
     cabecalho.push('Prestador', 'Data Início');
 
     const dados = [cabecalho];
     filtradas.forEach((l) => {
-      const linha = [l.cliente, l.numero_contrato || '', l.endereco, l.temItens ? 'SIM' : 'NÃO', STATUS_LABEL[l.status] || l.status, l.data_deposito || '', numeroCsv(l.total)];
+      const linha = [l.cliente, l.numero_contrato || '', l.endereco, l.temItens ? 'SIM' : 'NÃO', STATUS_LABEL[l.status] || l.status, l.data_deposito || ''];
+      if (veValores) linha.push(numeroCsv(l.total));
       if (veMargem) linha.push(l.comissao, numeroCsv(l.valorImob), numeroCsv(l.valorPrest));
       linha.push(l.prestador || '', l.data_inicio || '');
       dados.push(linha);
@@ -116,7 +118,7 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
               <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Orçamento</th>
               <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Aprovado</th>
               <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Data Depósito</th>
-              <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Valor Orçamento</th>
+              {veValores && <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Valor Orçamento</th>}
               {veMargem && (
                 <>
                   <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Comissão %</th>
@@ -169,7 +171,7 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
                     l.data_deposito ? fmtDate(l.data_deposito) : '—'
                   )}
                 </td>
-                <td className="px-3 py-2 border-b border-linha text-right font-mono">{fmtBRL(l.total)}</td>
+                {veValores && <td className="px-3 py-2 border-b border-linha text-right font-mono">{fmtBRL(l.total)}</td>}
                 {veMargem && (
                   <>
                     <td className="px-3 py-2 border-b border-linha" onClick={pararPropagacao}>

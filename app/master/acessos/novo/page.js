@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import NovoAcessoForm from '@/components/NovoAcessoForm';
 
@@ -16,7 +17,10 @@ export default async function NovoAcessoPage({ searchParams }) {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-3xl font-semibold mb-6">{pedeMaster ? 'Novo funcionário' : 'Novo acesso'}</h1>
+      <PageHeader
+        icone="acessos"
+        titulo={pedeMaster ? 'Novo funcionário' : 'Novo acesso'}
+      />
       <NovoAcessoForm clientes={clientes || []} podeCriarMaster={!!profile.dono} tipoInicial={pedeMaster ? 'master' : 'imobiliaria'} />
     </AppShell>
   );

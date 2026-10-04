@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import AuditoriaLista from '@/components/AuditoriaLista';
 import { MASTER_TABS } from '@/lib/navTabs';
 
@@ -19,10 +20,11 @@ export default async function AuditoriaPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-3xl font-semibold">Auditoria</h1>
-        <div className="text-sm text-marinho/60">Registro de quem fez o quê e quando — protege você e sua equipe</div>
-      </div>
+      <PageHeader
+        icone="auditoria"
+        titulo="Auditoria"
+        subtitulo="Registro de quem fez o quê e quando — protege você e sua equipe"
+      />
       <AuditoriaLista registros={registros || []} />
     </AppShell>
   );

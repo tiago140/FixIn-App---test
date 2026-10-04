@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import SenhaInput from '@/components/SenhaInput';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -60,9 +61,9 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="block text-xs text-marinho/60 mb-1">Senha</label>
-            <input
-              type="password"
+            <SenhaInput
               required
+              autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               className="w-full border border-linha rounded px-3 py-2 bg-papel"

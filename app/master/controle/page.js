@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import ControleTabela from '@/components/ControleTabela';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { calcularTotalComMargem } from '@/lib/format';
@@ -41,10 +42,11 @@ export default async function ControlePage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard" fullWidth>
-      <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-3xl font-semibold">Controle</h1>
-        <div className="text-sm text-marinho/60">Visão em planilha — mesmo formato do seu controle de manutenção</div>
-      </div>
+      <PageHeader
+        icone="controle"
+        titulo="Controle"
+        subtitulo="Visão em planilha — mesmo formato do seu controle de manutenção"
+      />
       <ControleTabela linhas={linhas} role="master" podeEditar />
     </AppShell>
   );

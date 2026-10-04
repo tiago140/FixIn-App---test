@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { imobiliariaTabs } from '@/lib/navTabs';
 
 export const dynamic = 'force-dynamic';
@@ -16,15 +17,19 @@ export default async function EquipePage() {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="font-slab text-3xl font-semibold">Equipe</h1>
-          <div className="text-sm text-marinho/60">Usuários com acesso ao painel da sua imobiliária</div>
-        </div>
-        <Link href="/imobiliaria/equipe/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">
+      <PageHeader
+        icone="equipe"
+        titulo="Equipe"
+        etiqueta={profile.empresa}
+        subtitulo="Usuários com acesso ao painel da sua imobiliária"
+        direita={
+          <>
+        <Link href="/imobiliaria/equipe/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm">
           + Novo usuário
         </Link>
-      </div>
+          </>
+        }
+      />
 
       {!equipe || equipe.length === 0 ? (
         <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum outro usuário ainda.</div>

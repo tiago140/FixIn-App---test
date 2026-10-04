@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import AcessosLista from '@/components/AcessosLista';
 import { MASTER_TABS } from '@/lib/navTabs';
 
@@ -24,14 +25,15 @@ export default async function AcessosPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-slab text-3xl font-semibold">Equipe e acessos</h1>
-          <div className="text-sm text-marinho/60">Cada pessoa com o seu próprio login — a Auditoria mostra quem fez o quê</div>
-        </div>
+      <PageHeader
+        icone="acessos"
+        titulo="Equipe e acessos"
+        subtitulo="Cada pessoa com o seu próprio login — a Auditoria mostra quem fez o quê"
+        direita={
+          <>
         <div className="flex gap-2">
           {profile.dono && (
-            <Link href="/master/acessos/novo?tipo=master" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">
+            <Link href="/master/acessos/novo?tipo=master" className="bg-verde text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm">
               Novo funcionário
             </Link>
           )}
@@ -39,7 +41,9 @@ export default async function AcessosPage() {
             Novo acesso de imobiliária
           </Link>
         </div>
-      </div>
+          </>
+        }
+      />
 
       <AcessosLista equipe={equipe} imobiliarias={imobiliarias} outros={outros} meuId={user.id} souDono={!!profile.dono} />
     </AppShell>

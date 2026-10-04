@@ -84,7 +84,7 @@ export default function AvisosList({ visitas, atrasos, mensagens }) {
                   <div className="font-semibold">{a.titulo}</div>
                   <div className="text-xs text-marinho/50">{a.detalhe}</div>
                 </div>
-                <div className="text-erro font-mono text-sm font-semibold">{fmtBRL(a.valor)} pendente</div>
+                {a.valor != null && <div className="text-erro font-mono text-sm font-semibold">{fmtBRL(a.valor)} pendente</div>}
               </div>
               <div className="text-xs text-marinho/50 mt-1.5">
                 <Link href={a.link} className="underline" onClick={(e) => e.stopPropagation()}>

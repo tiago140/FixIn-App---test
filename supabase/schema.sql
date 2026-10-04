@@ -394,3 +394,109 @@ $$;
 
 revoke execute on function public.responder_visita_imobiliaria(uuid, text) from public, anon;
 grant execute on function public.responder_visita_imobiliaria(uuid, text) to authenticated;
+
+-- =====================================================================================================
+-- VALORES PARA A IMOBILIÁRIA (referência do estado atual do banco)
+-- Regra: dono vê tudo; administrador da imobiliária vê todos os valores SEMPRE com o preço cheio (nunca margem,
+-- comissão ou custo base); operacional não vê nenhum valor em R$. A imobiliária lê pelas visões abaixo;
+-- as tabelas orcamentos, orcamento_itens e orcamento_comprovantes só o dono lê.
+-- Observação: no PostgreSQL a permissão de chamar funções dentro de uma visão é checada em nome de quem consulta,
+-- por isso o cálculo cru fica só para o servidor (service_role) e a versão exposta devolve nulo a quem não pode ver.
+-- =====================================================================================================
+alter table public.orcamento_comprovantes add column if not exists data_pagamento date not null default ((now() at time zone 'America/Sao_Paulo')::date);
+
+create or replace function public.total_orcamento_interno(p_id uuid) returns numeric
+language sql stable security definer set search_path = public as $f$
+  select coalesce((select sum(coalesce(i.mo,0) + coalesce(i.ma,0)) from public.orcamento_itens i where i.orcamento_id = p_id), 0)
+         * (1 + coalesce((select o.margem_percentual from public.orcamentos o where o.id = p_id), 0) / 100)
+$f$;
+revoke all on function public.total_orcamento_interno(uuid) from public, anon, authenticated;
+grant execute on function public.total_orcamento_interno(uuid) to service_role;
+
+create or replace function public.meu_orcamento(p_id uuid) returns boolean
+language sql stable security definer set search_path = public as $f$
+  select exists (select 1 from public.orcamentos o where o.id = p_id and o.cliente_id = public.current_cliente_id())
+$f$;
+revoke all on function public.meu_orcamento(uuid) from public, anon;
+grant execute on function public.meu_orcamento(uuid) to authenticated;
+
+create or replace function public.total_orcamento(p_id uuid) returns numeric
+language sql stable security definer set search_path = public as $f$
+  select case when public.is_master() or (public.is_imobiliaria_admin() and public.meu_orcamento(p_id))
+              then public.total_orcamento_interno(p_id) end
+$f$;
+revoke all on function public.total_orcamento(uuid) from public, anon;
+grant execute on function public.total_orcamento(uuid) to authenticated, service_role;
+
+create or replace function public.orcamento_em_atraso(p_id uuid) returns boolean
+language sql stable security definer set search_path = public as $f$
+  select case when public.is_master() or public.meu_orcamento(p_id) then
+    (select coalesce(o.atrasado, false)
+         or (o.status in ('aprovado','em_execucao','finalizado') and o.aprovado_em is not null
+             and coalesce(o.valor_pago,0) < public.total_orcamento_interno(o.id)
+             and floor(extract(epoch from (now() - o.aprovado_em)) / 86400) > 7)
+       from public.orcamentos o where o.id = p_id)
+  end
+$f$;
+revoke all on function public.orcamento_em_atraso(uuid) from public, anon;
+grant execute on function public.orcamento_em_atraso(uuid) to authenticated;
+
+create or replace function public.orcamento_pagamento_pendente(p_id uuid) returns boolean
+language sql stable security definer set search_path = public as $f$
+  select case when public.is_master() or public.meu_orcamento(p_id) then
+    (select (o.status in ('aprovado','em_execucao','finalizado') and coalesce(o.valor_pago,0) < public.total_orcamento_interno(o.id))
+       from public.orcamentos o where o.id = p_id)
+  end
+$f$;
+revoke all on function public.orcamento_pagamento_pendente(uuid) from public, anon;
+grant execute on function public.orcamento_pagamento_pendente(uuid) to authenticated;
+
+create or replace view public.orcamentos_cliente as
+select o.id, o.numero, o.cliente_id, o.tipo, o.endereco, o.data_orcamento, o.validade_dias, o.prazo_execucao_dias,
+       o.garantia, o.forma_pagamento, o.status, o.descricao_solicitacao, o.solicitado_por,
+       o.nome_cliente_final, o.cpf_cliente_final, o.cnpj_cliente_final,
+       pr.nome as prestador_nome,
+       o.criado_em, o.atualizado_em, o.aprovado_em, o.numero_contrato, o.data_deposito, o.data_inicio,
+       o.pagamento_cliente_status,
+       (select count(*) from public.orcamento_itens i where i.orcamento_id = o.id) as qtd_itens,
+       public.orcamento_em_atraso(o.id) as em_atraso,
+       case when public.is_imobiliaria_admin() then o.pdf_url end as pdf_url,
+       public.total_orcamento(o.id) as total,
+       case when public.is_imobiliaria_admin() then coalesce(o.valor_pago,0) end as valor_pago,
+       case when public.is_imobiliaria_admin() then greatest(public.total_orcamento(o.id) - coalesce(o.valor_pago,0), 0) end as valor_pendente,
+       public.orcamento_pagamento_pendente(o.id) as pendente_pagamento
+from public.orcamentos o
+left join public.prestadores pr on pr.id = o.prestador_id
+where o.cliente_id = public.current_cliente_id();
+
+create or replace view public.orcamento_itens_cliente as
+select i.id, i.orcamento_id, i.ambiente, i.servico, i.descricao, i.ordem,
+       case when public.is_imobiliaria_admin()
+            then (coalesce(i.mo,0) + coalesce(i.ma,0)) * (1 + coalesce(o.margem_percentual,0) / 100) end as preco
+from public.orcamento_itens i join public.orcamentos o on o.id = i.orcamento_id
+where o.cliente_id = public.current_cliente_id();
+
+create or replace view public.orcamento_comprovantes_cliente as
+select c.id, c.orcamento_id, c.arquivo_path, c.tipo_pagamento, c.data_pagamento, c.verificado, c.criado_em,
+       case when public.is_imobiliaria_admin() then c.valor end as valor
+from public.orcamento_comprovantes c join public.orcamentos o on o.id = c.orcamento_id
+where o.cliente_id = public.current_cliente_id();
+
+revoke all on public.orcamentos_cliente, public.orcamento_itens_cliente, public.orcamento_comprovantes_cliente from public, anon;
+grant select on public.orcamentos_cliente, public.orcamento_itens_cliente, public.orcamento_comprovantes_cliente to authenticated;
+
+-- regras de acesso: a imobiliária deixa de ler as tabelas com custo/margem; chat, documentos e envio de comprovante usam o ajudante
+drop policy if exists orcamentos_select on public.orcamentos;
+create policy orcamentos_select on public.orcamentos for select using (public.is_master());
+drop policy if exists itens_select on public.orcamento_itens;
+create policy itens_select on public.orcamento_itens for select using (public.is_master());
+drop policy if exists comprovantes_select on public.orcamento_comprovantes;
+create policy comprovantes_select on public.orcamento_comprovantes for select using (public.is_master());
+drop policy if exists comprovantes_insert_imobiliaria on public.orcamento_comprovantes;
+create policy comprovantes_insert_imobiliaria on public.orcamento_comprovantes for insert with check (public.meu_orcamento(orcamento_id));
+drop policy if exists mensagens_select on public.mensagens;
+create policy mensagens_select on public.mensagens for select using (public.is_master() or public.meu_orcamento(orcamento_id));
+drop policy if exists mensagens_insert on public.mensagens;
+create policy mensagens_insert on public.mensagens for insert with check (autor_id = auth.uid() and (public.is_master() or public.meu_orcamento(orcamento_id)));
+drop policy if exists docfiscais_select on public.orcamento_documentos_fiscais;
+create policy docfiscais_select on public.orcamento_documentos_fiscais for select using (public.is_master() or public.meu_orcamento(orcamento_id));

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import NovoCatalogoItemForm from '@/components/NovoCatalogoItemForm';
 import { fmtBRL } from '@/lib/format';
@@ -16,10 +17,11 @@ export default async function CatalogoPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-3xl font-semibold">Catálogo de itens</h1>
-        <div className="text-sm text-marinho/60">Valores de referência de mão de obra e material, reutilizáveis em qualquer orçamento</div>
-      </div>
+      <PageHeader
+        icone="catalogo"
+        titulo="Catálogo de itens"
+        subtitulo="Valores de referência de mão de obra e material, reutilizáveis em qualquer orçamento"
+      />
 
       <NovoCatalogoItemForm />
 

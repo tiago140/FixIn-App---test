@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import SenhaInput from '@/components/SenhaInput';
 import { createClient } from '@/lib/supabase/client';
 import { SENHA_MIN } from '@/lib/senha';
 
@@ -34,11 +35,11 @@ export default function TrocarSenhaForm() {
       {ok && <div className="text-sm bg-sucesso/10 border border-sucesso text-sucesso px-3 py-2 rounded">Senha alterada. Use a nova senha no próximo login.</div>}
       <div>
         <label className="block text-xs text-marinho/60 mb-1">Nova senha</label>
-        <input type="password" value={nova} onChange={(e) => setNova(e.target.value)} required className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+        <SenhaInput autoComplete="new-password" value={nova} onChange={(e) => setNova(e.target.value)} required className="w-full border border-linha rounded px-3 py-2 bg-papel" />
       </div>
       <div>
         <label className="block text-xs text-marinho/60 mb-1">Repita a nova senha</label>
-        <input type="password" value={confirma} onChange={(e) => setConfirma(e.target.value)} required className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+        <SenhaInput autoComplete="new-password" value={confirma} onChange={(e) => setConfirma(e.target.value)} required className="w-full border border-linha rounded px-3 py-2 bg-papel" />
       </div>
       <button disabled={salvando} className="bg-marinho text-white rounded px-4 py-2 text-sm font-semibold disabled:opacity-50">
         {salvando ? 'Salvando…' : 'Salvar nova senha'}

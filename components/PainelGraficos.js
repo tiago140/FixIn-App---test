@@ -10,13 +10,13 @@ import { CORES_ETAPAS, ROTULOS_ETAPAS } from '@/lib/painel';
 
 const reaisCompacto = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
-export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
+export default function PainelGraficos({ etapas, meses, papel = 'master', semValores = false }) {
   const rotulos = ROTULOS_ETAPAS[papel] || ROTULOS_ETAPAS.master;
   const totalQtd = etapas.reduce((a, e) => a + e.qtd, 0);
 
   const dados = etapas.map((e, i) => ({ nome: rotulos[i], qtd: e.qtd, valor: e.valor, cor: CORES_ETAPAS[i] }));
   const titulos = {
-    valor: papel === 'imobiliaria' ? 'Valor (R$) em cada etapa' : 'Valor (R$) parado em cada etapa',
+    valor: semValores ? 'Orçamentos em cada etapa' : papel === 'imobiliaria' ? 'Valor (R$) em cada etapa' : 'Valor (R$) parado em cada etapa',
     tendencia: papel === 'imobiliaria' ? 'Seus orçamentos nos últimos 6 meses' : 'Orçamentos criados nos últimos 6 meses',
   };
 
@@ -29,7 +29,7 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
             {dados.filter((d) => d.qtd > 0).map((d) => (
               <span key={d.nome} className="flex items-center gap-1.5 text-sm text-marinho/70">
                 <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: d.cor }} />
-                {d.nome} — {d.qtd} ({totalQtd ? Math.round((d.qtd / totalQtd) * 100) : 0}%) · {fmtBRL(d.valor)}
+                {d.nome} — {d.qtd} ({totalQtd ? Math.round((d.qtd / totalQtd) * 100) : 0}%){semValores ? '' : ` · ${fmtBRL(d.valor)}`}
               </span>
             ))}
           </div>
@@ -39,7 +39,7 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
                 <Pie data={dados} dataKey="qtd" nameKey="nome" innerRadius="50%" outerRadius="90%" paddingAngle={1} stroke="#fff">
                   {dados.map((d) => <Cell key={d.nome} fill={d.cor} />)}
                 </Pie>
-                <Tooltip formatter={(v, n, p) => [`${v} orçamento(s) · ${fmtBRL(p.payload.valor)}`, n]} />
+                <Tooltip formatter={(v, n, p) => [semValores ? `${v} orçamento(s)` : `${v} orçamento(s) · ${fmtBRL(p.payload.valor)}`, n]} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -51,10 +51,10 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#DADCD3" horizontal={false} />
-                <XAxis type="number" tickFormatter={reaisCompacto} tick={{ fontSize: 10 }} />
+                <XAxis type="number" allowDecimals={false} tickFormatter={semValores ? undefined : reaisCompacto} tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="nome" width={132} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [fmtBRL(v), 'Valor']} cursor={{ fill: 'rgba(24,47,80,.05)' }} />
-                <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
+                <Tooltip formatter={(v) => [semValores ? `${v} orçamento(s)` : fmtBRL(v), semValores ? 'Quantidade' : 'Valor']} cursor={{ fill: 'rgba(24,47,80,.05)' }} />
+                <Bar dataKey={semValores ? 'qtd' : 'valor'} radius={[0, 4, 4, 0]}>
                   {dados.map((d) => <Cell key={d.nome} fill={d.cor} />)}
                 </Bar>
               </BarChart>
@@ -71,11 +71,11 @@ export default function PainelGraficos({ etapas, meses, papel = 'master' }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#DADCD3" />
               <XAxis dataKey="rotulo" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="qtd" allowDecimals={false} tick={{ fontSize: 10 }} width={32} />
-              <YAxis yAxisId="valor" orientation="right" tickFormatter={reaisCompacto} tick={{ fontSize: 10 }} width={72} />
+              {!semValores && <YAxis yAxisId="valor" orientation="right" tickFormatter={reaisCompacto} tick={{ fontSize: 10 }} width={72} />}
               <Tooltip formatter={(v, n) => (n === 'Valor (R$)' ? [fmtBRL(v), n] : [`${v} orçamento(s)`, n])} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar yAxisId="qtd" dataKey="qtd" name="Quantidade" fill="#3B6B8C" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="valor" type="monotone" dataKey="valor" name="Valor (R$)" stroke="#182F50" strokeWidth={2} dot={{ r: 3 }} />
+              {!semValores && <Line yAxisId="valor" type="monotone" dataKey="valor" name="Valor (R$)" stroke="#182F50" strokeWidth={2} dot={{ r: 3 }} />}
             </ComposedChart>
           </ResponsiveContainer>
         </div>

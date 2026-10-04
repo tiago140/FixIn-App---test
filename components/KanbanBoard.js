@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { KANBAN_COLS, STATUS_LABEL, fmtBRL, calcularTotalComMargem, estaAtrasado } from '@/lib/format';
 
-export default function KanbanBoard({ orcamentos, readOnly, basePath }) {
+export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores = true }) {
   const router = useRouter();
   const [itens, setItens] = useState(orcamentos);
   const [dragId, setDragId] = useState(null);
@@ -43,7 +43,8 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath }) {
               {doStatus.length === 0 && <div className="text-xs text-marinho/40 p-2">Vazio</div>}
               {doStatus.map((o) => {
                 const idxAtual = KANBAN_COLS.indexOf(status);
-                const total = calcularTotalComMargem(o.orcamento_itens, o.margem_percentual);
+                // Dono: calcula pelos itens. Imobiliária: o banco já entrega o total (ou nulo, para o operacional).
+                const total = o.total != null ? Number(o.total) : o.orcamento_itens ? calcularTotalComMargem(o.orcamento_itens, o.margem_percentual) : null;
                 return (
                   <div
                     key={o.id}
@@ -56,7 +57,7 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath }) {
                       {o.numero} {o.tipo === 'manutencao' ? '· MANUT.' : ''}
                     </span>
                     <div className="font-semibold mt-0.5">{o.endereco}</div>
-                    <div className="font-mono mt-0.5">{fmtBRL(total)}</div>
+                    {veValores && total != null && <div className="font-mono mt-0.5">{fmtBRL(total)}</div>}
                     {estaAtrasado(o) && (
                       <div className="mt-1">
                         <span className="text-[10px] bg-erro/20 text-erro px-1.5 py-0.5 rounded font-semibold">EM ATRASO</span>

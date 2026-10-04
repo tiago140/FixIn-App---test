@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import NovaVisitaForm from '@/components/NovaVisitaForm';
 
@@ -14,7 +15,10 @@ export default async function NovaVisitaPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-3xl font-semibold mb-6">Agendar visita</h1>
+      <PageHeader
+        icone="visitas"
+        titulo="Agendar visita"
+      />
       <NovaVisitaForm clientes={clientes || []} prestadores={prestadores || []} />
     </AppShell>
   );

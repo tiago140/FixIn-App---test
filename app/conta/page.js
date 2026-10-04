@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import TrocarSenhaForm from '@/components/TrocarSenhaForm';
 import { MASTER_TABS, imobiliariaTabs } from '@/lib/navTabs';
 
@@ -15,12 +16,11 @@ export default async function MinhaConta() {
 
   return (
     <AppShell profile={profile} tabs={master ? MASTER_TABS : imobiliariaTabs(profile)} homeHref={master ? '/master/dashboard' : '/imobiliaria/dashboard'}>
-      <div className="border-b-2 border-marinho pb-3 mb-6">
-        <h1 className="font-slab text-3xl font-semibold">Minha conta</h1>
-        <div className="text-sm text-marinho/60">
-          {profile.nome_completo} · {profile.email || user.email} · {tipo}
-        </div>
-      </div>
+      <PageHeader
+        icone="conta"
+        titulo="Minha conta"
+        subtitulo={`${profile.nome_completo} · ${profile.email || user.email} · ${tipo}`}
+      />
       <TrocarSenhaForm />
     </AppShell>
   );

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { imobiliariaTabs } from '@/lib/navTabs';
 import NovoAcessoImobiliariaForm from '@/components/NovoAcessoImobiliariaForm';
 
@@ -12,7 +13,11 @@ export default async function NovoAcessoImobiliariaPage() {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <h1 className="font-slab text-3xl font-semibold mb-6">Novo usuário</h1>
+      <PageHeader
+        icone="equipe"
+        titulo="Novo usuário"
+        etiqueta={profile.empresa}
+      />
       <NovoAcessoImobiliariaForm />
       <p className="text-xs text-marinho/50 mt-4 max-w-md">
         Depois de criar, avise a pessoa por fora (WhatsApp, telefone) qual é o e-mail e a senha de acesso dela.

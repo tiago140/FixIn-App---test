@@ -1,20 +1,23 @@
 import Link from 'next/link';
+import { ClipboardList, CheckCircle2, Wrench, AlertTriangle, CircleDollarSign, Hourglass, Plus, CalendarDays, Bell, ArrowRight } from 'lucide-react';
 import PainelGraficos from '@/components/PainelGraficos';
+import KpiCard from '@/components/KpiCard';
 import SecaoOrcamentos from '@/components/SecaoOrcamentos';
 import { fmtBRL } from '@/lib/format';
-import { agruparPorEtapa, resumoPorEtapa, serieUltimosMeses } from '@/lib/painel';
+import { agruparPorEtapa, resumoPorEtapa, serieUltimosMeses, contagensFunil, temPendencia, ESTAGIOS_APROVADO } from '@/lib/painel';
 
-// `orcamentos` já vem com o campo `total` (com a margem) calculado.
-export default function PainelConteudo({ orcamentos, papel = 'master', agora }) {
+// `orcamentos`: lista já normalizada pela página (campos total, valor_pago, em_atraso, prestador_nome...).
+// `veValores`: false para o operacional da imobiliária — nenhum valor em R$ é desenhado.
+export default function PainelConteudo({ orcamentos, papel = 'master', veValores = true, agora }) {
   const lista = orcamentos || [];
   const g = agruparPorEtapa(lista);
   const etapas = resumoPorEtapa(g);
   const meses = serieUltimosMeses(lista, agora);
+  const n = contagensFunil(lista);
 
-  const aprovados = lista.filter((o) => ['aprovado', 'em_execucao', 'finalizado'].includes(o.status));
-  const valorAprovado = aprovados.reduce((a, o) => a + o.total, 0);
-  const aguardandoAprovacao = lista.filter((o) => o.status === 'enviado').length;
-  const pendenciaFinanceira = aprovados.reduce((a, o) => a + Math.max(0, o.total - (o.valor_pago || 0)), 0);
+  const aprovados = lista.filter((o) => ESTAGIOS_APROVADO.includes(o.status));
+  const valorAprovado = aprovados.reduce((a, o) => a + (Number(o.total) || 0), 0);
+  const valorPendente = lista.filter(temPendencia).reduce((a, o) => a + Math.max(0, (Number(o.total) || 0) - (Number(o.valor_pago) || 0)), 0);
 
   const master = papel === 'master';
   const basePath = master ? '/master/orcamentos' : '/imobiliaria/orcamentos';
@@ -44,40 +47,46 @@ export default function PainelConteudo({ orcamentos, papel = 'master', agora }) 
       {g.atrasados.length > 0 && (
         <Link
           href={avisosHref}
-          className="bg-alerta/15 border border-alerta text-marinho px-4 py-2.5 rounded mb-5 text-sm flex justify-between items-center"
+          className="bg-erro/10 border border-erro/50 text-marinho px-4 py-3 rounded-lg mb-5 text-sm flex justify-between items-center hover:bg-erro/15"
         >
-          <span>⚠ {g.atrasados.length} orçamento(s) com pagamento em atraso</span>
-          <span className="underline">Ver avisos</span>
+          <span className="flex items-center gap-2 font-semibold">
+            <AlertTriangle size={18} className="text-erro" /> {g.atrasados.length} orçamento(s) com pagamento em atraso
+          </span>
+          <span className="underline inline-flex items-center gap-1">Ver avisos <ArrowRight size={14} /></span>
         </Link>
       )}
 
       {master ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <KpiIcone icone="📋" num={String(lista.length)} lbl="orçamentos no total" />
-          <KpiIcone icone="💰" num={fmtBRL(valorAprovado)} lbl="valor aprovado" />
-          <KpiIcone icone="⏳" num={String(aguardandoAprovacao)} lbl="aguardando aprovação" />
-          <KpiIcone icone="⚠️" num={fmtBRL(pendenciaFinanceira)} lbl="pendência financeira" />
+          <KpiCard icone={ClipboardList} cor="#182F50" num={String(n.criados)} lbl="orçamentos no total" />
+          <KpiCard icone={CircleDollarSign} cor="#3F7A5E" num={fmtBRL(valorAprovado)} lbl="valor aprovado" />
+          <KpiCard icone={Hourglass} cor="#3B6B8C" num={String(n.aguardando)} lbl="aguardando aprovação" />
+          <KpiCard icone={AlertTriangle} cor="#B8862E" num={fmtBRL(valorPendente)} lbl="pendência financeira" />
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-px bg-linha border border-linha mb-6">
-            <Kpi num={String(lista.length)} lbl="no total" />
-            <Kpi num={String(aguardandoAprovacao)} lbl="aguardando você" />
-            <Kpi num={fmtBRL(valorAprovado)} lbl="aprovado" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            <KpiCard icone={ClipboardList} cor="#182F50" num={String(n.criados)} lbl="orçamentos criados" />
+            <KpiCard icone={CheckCircle2} cor="#3F7A5E" num={String(n.aprovados)} lbl="aprovados" sub={veValores ? `${fmtBRL(valorAprovado)} aprovado` : null} />
+            <KpiCard icone={Wrench} cor="#2C5570" num={String(n.emExecucao)} lbl="em execução" />
+            <KpiCard icone={AlertTriangle} cor="#B8862E" num={String(n.pendencias)} lbl="em pendência financeira" sub={veValores ? `${fmtBRL(valorPendente)} a pagar` : null} />
           </div>
-          <Link href="/imobiliaria/solicitar" className="block bg-verde text-white text-sm font-semibold px-4 py-3 rounded text-center mb-5">
-            + Nova solicitação
+          <Link
+            href="/imobiliaria/solicitar"
+            className="flex items-center justify-center gap-2 bg-verde text-white text-base font-bold px-4 py-3.5 rounded-lg mb-6 shadow hover:brightness-110 transition"
+          >
+            <Plus size={20} /> Nova solicitação
           </Link>
         </>
       )}
 
-      {lista.length > 0 && <PainelGraficos etapas={etapas} meses={meses} papel={papel} />}
+      {lista.length > 0 && <PainelGraficos etapas={etapas} meses={meses} papel={papel} semValores={!veValores} />}
 
       {master && (
-        <div className="flex gap-2.5 flex-wrap mb-5">
-          <Atalho href="/master/orcamentos">📋 Ver Orçamentos</Atalho>
-          <Atalho href="/master/visitas">📅 Ver visitas</Atalho>
-          <Atalho href="/master/avisos">🔔 Ver avisos</Atalho>
+        <div className="flex gap-2.5 flex-wrap mb-6">
+          <Atalho href="/master/orcamentos" icone={ClipboardList}>Ver Orçamentos</Atalho>
+          <Atalho href="/master/visitas" icone={CalendarDays}>Ver visitas</Atalho>
+          <Atalho href="/master/avisos" icone={Bell}>Ver avisos</Atalho>
         </div>
       )}
 
@@ -90,11 +99,13 @@ export default function PainelConteudo({ orcamentos, papel = 'master', agora }) 
           basePath={basePath}
           verTodosHref={verTodosHref}
           mostrarCliente={master}
+          veValores={veValores}
+          papel={papel}
         />
       ))}
 
       {lista.length === 0 && (
-        <div className="border border-dashed border-linha p-8 text-center text-marinho/50">
+        <div className="border-2 border-dashed border-linha rounded-lg p-10 text-center text-marinho/50 bg-white">
           {master ? 'Nenhum orçamento ainda. Crie um na aba Orçamentos.' : 'Nenhum orçamento ainda.'}
         </div>
       )}
@@ -102,31 +113,10 @@ export default function PainelConteudo({ orcamentos, papel = 'master', agora }) 
   );
 }
 
-function KpiIcone({ icone, num, lbl }) {
+function Atalho({ href, icone: Icone, children }) {
   return (
-    <div className="card rounded-md p-5 flex items-center gap-4">
-      <span className="text-4xl leading-none">{icone}</span>
-      <div>
-        <span className="block font-bold text-2xl xl:text-3xl">{num}</span>
-        <span className="block text-sm text-marinho/60">{lbl}</span>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ num, lbl }) {
-  return (
-    <div className="bg-white p-6">
-      <span className="block font-mono text-2xl xl:text-3xl font-semibold">{num}</span>
-      <span className="text-sm text-marinho/50">{lbl}</span>
-    </div>
-  );
-}
-
-function Atalho({ href, children }) {
-  return (
-    <Link href={href} className="border border-linha bg-white text-sm font-medium px-3 py-1.5 rounded hover:bg-papel">
-      {children}
+    <Link href={href} className="inline-flex items-center gap-2 border border-linha bg-white text-sm font-semibold px-3.5 py-2 rounded-lg hover:bg-papel hover:shadow-sm transition">
+      <Icone size={16} /> {children}
     </Link>
   );
 }

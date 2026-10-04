@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import SenhaInput from '@/components/SenhaInput';
 import { useRouter } from 'next/navigation';
 
 export default function NovoAcessoImobiliariaForm() {
@@ -56,7 +57,7 @@ export default function NovoAcessoImobiliariaForm() {
       </div>
       <div>
         <label className="block text-xs text-marinho/60 mb-1">Senha</label>
-        <input type="password" value={form.senha} onChange={set('senha')} required minLength={6} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+        <SenhaInput autoComplete="new-password" value={form.senha} onChange={set('senha')} required minLength={6} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
       </div>
       <button disabled={salvando} className="bg-marinho text-white rounded px-4 py-2 text-sm font-semibold disabled:opacity-50">
         {salvando ? 'Criando…' : 'Criar usuário'}

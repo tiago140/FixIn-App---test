@@ -16,7 +16,8 @@ export async function POST(req, { params }) {
   const { error } = await supabase.rpc('responder_orcamento', { p_orcamento_id: id, p_novo_status: status });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  const { data: orc } = await supabase.from('orcamentos').select('numero, endereco, clientes(nome_empresa, email)').eq('id', id).single();
+  const { data: orc } = await supabase.from('orcamentos_cliente').select('numero, endereco').eq('id', id).single();
+  const { data: cli } = await supabase.from('clientes').select('nome_empresa, email').eq('id', profile.cliente_id).maybeSingle();
 
   await supabase.from('auditoria').insert({
     acao: status === 'aprovado' ? 'Aprovou o orçamento' : 'Recusou o orçamento',
@@ -27,8 +28,8 @@ export async function POST(req, { params }) {
 
   if (status === 'aprovado' && orc) {
     await enviarEmailStatusOrcamento({
-      paraEmail: orc.clientes?.email,
-      nomeImobiliaria: orc.clientes?.nome_empresa,
+      paraEmail: cli?.email,
+      nomeImobiliaria: cli?.nome_empresa,
       numero: orc.numero,
       endereco: orc.endereco,
       status: 'aprovado',

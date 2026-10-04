@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import CalendarioVisitas from '@/components/CalendarioVisitas';
 import VisitaRow from '@/components/VisitaRow';
 import { MASTER_TABS } from '@/lib/navTabs';
@@ -21,15 +22,18 @@ export default async function VisitasPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="font-slab text-3xl font-semibold">Visitas</h1>
-          <div className="text-sm text-marinho/60">Confirmadas por você, ou solicitadas pelas imobiliárias</div>
-        </div>
-        <Link href="/master/visitas/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">
+      <PageHeader
+        icone="visitas"
+        titulo="Visitas"
+        subtitulo="Confirmadas por você, ou solicitadas pelas imobiliárias"
+        direita={
+          <>
+        <Link href="/master/visitas/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm">
           + Agendar visita
         </Link>
-      </div>
+          </>
+        }
+      />
 
       <CalendarioVisitas visitas={lista} />
 

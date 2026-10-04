@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Palette } from 'lucide-react';
 
 // Alterna o fundo entre "Creme" (padrão) e "Claro" (branco). A escolha fica salva no navegador.
 export default function ThemeToggle() {
@@ -23,9 +24,10 @@ export default function ThemeToggle() {
     <button
       onClick={alternar}
       title="Alternar fundo claro/creme"
-      className="text-marinho/70 hover:text-marinho text-xs border border-linha rounded px-2 py-1 whitespace-nowrap"
+      aria-label="Alternar fundo claro/creme"
+      className="bg-white/10 hover:bg-white/20 border border-white/25 text-white rounded-lg px-2.5 sm:px-3 py-2 flex items-center gap-2 whitespace-nowrap"
     >
-      🎨 {tema === 'claro' ? 'Creme' : 'Claro'}
+      <Palette size={18} /> <span className="hidden md:inline">{tema === 'claro' ? 'Creme' : 'Claro'}</span>
     </button>
   );
 }

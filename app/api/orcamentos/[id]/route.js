@@ -1,7 +1,69 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
-import { calcularProximoStatusAutomatico, STATUS_LABEL } from '@/lib/format';
+import { calcularProximoStatusAutomatico, calcularTotalComMargem, fmtBRL, STATUS_LABEL } from '@/lib/format';
 import { enviarEmailStatusOrcamento } from '@/lib/email';
+import { createAdminClient } from '@/lib/supabase/admin';
+
+// Pastas de arquivos de um orçamento: todos os buckets guardam tudo sob "<id do orçamento>/".
+const BUCKETS_DO_ORCAMENTO = ['orcamentos-pdfs', 'documentos-fiscais', 'comprovantes-pagamento', 'chat-anexos'];
+
+// Só o dono/funcionário master exclui. Imobiliária e prestador nunca (e o banco também recusa).
+// Itens, documentos fiscais, comprovantes e chat saem junto (ON DELETE CASCADE no banco).
+// Os arquivos no armazenamento são apagados em seguida; se algum falhar, o orçamento já foi excluído
+// e a resposta avisa quantos arquivos ficaram para trás.
+export async function DELETE(req, { params }) {
+  const { user, profile, supabase } = await getProfile();
+  if (!user || profile?.role !== 'master') {
+    return NextResponse.json({ error: 'sem permissão para excluir' }, { status: 403 });
+  }
+  const id = params.id;
+
+  const { data: orc } = await supabase
+    .from('orcamentos')
+    .select('numero, endereco, status, valor_pago, margem_percentual, clientes(nome_empresa), orcamento_itens(mo, ma)')
+    .eq('id', id)
+    .single();
+  if (!orc) return NextResponse.json({ error: 'orçamento não encontrado' }, { status: 404 });
+
+  // Pagamento registrado ou serviço já decidido: exige confirmação reforçada (digitar o número).
+  // A tela já faz isso; aqui garantimos que ninguém contorne chamando a API direto.
+  const sensivel = (Number(orc.valor_pago) || 0) > 0 || ['aprovado', 'em_execucao', 'finalizado'].includes(orc.status);
+  let confirmacao = '';
+  try { confirmacao = (await req.json())?.confirmacao || ''; } catch (e) {}
+  if (sensivel && confirmacao.trim().toUpperCase() !== String(orc.numero).toUpperCase()) {
+    return NextResponse.json({ error: `Este orçamento está ${STATUS_LABEL[orc.status] || orc.status}${Number(orc.valor_pago) > 0 ? ' e tem pagamento registrado' : ''}. Digite o número (${orc.numero}) para confirmar a exclusão.` }, { status: 400 });
+  }
+
+  // Apaga primeiro o registro: se o banco recusar, nada mais é tocado.
+  const { error: erroDel, count } = await supabase.from('orcamentos').delete({ count: 'exact' }).eq('id', id);
+  if (erroDel) return NextResponse.json({ error: erroDel.message }, { status: 400 });
+  if (!count) return NextResponse.json({ error: 'não foi possível excluir (sem permissão ou já excluído)' }, { status: 400 });
+
+  // Guarda uma "foto" do que foi apagado, já que depois não dá mais para consultar.
+  const total = calcularTotalComMargem(orc.orcamento_itens, orc.margem_percentual);
+  await registrarAuditoria(
+    supabase, user, profile, 'Excluiu orçamento',
+    `${orc.numero} · ${orc.clientes?.nome_empresa || '—'} · ${orc.endereco} · ${STATUS_LABEL[orc.status] || orc.status} · total ${fmtBRL(total)} · pago ${fmtBRL(orc.valor_pago || 0)}`,
+    'orcamento', id
+  );
+
+  // Limpa os arquivos (precisa da chave de serviço: os buckets não têm permissão de apagar para usuários).
+  let arquivosRestantes = 0;
+  try {
+    const admin = createAdminClient();
+    for (const bucket of BUCKETS_DO_ORCAMENTO) {
+      const { data: arquivos } = await admin.storage.from(bucket).list(id, { limit: 1000 });
+      const caminhos = (arquivos || []).filter((a) => a.name).map((a) => `${id}/${a.name}`);
+      if (!caminhos.length) continue;
+      const { error: erroRm } = await admin.storage.from(bucket).remove(caminhos);
+      if (erroRm) arquivosRestantes += caminhos.length;
+    }
+  } catch (e) {
+    arquivosRestantes = -1;
+  }
+
+  return NextResponse.json({ ok: true, arquivosRestantes });
+}
 
 export async function PATCH(req, { params }) {
   const { user, profile, supabase } = await getProfile();

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import NovoOrcamentoForm from '@/components/NovoOrcamentoForm';
 
@@ -17,7 +18,10 @@ export default async function NovoOrcamentoPage({ searchParams }) {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-3xl font-semibold mb-6">{tipoInicial === 'manutencao' ? 'Nova solicitação de manutenção' : 'Novo orçamento'}</h1>
+      <PageHeader
+        icone="orcamentos"
+        titulo={tipoInicial === 'manutencao' ? 'Nova solicitação de manutenção' : 'Novo orçamento'}
+      />
       <NovoOrcamentoForm
         clientes={clientes || []}
         catalogo={catalogo || []}

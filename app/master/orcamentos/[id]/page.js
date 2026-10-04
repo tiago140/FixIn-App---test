@@ -2,13 +2,15 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import StatusTag from '@/components/StatusTag';
 import GestaoOrcamentoForm from '@/components/GestaoOrcamentoForm';
 import DocumentosFiscais from '@/components/DocumentosFiscais';
 import ComprovantesPagamento from '@/components/ComprovantesPagamento';
+import ExcluirOrcamentoButton from '@/components/ExcluirOrcamentoButton';
 import Chat from '@/components/Chat';
 import { MASTER_TABS } from '@/lib/navTabs';
-import { fmtDate, estaAtrasado, calcularTotalComMargem } from '@/lib/format';
+import { fmtDate, estaAtrasado, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,22 +57,19 @@ export default async function OrcamentoDetalhePage({ params }) {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <Link href="/master/orcamentos" className="text-sm text-marinho/50">← voltar</Link>
 
-      <div className="border-b-2 border-marinho pb-3 flex items-end justify-between mt-3 mb-6">
-        <div>
-          <h1 className="font-slab text-3xl font-semibold">
-            {orcamento.numero} {orcamento.tipo === 'manutencao' && <span className="text-info text-sm font-semibold">· MANUTENÇÃO</span>}
-          </h1>
-          <div className="text-sm text-marinho/60">
-            {orcamento.clientes?.nome_empresa} · {orcamento.endereco}
-          </div>
-          <div className="text-xs text-marinho/40">Criado em {fmtDate(orcamento.criado_em)}</div>
-        </div>
-        <div className="flex gap-1.5">
-          <StatusTag status={orcamento.status} />
-          {estaAtrasado({ ...orcamento, orcamento_itens: itens }) && (
-            <span className="tag tag-rejeitado">ATRASO</span>
-          )}
-        </div>
+      <div className="mt-3">
+        <PageHeader
+          icone="orcamentos"
+          titulo={orcamento.tipo === 'manutencao' ? `${orcamento.numero} · MANUTENÇÃO` : orcamento.numero}
+          etiqueta={orcamento.clientes?.nome_empresa}
+          subtitulo={`${orcamento.endereco} · criado em ${fmtDate(orcamento.criado_em)}`}
+          direita={
+            <>
+              {estaAtrasado({ ...orcamento, orcamento_itens: itens }) && <span className="tag tag-rejeitado">ATRASO</span>}
+              <StatusTag status={orcamento.status} />
+            </>
+          }
+        />
       </div>
 
       {orcamento.descricao_solicitacao && (
@@ -101,6 +100,14 @@ export default async function OrcamentoDetalhePage({ params }) {
         />
         <DocumentosFiscais orcamentoId={orcamento.id} documentos={documentos} role="master" />
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />
+        <ExcluirOrcamentoButton
+          orcamentoId={orcamento.id}
+          numero={orcamento.numero}
+          endereco={orcamento.endereco}
+          status={orcamento.status}
+          statusLabel={STATUS_LABEL[orcamento.status] || orcamento.status}
+          valorPago={orcamento.valor_pago}
+        />
       </div>
     </AppShell>
   );

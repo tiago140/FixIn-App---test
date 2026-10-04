@@ -4,10 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { ChevronsLeft, ChevronsRight, LogOut, Menu, User } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, LogOut, Menu, MessageCircle } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import { rotuloPerfil } from '@/lib/permissoes';
 
-const ROLE_LABEL = { dono: 'dono', master: 'master', imobiliaria_admin: 'administrador', imobiliaria_operacional: 'operacional' };
+// Cor da etiqueta de perfil (sobre o fundo azul-marinho da barra)
+const COR_PERFIL = { Dono: '#B8862E', 'Equipe FixIn': '#3B6B8C', Administrador: '#3F7A5E', Operacional: '#6B7280' };
+
+function iniciais(nome) {
+  const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '?';
+  return (partes[0][0] + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+}
 
 export default function AppShell({ profile, tabs, children, homeHref, fullWidth = false }) {
   const pathname = usePathname();
@@ -71,43 +79,54 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
     router.refresh();
   }
 
-  const roleKey = profile.role === 'master' ? (profile.dono ? 'dono' : 'master') : profile.subrole === 'operacional' ? 'imobiliaria_operacional' : 'imobiliaria_admin';
+  const perfilRotulo = rotuloPerfil(profile);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="app-topbar flex items-center justify-between px-5 py-3.5 border-b border-linha bg-white sticky top-0 z-30 gap-3">
-        <div className="flex items-center gap-2">
-          <button className="md:hidden border border-linha rounded px-2.5 py-1.5" onClick={() => setOpen((v) => !v)}>
-            <Menu size={16} />
+      <div className="app-topbar h-16 flex items-center justify-between px-3 sm:px-6 bg-marinho text-white sticky top-0 z-30 gap-3 shadow-md border-b border-black/20">
+        <div className="flex items-center gap-3">
+          <button className="md:hidden bg-white/10 hover:bg-white/20 border border-white/25 rounded-lg px-2.5 py-2" onClick={() => setOpen((v) => !v)} aria-label="Abrir menu">
+            <Menu size={18} />
           </button>
           <Link href={homeHref} className="flex items-baseline gap-2.5 cursor-pointer">
-            <span className="font-slab font-bold text-3xl text-marinho tracking-tight">FixIn</span>
-            <span className="text-sm font-mono font-semibold text-verde tracking-wide">REFORMAS</span>
+            <span className="font-slab font-bold text-2xl sm:text-3xl text-white tracking-tight">FixIn</span>
+            <span className="hidden sm:inline text-sm font-mono font-semibold text-white/80 tracking-[0.25em]">REFORMAS</span>
           </Link>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Link href="/conta" title="Minha conta (trocar senha)" className="text-marinho/70 hover:text-marinho hover:underline hidden sm:inline">{profile.nome_completo}</Link>
-          <Link href="/conta" title="Minha conta" className="sm:hidden text-marinho/60 border border-linha rounded px-2 py-1"><User size={13} /></Link>
-          <span className="text-[10px] font-mono border border-linha rounded px-2 py-0.5 text-marinho/60">{ROLE_LABEL[roleKey]}</span>
+        <div className="flex items-center gap-1.5 sm:gap-3 text-sm">
+          <Link href="/conta" title="Minha conta (trocar senha)" className="flex items-center gap-2.5 rounded-lg hover:bg-white/10 pl-1 pr-1 sm:pr-3 py-1">
+            <span className="w-10 h-10 rounded-full bg-white/15 border border-white/30 flex items-center justify-center font-bold text-sm">
+              {iniciais(profile.nome_completo)}
+            </span>
+            <span className="hidden sm:block leading-tight text-left">
+              <span className="block font-semibold text-white">{profile.nome_completo}</span>
+              <span className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 text-white" style={{ background: COR_PERFIL[perfilRotulo] || '#6B7280' }}>
+                  {perfilRotulo}
+                </span>
+                {profile.empresa && <span className="hidden lg:inline text-[11px] text-white/70 truncate max-w-[220px]">{profile.empresa}</span>}
+              </span>
+            </span>
+          </Link>
           <a
             href="https://wa.me/5515996540710?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20sistema%20de%20or%C3%A7amentos%20FixIn."
             target="_blank"
             rel="noreferrer"
-            className="text-marinho/60 hover:text-verde text-xs border border-linha rounded px-2 py-1 flex items-center gap-1 whitespace-nowrap"
+            className="bg-[#3F7A5E] hover:brightness-110 text-white font-semibold rounded-lg px-2.5 sm:px-4 py-2 flex items-center gap-2 whitespace-nowrap shadow-sm"
             title="Falar com o suporte pelo WhatsApp"
           >
-            💬 <span className="hidden sm:inline">Suporte</span>
+            <MessageCircle size={18} /> <span className="hidden sm:inline">Suporte</span>
           </a>
           <ThemeToggle />
-          <button onClick={sair} className="text-marinho/60 hover:text-erro text-xs border border-linha rounded px-2 py-1 flex items-center gap-1">
-            <LogOut size={13} /> <span className="hidden sm:inline">Sair</span>
+          <button onClick={sair} className="bg-white/10 hover:bg-white/20 border border-white/25 text-white rounded-lg px-2.5 sm:px-3 py-2 flex items-center gap-2" title="Sair">
+            <LogOut size={18} /> <span className="hidden sm:inline">Sair</span>
           </button>
         </div>
       </div>
 
       <div className="flex flex-1 items-stretch">
         <aside
-          className={`app-aside fixed md:static top-[49px] md:top-0 bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-64'} flex-shrink-0 bg-white border-r border-linha py-3 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
+          className={`app-aside fixed md:static top-16 md:top-0 bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-64'} flex-shrink-0 bg-white border-r border-linha py-3 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
             open ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
           }`}
         >
@@ -144,7 +163,7 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
           </button>
         </aside>
 
-        {open && <div className="fixed inset-0 top-[49px] bg-black/30 z-10 md:hidden" onClick={() => setOpen(false)} />}
+        {open && <div className="fixed inset-0 top-16 bg-black/30 z-10 md:hidden" onClick={() => setOpen(false)} />}
 
         <main className="flex-1 min-w-0 px-4 sm:px-8 py-5 pb-16">{children}</main>
       </div>

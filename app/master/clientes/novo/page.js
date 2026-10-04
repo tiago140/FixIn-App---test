@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import NovoClienteForm from '@/components/NovoClienteForm';
 
@@ -11,7 +12,10 @@ export default async function NovoClientePage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-3xl font-semibold mb-6">Nova imobiliária</h1>
+      <PageHeader
+        icone="clientes"
+        titulo="Nova imobiliária"
+      />
       <NovoClienteForm />
     </AppShell>
   );

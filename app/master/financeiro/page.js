@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import ToggleAtraso from '@/components/ToggleAtraso';
 import { GraficoPizzaStatus, GraficoBarrasClientes, GraficoBarrasAprovadoReprovado } from '@/components/DashboardCharts';
@@ -54,8 +55,11 @@ export default async function FinanceiroPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <h1 className="font-slab text-3xl font-semibold mb-1">Financeiro</h1>
-      <div className="text-base text-marinho/60 mb-6">Visão completa — pagamentos, aprovação e margem interna</div>
+      <PageHeader
+        icone="financeiro"
+        titulo="Financeiro"
+        subtitulo="Visão completa — pagamentos, aprovação e margem interna"
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-linha border border-linha mb-6">
         <Kpi num={fmtBRL(totalAprovadoGeral)} lbl="total aprovado" />

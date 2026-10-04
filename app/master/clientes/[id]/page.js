@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import StatusTag from '@/components/StatusTag';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { fmtBRL, fmtDate, calcularTotalComMargem } from '@/lib/format';
@@ -27,12 +28,11 @@ export default async function ClienteDetalhePage({ params }) {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <Link href="/master/clientes" className="text-sm text-marinho/50">← voltar</Link>
 
-      <div className="border-b-2 border-marinho pb-3 mt-3 mb-6">
-        <h1 className="font-slab text-3xl font-semibold">{cliente.nome_empresa}</h1>
-        <div className="text-sm text-marinho/60">
-          {cliente.nome} {cliente.email ? `· ${cliente.email}` : ''} {cliente.cnpj ? `· CNPJ ${cliente.cnpj}` : ''}
-        </div>
-      </div>
+      <PageHeader
+        icone="clientes"
+        titulo={cliente.nome_empresa}
+        subtitulo={`${cliente.nome} ${cliente.email ? `· ${cliente.email}` : ''} ${cliente.cnpj ? `· CNPJ ${cliente.cnpj}` : ''}`}
+      />
 
       <h2 className="font-semibold text-xl mb-2">Orçamentos ({orcamentos.length})</h2>
       {orcamentos.length === 0 ? (

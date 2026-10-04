@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
+import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 
 export const dynamic = 'force-dynamic';
@@ -15,15 +16,18 @@ export default async function PrestadoresPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <div className="border-b-2 border-marinho pb-3 mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="font-slab text-3xl font-semibold">Prestadores</h1>
-          <div className="text-sm text-marinho/60">Cadastro da equipe de execução</div>
-        </div>
-        <Link href="/master/prestadores/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded">
+      <PageHeader
+        icone="prestadores"
+        titulo="Prestadores"
+        subtitulo="Cadastro da equipe de execução"
+        direita={
+          <>
+        <Link href="/master/prestadores/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm">
           + Novo prestador
         </Link>
-      </div>
+          </>
+        }
+      />
 
       {!prestadores || prestadores.length === 0 ? (
         <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum prestador cadastrado ainda.</div>

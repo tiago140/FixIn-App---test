@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fmtBRL, fmtDataHora, PAGAMENTO_CLIENTE_LABEL } from '@/lib/format';
+import { fmtBRL, fmtDate, fmtDataHora, PAGAMENTO_CLIENTE_LABEL } from '@/lib/format';
+
+// Hoje no fuso do navegador, no formato aaaa-mm-dd (o que o campo de data usa).
+const hojeLocal = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
 const CLASSE_STATUS = {
   aguardando: 'bg-alerta/15 text-alerta',
@@ -10,13 +13,14 @@ const CLASSE_STATUS = {
   pago_total: 'bg-sucesso/15 text-sucesso',
 };
 
-export default function ComprovantesPagamento({ orcamentoId, comprovantes, role, total, valorPago, pagamentoClienteStatus }) {
+export default function ComprovantesPagamento({ orcamentoId, comprovantes, role, total, valorPago, pagamentoClienteStatus, veValores = true }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [verificando, setVerificando] = useState(null);
   const [erro, setErro] = useState('');
   const [tipo, setTipo] = useState('entrada');
-  const [valor, setValor] = useState(Math.round(total / 2));
+  const [valor, setValor] = useState(total ? Math.round(total / 2) : '');
+  const [dataPagamento, setDataPagamento] = useState(hojeLocal);
 
   async function enviar(e) {
     e.preventDefault();
@@ -27,7 +31,8 @@ export default function ComprovantesPagamento({ orcamentoId, comprovantes, role,
     const fd = new FormData();
     fd.append('arquivo', file);
     fd.append('tipo_pagamento', tipo);
-    fd.append('valor', valor);
+    if (veValores) fd.append('valor', valor);
+    fd.append('data_pagamento', dataPagamento);
     const res = await fetch(`/api/orcamentos/${orcamentoId}/comprovantes`, { method: 'POST', body: fd });
     setEnviando(false);
     if (!res.ok) {
@@ -70,9 +75,11 @@ export default function ComprovantesPagamento({ orcamentoId, comprovantes, role,
           {PAGAMENTO_CLIENTE_LABEL[pagamentoClienteStatus] || PAGAMENTO_CLIENTE_LABEL.aguardando}
         </span>
       </div>
-      <div className="text-xs text-marinho/60 mb-3">
-        Total {fmtBRL(total)} · Pago {fmtBRL(valorPago || 0)} · <span className={pendente > 0 ? 'text-erro font-semibold' : ''}>Faltando {fmtBRL(pendente)}</span>
-      </div>
+      {veValores && (
+        <div className="text-xs text-marinho/60 mb-3">
+          Total {fmtBRL(total)} · Pago {fmtBRL(valorPago || 0)} · <span className={pendente > 0 ? 'text-erro font-semibold' : ''}>Faltando {fmtBRL(pendente)}</span>
+        </div>
+      )}
 
       {erro && <div className="text-xs bg-erro/10 border border-erro text-erro px-3 py-2 rounded mb-3">{erro}</div>}
 
@@ -86,7 +93,7 @@ export default function ComprovantesPagamento({ orcamentoId, comprovantes, role,
                 <a href={c.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-marinho underline">
                   Comprovante — {c.tipo_pagamento === 'integral' ? 'Pago integral' : 'Entrada 50%'}
                 </a>
-                <div className="text-xs text-marinho/50">{fmtBRL(c.valor)} · enviado em {fmtDataHora(c.criado_em)}</div>
+                <div className="text-xs text-marinho/50">{veValores && c.valor != null ? `${fmtBRL(c.valor)} · ` : ''}pago em {fmtDate(c.data_pagamento)} · enviado em {fmtDataHora(c.criado_em)}</div>
               </div>
               {c.verificado ? (
                 <span className="text-xs text-sucesso font-semibold">✓ Verificado</span>
@@ -117,9 +124,15 @@ export default function ComprovantesPagamento({ orcamentoId, comprovantes, role,
                 <option value="integral">Pago integral</option>
               </select>
             </div>
+            {veValores && (
+              <div>
+                <label className="block text-[11px] text-marinho/60 mb-1">Valor pago (R$)</label>
+                <input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} className="border border-linha rounded px-2 py-1.5 bg-papel text-sm w-32" />
+              </div>
+            )}
             <div>
-              <label className="block text-[11px] text-marinho/60 mb-1">Valor pago (R$)</label>
-              <input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} className="border border-linha rounded px-2 py-1.5 bg-papel text-sm w-32" />
+              <label className="block text-[11px] text-marinho/60 mb-1">Data do pagamento</label>
+              <input type="date" value={dataPagamento} max={hojeLocal()} onChange={(e) => setDataPagamento(e.target.value)} required className="border border-linha rounded px-2 py-1.5 bg-papel text-sm" />
             </div>
             <div>
               <label className="block text-[11px] text-marinho/60 mb-1">Arquivo (PDF)</label>
