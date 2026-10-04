@@ -500,3 +500,21 @@ drop policy if exists mensagens_insert on public.mensagens;
 create policy mensagens_insert on public.mensagens for insert with check (autor_id = auth.uid() and (public.is_master() or public.meu_orcamento(orcamento_id)));
 drop policy if exists docfiscais_select on public.orcamento_documentos_fiscais;
 create policy docfiscais_select on public.orcamento_documentos_fiscais for select using (public.is_master() or public.meu_orcamento(orcamento_id));
+
+-- Quem já tem histórico (orçamentos, mensagens, comprovantes, Auditoria...) não pode ser excluído sem perder o registro
+-- de "quem fez o quê": só desativado. A tela Equipe usa esta função (via servidor) para decidir se mostra a exclusão.
+create or replace function public.pessoas_com_historico(p_ids uuid[]) returns setof uuid
+language sql stable security definer set search_path = public as $f$
+  select distinct id from (
+    select autor_id as id from public.auditoria where autor_id = any(p_ids)
+    union all select criado_por from public.clientes where criado_por = any(p_ids)
+    union all select autor_id from public.mensagens where autor_id = any(p_ids)
+    union all select enviado_por from public.orcamento_comprovantes where enviado_por = any(p_ids)
+    union all select criado_por from public.orcamento_documentos_fiscais where criado_por = any(p_ids)
+    union all select criado_por from public.orcamentos where criado_por = any(p_ids)
+    union all select pagamento_verificado_por from public.orcamentos where pagamento_verificado_por = any(p_ids)
+    union all select criado_por from public.visitas where criado_por = any(p_ids)
+  ) t where id is not null
+$f$;
+revoke all on function public.pessoas_com_historico(uuid[]) from public, anon, authenticated;
+grant execute on function public.pessoas_com_historico(uuid[]) to service_role;
