@@ -535,3 +535,13 @@ begin
   update public.orcamentos set status = p_novo_status, aprovado_em = case when p_novo_status = 'aprovado' then now() else aprovado_em end, atualizado_em = now() where id = p_orcamento_id;
 end;
 $$;
+
+-- PRESTADORES: RG e CPF só o dono lê. A imobiliária vê só NOME e TELEFONE de quem atende a ela (visita ou orçamento dela).
+create or replace view public.prestadores_cliente as
+select p.id, p.nome, p.telefone
+from public.prestadores p
+where exists (select 1 from public.visitas v where v.prestador_id = p.id and v.cliente_id = public.current_cliente_id())
+   or exists (select 1 from public.orcamentos o where o.prestador_id = p.id and o.cliente_id = public.current_cliente_id());
+revoke all on public.prestadores_cliente from public, anon;
+grant select on public.prestadores_cliente to authenticated;
+drop policy if exists prestadores_select on public.prestadores;  -- antes: qualquer usuário logado lia a tabela inteira

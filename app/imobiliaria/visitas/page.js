@@ -14,7 +14,11 @@ export default async function ImobiliariaVisitas() {
   if (!user) redirect('/login');
   if (profile.role === 'master') redirect('/master/dashboard');
 
-  const { data: visitas } = await supabase.from('visitas').select('*, prestadores(nome, telefone)').order('data_hora');
+  // O prestador vem pela visão protegida (só nome e telefone de quem atende esta imobiliária): RG e CPF ficam só com o dono.
+  const { data: visitasBrutas } = await supabase.from('visitas').select('*').order('data_hora');
+  const { data: prestadoresDaImob } = await supabase.from('prestadores_cliente').select('id, nome, telefone');
+  const prestadorPorId = Object.fromEntries((prestadoresDaImob || []).map((p) => [p.id, { nome: p.nome, telefone: p.telefone }]));
+  const visitas = (visitasBrutas || []).map((v) => ({ ...v, prestadores: v.prestador_id ? prestadorPorId[v.prestador_id] || null : null }));
   const lista = visitas || [];
 
   return (

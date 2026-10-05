@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
+import { createAdminClient } from '@/lib/supabase/admin';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import AcessosLista from '@/components/AcessosLista';
@@ -18,12 +19,19 @@ export default async function AcessosPage() {
   // o banco recusa a consulta por ser ambígua e a lista aparecia vazia.
   const { data: todos, error: erroAcessos } = await supabase
     .from('profiles')
-    .select('id, role, subrole, nome_completo, email, ativo, dono, criado_em, cliente_id')
+    .select('id, role, subrole, nome_completo, email, cpf, ativo, dono, criado_em, cliente_id')
     .order('nome_completo');
   const { data: imobs } = await supabase.from('clientes').select('id, nome_empresa');
   const nomePorId = Object.fromEntries((imobs || []).map((c) => [c.id, c.nome_empresa]));
 
-  const lista = (todos || []).map((p) => ({ ...p, clientes: p.cliente_id ? { nome_empresa: nomePorId[p.cliente_id] || null } : null }));
+  // Quem já tem histórico (orçamentos, mensagens, Auditoria...) não pode ser excluído, só desativado.
+  let comHistorico = new Set();
+  try {
+    const { data: hist } = await createAdminClient().rpc('pessoas_com_historico', { p_ids: (todos || []).map((p) => p.id) });
+    comHistorico = new Set((hist || []).map((h) => (typeof h === 'string' ? h : Object.values(h)[0])));
+  } catch (e) {}
+
+  const lista = (todos || []).map((p) => ({ ...p, tem_historico: comHistorico.has(p.id), clientes: p.cliente_id ? { nome_empresa: nomePorId[p.cliente_id] || null } : null }));
   const equipe = lista.filter((p) => p.role === 'master').sort((a, b) => Number(b.dono) - Number(a.dono));
   const imobiliarias = lista.filter((p) => p.role === 'imobiliaria');
   const outros = lista.filter((p) => p.role !== 'master' && p.role !== 'imobiliaria');

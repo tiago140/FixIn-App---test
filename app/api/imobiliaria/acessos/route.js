@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { validarSenha } from '@/lib/senha';
 
 export async function POST(req) {
   const { user, profile, supabase } = await getProfile();
@@ -19,6 +20,9 @@ export async function POST(req) {
   if (!email || !senha || !nome_completo) {
     return NextResponse.json({ error: 'preencha nome, e-mail e senha' }, { status: 400 });
   }
+
+  const erroSenha = validarSenha(senha);
+  if (erroSenha) return NextResponse.json({ error: erroSenha }, { status: 400 });
 
   const admin = createAdminClient();
 
