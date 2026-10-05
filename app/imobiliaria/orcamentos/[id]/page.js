@@ -107,7 +107,13 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
           )}
         </div>
 
-        {['pendente', 'em_preparacao', 'enviado'].includes(orcamento.status) && <ResponderOrcamentoButtons orcamentoId={orcamento.id} />}
+        {orcamento.status === 'enviado' && <ResponderOrcamentoButtons orcamentoId={orcamento.id} />}
+        {['pendente', 'em_preparacao'].includes(orcamento.status) && (
+          <ResponderOrcamentoButtons
+            orcamentoId={orcamento.id}
+            bloqueado="A FixIn ainda está preparando este orçamento. Os botões de aprovar e recusar liberam assim que ele for enviado para você (você será avisado por e-mail)."
+          />
+        )}
 
         {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && (
           <ComprovantesPagamento

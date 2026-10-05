@@ -16,7 +16,10 @@ export async function POST(req, { params }) {
   }
 
   const { error } = await supabase.rpc('responder_orcamento', { p_orcamento_id: id, p_novo_status: status });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    const aindaEmPreparo = /em preparação/i.test(error.message);
+    return NextResponse.json({ error: aindaEmPreparo ? 'A FixIn ainda está preparando este orçamento. A aprovação libera quando ele for enviado.' : error.message }, { status: aindaEmPreparo ? 409 : 400 });
+  }
 
   const { data: orc } = await supabase.from('orcamentos_cliente').select('numero, endereco').eq('id', id).single();
   const { data: cli } = await supabase.from('clientes').select('nome_empresa, email').eq('id', profile.cliente_id).maybeSingle();

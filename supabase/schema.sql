@@ -518,3 +518,20 @@ language sql stable security definer set search_path = public as $f$
 $f$;
 revoke all on function public.pessoas_com_historico(uuid[]) from public, anon, authenticated;
 grant execute on function public.pessoas_com_historico(uuid[]) to service_role;
+
+-- A imobiliária só aprova/recusa orçamento ENVIADO. Pendente e em preparação ficam travados até a FixIn enviar.
+create or replace function public.responder_orcamento(p_orcamento_id uuid, p_novo_status text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_cliente_id uuid; v_status_atual text;
+begin
+  if p_novo_status not in ('aprovado','rejeitado') then raise exception 'status inválido'; end if;
+  select cliente_id, status into v_cliente_id, v_status_atual from public.orcamentos where id = p_orcamento_id;
+  if v_cliente_id is null then raise exception 'orçamento não encontrado'; end if;
+  if v_cliente_id <> public.current_cliente_id() then raise exception 'sem permissão para este orçamento'; end if;
+  if v_status_atual in ('pendente', 'em_preparacao') then
+    raise exception 'orçamento ainda em preparação pela FixIn: a aprovação libera quando ele for enviado';
+  end if;
+  if v_status_atual <> 'enviado' then raise exception 'orçamento não está mais aguardando decisão'; end if;
+  update public.orcamentos set status = p_novo_status, aprovado_em = case when p_novo_status = 'aprovado' then now() else aprovado_em end, atualizado_em = now() where id = p_orcamento_id;
+end;
+$$;
