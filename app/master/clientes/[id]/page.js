@@ -32,6 +32,7 @@ export default async function ClienteDetalhePage({ params }) {
         icone="clientes"
         titulo={cliente.nome_empresa}
         subtitulo={`${cliente.nome} ${cliente.email ? `· ${cliente.email}` : ''} ${cliente.cnpj ? `· CNPJ ${cliente.cnpj}` : ''}`}
+        direita={cliente.ativo === false ? <span className="text-sm font-bold uppercase tracking-wide rounded-lg px-3 py-1.5 bg-erro text-white">Desativada</span> : null}
       />
 
       <h2 className="font-semibold text-xl mb-2">Orçamentos ({orcamentos.length})</h2>

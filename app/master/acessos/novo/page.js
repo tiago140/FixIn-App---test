@@ -12,7 +12,7 @@ export default async function NovoAcessoPage({ searchParams }) {
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
-  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').order('nome_empresa');
+  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
   const pedeMaster = searchParams?.tipo === 'master' && !!profile.dono;
 
   return (

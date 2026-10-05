@@ -88,6 +88,10 @@ export async function PATCH(req, { params }) {
   }
 
   if (acao === 'reativar') {
+    if (alvo.role === 'imobiliaria' && alvo.cliente_id) {
+      const { data: cli } = await admin.from('clientes').select('ativo, nome_empresa').eq('id', alvo.cliente_id).maybeSingle();
+      if (cli && cli.ativo === false) return erro(`A imobiliária "${cli.nome_empresa}" está desativada. Reative a imobiliária primeiro (em Imobiliárias).`, 409);
+    }
     const { error: e1 } = await admin.auth.admin.updateUserById(alvo.id, { ban_duration: 'none' });
     if (e1) return erro(e1.message);
     const { error: e2 } = await admin.from('profiles').update({ ativo: true }).eq('id', alvo.id);

@@ -20,7 +20,7 @@ export async function GET(req) {
 
   const { data: orcamentos, error } = await admin
     .from('orcamentos')
-    .select('id, numero, endereco, status, aprovado_em, valor_pago, margem_percentual, pagamento_cliente_status, orcamento_itens(mo, ma), clientes(nome_empresa, email)')
+    .select('id, numero, endereco, status, aprovado_em, valor_pago, margem_percentual, pagamento_cliente_status, orcamento_itens(mo, ma), clientes(nome_empresa, email, ativo)')
     .in('status', ['aprovado', 'em_execucao'])
     .neq('pagamento_cliente_status', 'pago_total');
 
@@ -30,6 +30,7 @@ export async function GET(req) {
   const detalhes = [];
   for (const o of orcamentos || []) {
     if (!estaAtrasado(o)) continue;
+    if (o.clientes?.ativo === false) continue; // imobiliária desativada: sem lembretes automáticos
     const total = calcularTotalComMargem(o.orcamento_itens, o.margem_percentual);
     const pendente = Math.max(0, total - (Number(o.valor_pago) || 0));
     const destino = await destinatariosDoOrcamento(admin, o.id, { soAdmins: true });

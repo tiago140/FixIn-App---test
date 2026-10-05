@@ -545,3 +545,8 @@ where exists (select 1 from public.visitas v where v.prestador_id = p.id and v.c
 revoke all on public.prestadores_cliente from public, anon;
 grant select on public.prestadores_cliente to authenticated;
 drop policy if exists prestadores_select on public.prestadores;  -- antes: qualquer usuário logado lia a tabela inteira
+
+-- IMOBILIÁRIA (cliente) pode ser desativada sem perder histórico. Ao desativar, os logins dela são bloqueados;
+-- "bloqueado_por_cliente" lembra quem foi bloqueado POR ISSO, para a reativação devolver o acesso só a esses.
+alter table public.clientes add column if not exists ativo boolean not null default true;
+alter table public.profiles add column if not exists bloqueado_por_cliente boolean not null default false;

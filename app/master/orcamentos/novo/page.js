@@ -10,7 +10,7 @@ export default async function NovoOrcamentoPage({ searchParams }) {
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
-  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').order('nome_empresa');
+  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
   const { data: catalogo } = await supabase.from('catalogo_itens').select('*').order('ambiente').order('servico');
   const tipoInicial = searchParams?.tipo === 'manutencao' ? 'manutencao' : 'rescisao';
   const enderecoInicial = searchParams?.endereco || '';

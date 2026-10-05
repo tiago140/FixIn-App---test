@@ -36,6 +36,12 @@ export async function POST(req) {
 
   const admin = createAdminClient();
 
+  if (role === 'imobiliaria') {
+    const { data: cli } = await admin.from('clientes').select('ativo').eq('id', cliente_id).maybeSingle();
+    if (!cli) return NextResponse.json({ error: 'imobiliária não encontrada' }, { status: 400 });
+    if (cli.ativo === false) return NextResponse.json({ error: 'Esta imobiliária está desativada. Reative-a antes de criar usuários.' }, { status: 409 });
+  }
+
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password: senha,

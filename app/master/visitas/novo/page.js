@@ -10,7 +10,7 @@ export default async function NovaVisitaPage() {
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
-  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').order('nome_empresa');
+  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
   const { data: prestadores } = await supabase.from('prestadores').select('id, nome').order('nome');
 
   return (
