@@ -11,6 +11,24 @@ const temporizadores = new WeakMap();
 // n = quantidade; com zero não há o que mostrar, então não vira clicável.
 export default function AlvoRolagem({ alvo, n = 1, rotulo, children, dica = true, className = '' }) {
   function ir() {
+    // cartões que estão escondidos atrás de "Mostrar os outros N": abre antes, para destacar TODOS
+    if (alvo !== 'criado') {
+      const botoes = new Set(
+        Array.from(document.querySelectorAll(`[data-kpi~="${alvo}"]`))
+          .filter((el) => el.closest('[data-extra]')?.classList.contains('hidden'))
+          .map((el) => el.closest('section')?.querySelector('[data-mostrar-todos]'))
+          .filter(Boolean)
+      );
+      if (botoes.size) {
+        botoes.forEach((b) => b.click());
+        setTimeout(rolarEDestacar, 80);
+        return;
+      }
+    }
+    rolarEDestacar();
+  }
+
+  function rolarEDestacar() {
     const reduzMovimento = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const itens = alvo === 'criado' ? [] : Array.from(document.querySelectorAll(`[data-kpi~="${alvo}"]`));
     const secao = itens[0]?.closest('section');

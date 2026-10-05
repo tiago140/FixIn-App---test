@@ -593,3 +593,16 @@ create policy laudos_imobiliaria_le on public.laudos for select using (publicado
 -- fotos e PDFs dos laudos ficam num espaço PRIVADO: só se acessa por link temporário gerado pelo servidor depois de conferir a permissão
 insert into storage.buckets (id, name, public) values ('laudos', 'laudos', false) on conflict (id) do nothing;
 -- (a função pessoas_com_historico passou a incluir laudos.criado_por: quem criou laudo só pode ser desativado, não excluído)
+
+-- ATRASO só depois de aprovado: a marca manual "atrasado" não vale em orçamento recusado ou ainda em análise.
+create or replace function public.orcamento_em_atraso(p_id uuid) returns boolean
+language sql stable security definer set search_path = public as $f$
+  select case when public.is_master() or public.meu_orcamento(p_id) then
+    (select o.status in ('aprovado','em_execucao','finalizado')
+            and (coalesce(o.atrasado, false)
+                 or (o.aprovado_em is not null
+                     and coalesce(o.valor_pago,0) < public.total_orcamento_interno(o.id)
+                     and floor(extract(epoch from (now() - o.aprovado_em)) / 86400) > 7))
+       from public.orcamentos o where o.id = p_id)
+  end
+$f$;

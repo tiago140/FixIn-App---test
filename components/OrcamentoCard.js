@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Clock, PencilRuler, Send, CheckCircle2, Wrench, BadgeCheck, XCircle, AlertTriangle, Check, HardHat } from 'lucide-react';
 import { fmtBRL, fmtDate } from '@/lib/format';
 import { ETAPAS_LINHA, SITUACAO, COR_ATRASO, PAGAMENTO_TEXTO, etapaAtual } from '@/lib/statusVisual';
-import { temPendencia } from '@/lib/painel';
+import { temPendencia, faixaEspera } from '@/lib/painel';
 
 const ICONES = { Clock, PencilRuler, Send, CheckCircle2, Wrench, BadgeCheck, XCircle };
 
@@ -31,6 +31,10 @@ export default function OrcamentoCard({ o, basePath, mostrarCliente = false, veV
   if (o.status === 'enviado') contas.push('aguardando');
   if (temPendencia(o)) contas.push('pendencia');
   if (emAtraso) contas.push('atraso');
+  contas.push(`st-${o.status}`);                                   // um por situação (o painel "O todo" clica por aqui)
+  if (['pendente', 'em_preparacao'].includes(o.status)) contas.push('aorcar');
+  const espera = faixaEspera(o);                                    // há quanto tempo está esperando resposta
+  if (espera) contas.push(`espera-${espera}`);
 
   return (
     <Link

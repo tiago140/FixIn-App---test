@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import OrcamentoCard from '@/components/OrcamentoCard';
+import GradeOrcamentos from '@/components/GradeOrcamentos';
+
+const TETO_NA_PAGINA = 120; // acima disso o resto só no "ver todos" (evita página gigante)
 
 // Bloco do painel: cabeçalho colorido com a contagem e uma grade de cartões.
 export default function SecaoOrcamentos({ titulo, cor, lista, basePath, verTodosHref, mostrarCliente = true, limite = 6, veValores = false, papel = 'master' }) {
   if (!lista || lista.length === 0) return null;
-  const mostrar = lista.slice(0, limite);
-  const resto = lista.length - mostrar.length;
+  const naPagina = lista.slice(0, TETO_NA_PAGINA);
+  const resto = lista.length - Math.min(limite, lista.length);
 
   return (
     <section className="mb-8 scroll-mt-20">
@@ -22,11 +25,11 @@ export default function SecaoOrcamentos({ titulo, cor, lista, basePath, verTodos
           </Link>
         )}
       </div>
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {mostrar.map((o) => (
+      <GradeOrcamentos limite={limite}>
+        {naPagina.map((o) => (
           <OrcamentoCard key={o.id} o={o} basePath={basePath} mostrarCliente={mostrarCliente} veValores={veValores} papel={papel} />
         ))}
-      </div>
+      </GradeOrcamentos>
     </section>
   );
 }

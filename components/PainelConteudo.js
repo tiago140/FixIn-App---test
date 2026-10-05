@@ -4,6 +4,7 @@ import PainelGraficos from '@/components/PainelGraficos';
 import KpiCard from '@/components/KpiCard';
 import AlvoRolagem from '@/components/AlvoRolagem';
 import SecaoOrcamentos from '@/components/SecaoOrcamentos';
+import FunilOrcamentos from '@/components/FunilOrcamentos';
 import { fmtBRL } from '@/lib/format';
 import { agruparPorEtapa, resumoPorEtapa, serieUltimosMeses, contagensFunil, temPendencia, ESTAGIOS_APROVADO } from '@/lib/painel';
 
@@ -28,7 +29,8 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
   const secoes = master
     ? [
         ['Em atraso', '#C0392B', g.atrasados],
-        ['Em preparação interna', '#B8862E', g.internos],
+        ['Novas solicitações', '#D9A441', g.solicitados],
+        ['Em análise pela FixIn', '#B8862E', g.emAnalise],
         ['Aguardando a imobiliária', '#3B6B8C', g.aguardando],
         ['Aprovado / em execução', '#3F7A5E', g.andamento],
         ['Finalizado', '#5A6459', g.finalizados],
@@ -37,7 +39,8 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
     : [
         ['Em atraso', '#C0392B', g.atrasados],
         ['Aguardando sua aprovação', '#3B6B8C', g.aguardando],
-        ['Em análise pela FixIn', '#B8862E', g.internos],
+        ['Solicitados (a FixIn vai orçar)', '#D9A441', g.solicitados],
+        ['Em análise pela FixIn', '#B8862E', g.emAnalise],
         ['Aprovado / em execução', '#3F7A5E', g.andamento],
         ['Finalizado', '#5A6459', g.finalizados],
         ['Rejeitado', '#A63A2D', g.rejeitados],
@@ -80,7 +83,7 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
       )}
 
       {master ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           <AlvoRolagem alvo="criado" n={n.criados} rotulo="Ver todos os orçamentos na lista abaixo"><KpiCard icone={ClipboardList} cor="#182F50" num={String(n.criados)} lbl="orçamentos no total" /></AlvoRolagem>
           <AlvoRolagem alvo="aprovado" n={n.aprovados} rotulo="Ver os orçamentos aprovados na lista abaixo"><KpiCard icone={CircleDollarSign} cor="#3F7A5E" num={fmtBRL(valorAprovado)} lbl="valor aprovado" /></AlvoRolagem>
           <AlvoRolagem alvo="aguardando" n={n.aguardando} rotulo="Ver os orçamentos aguardando aprovação na lista abaixo"><KpiCard icone={Hourglass} cor="#3B6B8C" num={String(n.aguardando)} lbl="aguardando aprovação" /></AlvoRolagem>
@@ -88,7 +91,7 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
             <AlvoRolagem alvo="criado" n={n.criados} rotulo="Ver todos os orçamentos na lista abaixo"><KpiCard icone={ClipboardList} cor="#182F50" num={String(n.criados)} lbl="orçamentos criados" /></AlvoRolagem>
             <AlvoRolagem alvo="aprovado" n={n.aprovados} rotulo="Ver os orçamentos aprovados na lista abaixo"><KpiCard icone={CheckCircle2} cor="#3F7A5E" num={String(n.aprovados)} lbl="aprovados" sub={veValores ? `${fmtBRL(valorAprovado)} aprovado` : null} /></AlvoRolagem>
             <AlvoRolagem alvo="execucao" n={n.emExecucao} rotulo="Ver os orçamentos em execução na lista abaixo"><KpiCard icone={Wrench} cor="#2C5570" num={String(n.emExecucao)} lbl="em execução" /></AlvoRolagem>
@@ -102,6 +105,8 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
           </Link>
         </>
       )}
+
+      <FunilOrcamentos orcamentos={lista} papel={papel} veValores={veValores} agora={agora || new Date()} />
 
       {lista.length > 0 && <PainelGraficos etapas={etapas} meses={meses} papel={papel} semValores={!veValores} />}
 
