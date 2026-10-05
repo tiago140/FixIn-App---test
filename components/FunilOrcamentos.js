@@ -9,7 +9,7 @@ const pct = (parte, todo) => (todo > 0 ? Math.round((parte / todo) * 100) : 0);
 // "O todo": quantos orçamentos E quanto dinheiro em cada situação — o que está esperando resposta, o que ainda vai ser orçado,
 // o que foi fechado e o que foi recusado. Cada linha clica e leva à lista abaixo, destacando os orçamentos que entram na conta.
 // veValores = false (operacional da imobiliária): só quantidades, nenhum R$.
-export default function FunilOrcamentos({ orcamentos, papel = 'master', veValores = true, agora = new Date() }) {
+export default function FunilOrcamentos({ orcamentos, papel = 'master', veValores = true, agora = new Date(), escopo = null }) {
   const lista = orcamentos || [];
   if (lista.length === 0) return null;
   const v = visaoDoTodo(lista, agora);
@@ -19,7 +19,8 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
   const maiorQtd = Math.max(1, ...linhas.map((l) => l.qtd));
   const maiorValor = Math.max(1, ...linhas.map((l) => l.valor));
 
-  const titulo = master ? 'O todo: onde está o dinheiro' : veValores ? 'Seus orçamentos: situação e valores' : 'Seus orçamentos por situação';
+  const tituloBase = master ? 'O todo: onde está o dinheiro' : veValores ? 'Seus orçamentos: situação e valores' : 'Seus orçamentos por situação';
+  const titulo = escopo ? `${tituloBase} — ${escopo}` : tituloBase;
 
   const rotulosCartao = master
     ? { espera: 'Esperando resposta da imobiliária', orcar: 'A orçar (FixIn)', fechado: 'Fechado (aprovado)', recusado: 'Recusado (perdido)' }

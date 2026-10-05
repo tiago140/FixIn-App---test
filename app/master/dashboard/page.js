@@ -7,19 +7,29 @@ import PainelConteudo from '@/components/PainelConteudo';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { calcularTotalComMargem, estaAtrasado } from '@/lib/format';
 import { contagensFunil } from '@/lib/painel';
+import FiltroImobiliaria from '@/components/FiltroImobiliaria';
+import { resolverFiltro, opcoesFiltro } from '@/lib/filtroPainel';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MasterDashboard() {
+export default async function MasterDashboard({ searchParams }) {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
-  const { data: orcamentos } = await supabase
+  // Filtro por imobiliária (?cliente=<id>): só vale se for o id de uma imobiliária que existe.
+  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa, ativo');
+  const { data: contagem } = await supabase.from('orcamentos').select('cliente_id').limit(5000);
+  const filtro = resolverFiltro(searchParams?.cliente, clientes);
+  const opcoes = opcoesFiltro(clientes, contagem);
+
+  let consulta = supabase
     .from('orcamentos')
     .select('*, clientes(nome_empresa), prestadores(nome), orcamento_itens(mo, ma)')
     .order('criado_em', { ascending: false })
     .limit(1000);
+  if (filtro) consulta = consulta.eq('cliente_id', filtro.id);
+  const { data: orcamentos } = await consulta;
 
   const lista = (orcamentos || []).map((o) => {
     const total = calcularTotalComMargem(o.orcamento_itens, o.margem_percentual);
@@ -40,7 +50,8 @@ export default async function MasterDashboard() {
           </>
         }
       />
-      <PainelConteudo orcamentos={lista} papel="master" veValores />
+      <FiltroImobiliaria opcoes={opcoes} selecionado={filtro?.id || null} totalGeral={(contagem || []).length} />
+      <PainelConteudo orcamentos={lista} papel="master" veValores escopo={filtro?.nome_empresa || null} />
     </AppShell>
   );
 }

@@ -5,12 +5,13 @@ import KpiCard from '@/components/KpiCard';
 import AlvoRolagem from '@/components/AlvoRolagem';
 import SecaoOrcamentos from '@/components/SecaoOrcamentos';
 import FunilOrcamentos from '@/components/FunilOrcamentos';
+import PorImobiliaria from '@/components/PorImobiliaria';
 import { fmtBRL } from '@/lib/format';
 import { agruparPorEtapa, resumoPorEtapa, serieUltimosMeses, contagensFunil, temPendencia, ESTAGIOS_APROVADO } from '@/lib/painel';
 
 // `orcamentos`: lista já normalizada pela página (campos total, valor_pago, em_atraso, prestador_nome...).
 // `veValores`: false para o operacional da imobiliária — nenhum valor em R$ é desenhado.
-export default function PainelConteudo({ orcamentos, papel = 'master', veValores = true, agora }) {
+export default function PainelConteudo({ orcamentos, papel = 'master', veValores = true, agora, escopo = null }) {
   const lista = orcamentos || [];
   const g = agruparPorEtapa(lista);
   const etapas = resumoPorEtapa(g);
@@ -106,7 +107,9 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
         </>
       )}
 
-      <FunilOrcamentos orcamentos={lista} papel={papel} veValores={veValores} agora={agora || new Date()} />
+      <FunilOrcamentos orcamentos={lista} papel={papel} veValores={veValores} agora={agora || new Date()} escopo={escopo} />
+
+      {master && !escopo && <PorImobiliaria orcamentos={lista} agora={agora || new Date()} />}
 
       {lista.length > 0 && <PainelGraficos etapas={etapas} meses={meses} papel={papel} semValores={!veValores} />}
 
