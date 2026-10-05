@@ -554,3 +554,42 @@ alter table public.profiles add column if not exists bloqueado_por_cliente boole
 -- MARGEM com até 6 casas decimais (era numeric(5,2)): orçamentos que fecham em total redondo usam margens como 33,3333%;
 -- com 2 casas o total saía com centavos de diferença do PDF já enviado ao cliente. (A visão orcamento_itens_cliente foi recriada junto.)
 alter table public.orcamentos alter column margem_percentual type numeric(9,6);
+
+-- LAUDO DE INSPEÇÃO: só a equipe FixIn (master) cria, edita e apaga. A imobiliária só LÊ os laudos PUBLICADOS da própria imobiliária.
+create sequence if not exists public.laudo_numero_seq;
+create table if not exists public.laudos (
+  id uuid primary key default gen_random_uuid(),
+  numero text unique not null,
+  cliente_id uuid not null references public.clientes(id),
+  orcamento_id uuid references public.orcamentos(id) on delete set null,
+  endereco text not null,
+  titulo text not null default 'Laudo de Inspeção',
+  data_inspecao date not null default ((now() at time zone 'America/Sao_Paulo')::date),
+  descricao_original text,
+  texto_tecnico text,
+  fotos jsonb not null default '[]'::jsonb,        -- [{ "id": "...", "path": "...", "legenda": "..." }] na ordem de exibição
+  pdf_path text,
+  pdf_gerado_em timestamptz,
+  publicado boolean not null default false,
+  publicado_em timestamptz,
+  criado_por uuid references public.profiles(id),
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+create or replace function public.gerar_numero_laudo() returns trigger language plpgsql as $f$
+begin
+  if new.numero is null or new.numero = '' then new.numero := 'LAUDO-' || lpad(nextval('public.laudo_numero_seq')::text, 4, '0'); end if;
+  return new;
+end;
+$f$;
+drop trigger if exists trg_gerar_numero_laudo on public.laudos;
+create trigger trg_gerar_numero_laudo before insert on public.laudos for each row execute function public.gerar_numero_laudo();
+alter table public.laudos enable row level security;
+revoke all on public.laudos from anon;
+drop policy if exists laudos_master_total on public.laudos;
+create policy laudos_master_total on public.laudos for all using (public.is_master()) with check (public.is_master());
+drop policy if exists laudos_imobiliaria_le on public.laudos;
+create policy laudos_imobiliaria_le on public.laudos for select using (publicado = true and cliente_id = public.current_cliente_id());
+-- fotos e PDFs dos laudos ficam num espaço PRIVADO: só se acessa por link temporário gerado pelo servidor depois de conferir a permissão
+insert into storage.buckets (id, name, public) values ('laudos', 'laudos', false) on conflict (id) do nothing;
+-- (a função pessoas_com_historico passou a incluir laudos.criado_por: quem criou laudo só pode ser desativado, não excluído)

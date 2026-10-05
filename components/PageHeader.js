@@ -1,13 +1,13 @@
 import {
   LayoutDashboard, ClipboardList, Columns3, Table2, CalendarDays, HardHat, Wallet, ShieldCheck,
-  Building2, Users, BookOpen, Bell, FilePlus2, UserCog,
+  Building2, Users, BookOpen, Bell, FilePlus2, UserCog, ClipboardCheck,
 } from 'lucide-react';
 
 // Ícone por seção. Recebe o NOME (texto) e não o componente, para funcionar tanto em páginas de servidor quanto de navegador.
 const ICONES = {
   painel: LayoutDashboard, orcamentos: ClipboardList, kanban: Columns3, controle: Table2, visitas: CalendarDays,
   prestadores: HardHat, financeiro: Wallet, auditoria: ShieldCheck, clientes: Building2, acessos: Users,
-  catalogo: BookOpen, avisos: Bell, solicitar: FilePlus2, conta: UserCog, equipe: Users,
+  catalogo: BookOpen, avisos: Bell, solicitar: FilePlus2, conta: UserCog, equipe: Users, laudos: ClipboardCheck,
 };
 
 // Cabeçalho padrão de todas as telas: ícone da seção, título forte, etiqueta (ex.: nome da imobiliária)
