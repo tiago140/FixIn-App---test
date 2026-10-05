@@ -108,26 +108,26 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
         {erro && <span className="text-xs text-erro">{erro}</span>}
       </div>
 
-      <div className="overflow-x-auto border border-linha bg-white rounded-md shadow-sm">
+      <div className="overflow-auto max-h-[calc(100vh-24rem)] min-h-[16rem] sm:max-h-[calc(100vh-17rem)] sm:min-h-[22rem] border border-linha bg-white rounded-md shadow-sm">
         <table className="w-full text-[12.5px] whitespace-nowrap border-collapse">
           <thead>
             <tr>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Imobiliária</th>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Nº Contrato</th>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Endereço</th>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Orçamento</th>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Aprovado</th>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Data Depósito</th>
-              {veValores && <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Valor Orçamento</th>}
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 left-0 z-30">Imobiliária</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Nº Contrato</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Endereço</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Orçamento</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Aprovado</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Data Depósito</th>
+              {veValores && <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Valor Orçamento</th>}
               {veMargem && (
                 <>
-                  <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Comissão %</th>
-                  <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Valor Imob.</th>
-                  <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Valor Prest.</th>
+                  <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Comissão %</th>
+                  <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Valor Imob.</th>
+                  <th className="bg-marinho text-white text-right font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Valor Prest.</th>
                 </>
               )}
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Prestador</th>
-              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0">Data Início</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Prestador</th>
+              <th className="bg-marinho text-white text-left font-semibold uppercase tracking-wide text-[10.5px] px-3 py-2.5 sticky top-0 z-20">Data Início</th>
             </tr>
           </thead>
           <tbody>
@@ -135,9 +135,9 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
               <tr
                 key={l.id}
                 onClick={() => router.push(`${basePath}/${l.id}`)}
-                className="odd:bg-white even:bg-papel hover:bg-info/10 cursor-pointer transition-colors"
+                className="group odd:bg-white even:bg-papel hover:bg-info/10 cursor-pointer transition-colors"
               >
-                <td className="px-3 py-2 border-b border-linha">
+                <td className="px-3 py-2 border-b border-r border-linha sticky left-0 z-10 group-odd:bg-white group-even:bg-papel group-hover:bg-[#ECF1F5]">
                   <Link href={`${basePath}/${l.id}`} onClick={pararPropagacao} className="font-medium text-marinho hover:underline">
                     {l.cliente}
                   </Link>
