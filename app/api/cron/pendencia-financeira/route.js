@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { estaAtrasado, diasDesde, calcularTotalComMargem, PRAZO_PAGAMENTO_DIAS } from '@/lib/format';
 import { enviarEmailPendenciaFinanceira } from '@/lib/email';
+import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -31,8 +32,9 @@ export async function GET(req) {
     if (!estaAtrasado(o)) continue;
     const total = calcularTotalComMargem(o.orcamento_itens, o.margem_percentual);
     const pendente = Math.max(0, total - (Number(o.valor_pago) || 0));
+    const destino = await destinatariosDoOrcamento(admin, o.id, { soAdmins: true });
     const resultado = await enviarEmailPendenciaFinanceira({
-      paraEmail: o.clientes?.email,
+      paraEmail: destino.emails,
       nomeImobiliaria: o.clientes?.nome_empresa,
       numero: o.numero,
       endereco: o.endereco,

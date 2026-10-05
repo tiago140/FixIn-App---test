@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fmtBRL, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 import EditorItensOrcamento from '@/components/EditorItensOrcamento';
 
-export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes }) {
+export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [] }) {
   const router = useRouter();
   const [status, setStatus] = useState(orcamento.status);
   const [clienteId, setClienteId] = useState(orcamento.cliente_id);
@@ -29,7 +29,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const totalFinal = calcularTotalComMargem(itens, margem);
   const mostrarPagamentoPrestador = prestadorId && ['aprovado', 'em_execucao', 'finalizado'].includes(status);
 
-  async function salvar() {
+  async function salvar(opcoes = {}) {
     setErro('');
     setAviso('');
     setSalvando(true);
@@ -50,24 +50,39 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       }),
     });
     setSalvando(false);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setErro(data.error || 'Erro ao salvar');
-      return;
+      return false;
     }
-    setAviso('Salvo.');
-    router.refresh();
+    if (!opcoes.silencioso) {
+      setAviso('Salvo.');
+      router.refresh();
+    }
+    return true;
   }
 
+  // Gerar PDF e enviar: primeiro SALVA o que está na tela (inclusive o que a IA mexeu), para o PDF e o e-mail
+  // nunca irem com dados desatualizados. Depois gera o PDF, envia o e-mail e passa o orçamento para "Enviado".
   async function gerarPdf() {
-    setGerandoPdf(true);
     setErro('');
+    setAviso('');
+    const salvou = await salvar({ silencioso: true });
+    if (!salvou) return;
+    setGerandoPdf(true);
     const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf`, { method: 'POST' });
     setGerandoPdf(false);
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setErro(data.error || 'Erro ao gerar PDF');
       return;
+    }
+    if (data.status_novo) setStatus(data.status_novo);
+    const quem = (data.email?.para || []).join(', ');
+    if (data.email?.enviado) {
+      setAviso(`PDF gerado e e-mail enviado para ${quem}.${data.status_novo ? ' O orçamento passou para "Enviado" (Kanban e Controle já refletem).' : ''}`);
+    } else {
+      setErro(`PDF gerado${data.status_novo ? ' e orçamento marcado como "Enviado" (já aparece, com valor e PDF, no painel da imobiliária)' : ''}, mas o e-mail NÃO foi enviado: ${data.email?.motivo || 'motivo desconhecido'}`);
     }
     router.refresh();
   }
@@ -191,7 +206,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             {salvando ? 'Salvando…' : 'Salvar alterações'}
           </button>
           <button type="button" onClick={gerarPdf} disabled={gerandoPdf} className="flex-1 bg-verde text-white rounded py-2.5 font-semibold disabled:opacity-50">
-            {gerandoPdf ? 'Gerando…' : 'Gerar PDF e notificar'}
+            {gerandoPdf ? 'Salvando e enviando…' : 'Gerar PDF e enviar por e-mail'}
           </button>
         </div>
 
@@ -203,6 +218,14 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
         >
           📄 {gerandoPdfPrestador ? 'Gerando…' : 'Ordem de serviço do prestador (sem margem)'}
         </button>
+
+        <div className="sm:col-span-2 text-xs -mt-2">
+          {emailsDestino.length > 0 ? (
+            <span className="text-marinho/60">Ao enviar, o e-mail vai com o PDF anexo para: <b className="text-marinho">{emailsDestino.join(', ')}</b></span>
+          ) : (
+            <span className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: o PDF será gerado, mas não há para quem enviar.</span>
+          )}
+        </div>
 
         {orcamento.pdf_url && (
           <div className="sm:col-span-2">

@@ -52,6 +52,8 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
   }));
 
   const total = num(orcamento.total);
+  // Administrador: vê tudo. Operacional: só valor e PDF dos orçamentos que ELA mesma solicitou — o banco já devolve nulo nos outros.
+  const verEste = ver || total != null;
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
@@ -86,13 +88,13 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
                 <span className="font-medium">{it.servico}</span>
                 {it.descricao ? <span className="text-marinho/60"> — {it.descricao}</span> : null}
               </div>
-              {ver && it.preco != null && <span className="font-mono text-marinho/70 whitespace-nowrap">{fmtBRL(it.preco)}</span>}
+              {verEste && it.preco != null && <span className="font-mono text-marinho/70 whitespace-nowrap">{fmtBRL(it.preco)}</span>}
             </div>
           ))}
           {orcamento.garantia && (
             <div className="mt-3 text-sm"><span className="font-semibold">Garantia: </span>{orcamento.garantia}</div>
           )}
-          {ver && total != null && (
+          {verEste && total != null && (
             <div className="mt-4 flex justify-between text-lg font-semibold">
               <span>Total</span>
               <span className="font-mono">{fmtBRL(total)}</span>

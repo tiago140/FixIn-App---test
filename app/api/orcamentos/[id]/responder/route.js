@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { enviarEmailStatusOrcamento } from '@/lib/email';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 
 export async function POST(req, { params }) {
   const { user, profile, supabase } = await getProfile();
@@ -27,8 +29,10 @@ export async function POST(req, { params }) {
   });
 
   if (status === 'aprovado' && orc) {
+    // o operacional não consegue ler quem criou o pedido, então a consulta dos destinatários usa o acesso do servidor
+    const destino = await destinatariosDoOrcamento(createAdminClient(), id);
     await enviarEmailStatusOrcamento({
-      paraEmail: cli?.email,
+      paraEmail: destino.emails,
       nomeImobiliaria: cli?.nome_empresa,
       numero: orc.numero,
       endereco: orc.endereco,

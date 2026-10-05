@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { gerarPdfOrcamento } from '@/lib/gerarPdfOrcamento';
 import { enviarEmailOrcamentoPronto } from '@/lib/email';
+import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 
 export const runtime = 'nodejs';
 
@@ -46,13 +47,33 @@ export async function POST(req, { params }) {
 
   await supabase.from('orcamentos').update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() }).eq('id', id);
 
+  // Quem recebe: o administrador da imobiliária (todos os orçamentos) + quem solicitou este orçamento.
+  const destino = await destinatariosDoOrcamento(supabase, id);
   const resultadoEmail = await enviarEmailOrcamentoPronto({
-    paraEmail: orcamento.clientes?.email,
+    paraEmail: destino.emails,
     nomeImobiliaria: orcamento.clientes?.nome_empresa,
     numero: orcamento.numero,
     endereco: orcamento.endereco,
     linkPdf: pdfUrl,
+    pdfBuffer,
   });
 
-  return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: resultadoEmail });
+  // Enviar = o orçamento passa para "Enviado" sozinho (Kanban, Controle e painel da imobiliária acompanham o status),
+  // mesmo que o e-mail falhe: o PDF e o valor já ficam visíveis para a imobiliária no sistema.
+  let statusNovo = null;
+  if (['pendente', 'em_preparacao'].includes(orcamento.status)) {
+    const { error: erroStatus } = await supabase.from('orcamentos').update({ status: 'enviado', atualizado_em: new Date().toISOString() }).eq('id', id);
+    if (!erroStatus) statusNovo = 'enviado';
+  }
+
+  try {
+    await supabase.from('auditoria').insert({
+      acao: 'Enviou orçamento (PDF e e-mail)',
+      detalhe: `${orcamento.numero}: ${resultadoEmail.enviado ? `e-mail enviado para ${resultadoEmail.para.join(', ')}` : `PDF gerado, e-mail NÃO enviado (${resultadoEmail.motivo})`}${statusNovo ? ' — passou para Enviado' : ''}`,
+      alvo_tipo: 'orcamento', alvo_id: id,
+      autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
+    });
+  } catch (e) {}
+
+  return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: resultadoEmail, status_novo: statusNovo });
 }

@@ -3,6 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import { calcularProximoStatusAutomatico, calcularTotalComMargem, fmtBRL, STATUS_LABEL } from '@/lib/format';
 import { enviarEmailStatusOrcamento } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 
 // Pastas de arquivos de um orçamento: todos os buckets guardam tudo sob "<id do orçamento>/".
 const BUCKETS_DO_ORCAMENTO = ['orcamentos-pdfs', 'documentos-fiscais', 'comprovantes-pagamento', 'chat-anexos'];
@@ -150,12 +151,13 @@ async function enviarEmailPorMudancaDeStatus(supabase, orcamentoId, novoStatus) 
   if (!['aprovado', 'em_execucao', 'finalizado'].includes(novoStatus)) return;
   const { data: orc } = await supabase
     .from('orcamentos')
-    .select('numero, endereco, clientes(nome_empresa, email)')
+    .select('numero, endereco, clientes(nome_empresa)')
     .eq('id', orcamentoId)
     .single();
   if (!orc) return;
+  const destino = await destinatariosDoOrcamento(supabase, orcamentoId);
   await enviarEmailStatusOrcamento({
-    paraEmail: orc.clientes?.email,
+    paraEmail: destino.emails,
     nomeImobiliaria: orc.clientes?.nome_empresa,
     numero: orc.numero,
     endereco: orc.endereco,

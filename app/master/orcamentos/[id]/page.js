@@ -5,6 +5,7 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import StatusTag from '@/components/StatusTag';
 import GestaoOrcamentoForm from '@/components/GestaoOrcamentoForm';
+import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 import DocumentosFiscais from '@/components/DocumentosFiscais';
 import ComprovantesPagamento from '@/components/ComprovantesPagamento';
 import ExcluirOrcamentoButton from '@/components/ExcluirOrcamentoButton';
@@ -52,6 +53,7 @@ export default async function OrcamentoDetalhePage({ params }) {
     url: supabase.storage.from('comprovantes-pagamento').getPublicUrl(c.arquivo_path).data.publicUrl,
   }));
   const total = calcularTotalComMargem(itens, orcamento.margem_percentual);
+  const destino = await destinatariosDoOrcamento(supabase, params.id);
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
@@ -105,7 +107,7 @@ export default async function OrcamentoDetalhePage({ params }) {
       )}
 
       <div className="space-y-6">
-        <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} />
+        <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} emailsDestino={destino.emails} />
         <ComprovantesPagamento
           orcamentoId={orcamento.id}
           comprovantes={comprovantes}

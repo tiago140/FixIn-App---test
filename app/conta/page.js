@@ -3,6 +3,8 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import TrocarSenhaForm from '@/components/TrocarSenhaForm';
+import TesteEmail from '@/components/TesteEmail';
+import { statusEnvioEmail } from '@/lib/email';
 import { MASTER_TABS, imobiliariaTabs } from '@/lib/navTabs';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +24,7 @@ export default async function MinhaConta() {
         subtitulo={`${profile.nome_completo} · ${profile.email || user.email} · ${tipo}`}
       />
       <TrocarSenhaForm />
+      {master && <TesteEmail configuracao={statusEnvioEmail()} />}
     </AppShell>
   );
 }
