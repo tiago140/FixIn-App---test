@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Clock, PencilRuler, Send, CheckCircle2, Wrench, BadgeCheck, XCircle, AlertTriangle, Check, HardHat } from 'lucide-react';
 import { fmtBRL, fmtDate } from '@/lib/format';
 import { ETAPAS_LINHA, SITUACAO, COR_ATRASO, PAGAMENTO_TEXTO, etapaAtual } from '@/lib/statusVisual';
+import { temPendencia } from '@/lib/painel';
 
 const ICONES = { Clock, PencilRuler, Send, CheckCircle2, Wrench, BadgeCheck, XCircle };
 
@@ -23,9 +24,18 @@ export default function OrcamentoCard({ o, basePath, mostrarCliente = false, veV
   const pct = total > 0 ? Math.min(100, Math.round((pago / total) * 100)) : 0;
   const corBarra = pct >= 100 ? '#3F7A5E' : emAtraso ? COR_ATRASO : '#B8862E';
 
+  // Em quais indicadores do painel este cartão entra (usado pelo clique nos indicadores, para destacá-lo)
+  const contas = ['criado'];
+  if (aprovadoOuAdiante) contas.push('aprovado');
+  if (o.status === 'em_execucao') contas.push('execucao');
+  if (o.status === 'enviado') contas.push('aguardando');
+  if (temPendencia(o)) contas.push('pendencia');
+  if (emAtraso) contas.push('atraso');
+
   return (
     <Link
       href={`${basePath}/${o.id}`}
+      data-kpi={contas.join(' ')}
       className="group block bg-white border border-linha rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition duration-200"
     >
       <div className="h-1.5" style={{ background: cor }} />

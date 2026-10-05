@@ -36,8 +36,8 @@ export default async function ImobiliariaDashboard() {
         etiqueta={profile.empresa}
         direita={
           <>
-            <ChipIndicador n={n.aguardando} texto="aguardando você" tom="info" />
-            <ChipIndicador n={n.atrasados} texto="em atraso" tom="erro" />
+            <ChipIndicador n={n.aguardando} texto="aguardando você" tom="info" alvo="aguardando" />
+            <ChipIndicador n={n.atrasados} texto="em atraso" tom="erro" alvo="atraso" />
           </>
         }
       />

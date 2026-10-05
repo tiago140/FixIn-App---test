@@ -10,6 +10,6 @@ export async function GET() {
   const { user, profile, supabase } = await getProfile();
   if (!user || !profile) return NextResponse.json({ chaves: [] }, { status: 401 });
   const a = await buscarAvisos(supabase, profile);
-  const chaves = [...a.visitas, ...a.atrasos, ...a.mensagens].map((x) => x.key);
+  const chaves = [...(a.solicitacoes || []), ...a.visitas, ...a.atrasos, ...a.mensagens].map((x) => x.key);
   return NextResponse.json({ chaves });
 }

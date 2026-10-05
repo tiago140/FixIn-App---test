@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtBRL, calcularTotalItens, calcularTotalComMargem } from '@/lib/format';
+import EditorItensOrcamento from '@/components/EditorItensOrcamento';
 
 let uidCounter = 0;
 function novoId() {
@@ -27,70 +28,14 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
   const [margemCustom, setMargemCustom] = useState('');
   const [itens, setItens] = useState([]);
   const [vistoriaTexto, setVistoriaTexto] = useState('');
-  const [catalogoSelecionado, setCatalogoSelecionado] = useState(catalogo?.[0]?.id || '');
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [avisoVistoria, setAvisoVistoria] = useState('');
-  const [descricaoIA, setDescricaoIA] = useState('');
-  const [gerandoIA, setGerandoIA] = useState(false);
-  const [avisoIA, setAvisoIA] = useState('');
 
   const margemEfetiva = margem === 'custom' ? Number(margemCustom) || 0 : Number(margem);
   const totalBase = useMemo(() => calcularTotalItens(itens), [itens]);
   const totalFinal = useMemo(() => calcularTotalComMargem(itens, margemEfetiva), [itens, margemEfetiva]);
-
-  function atualizarItem(id, campo, valor) {
-    setItens((lista) => lista.map((it) => (it.id === id ? { ...it, [campo]: valor } : it)));
-  }
-
-  function removerItem(id) {
-    setItens((lista) => lista.filter((it) => it.id !== id));
-  }
-
-  function adicionarItemManual() {
-    setItens((lista) => [...lista, { id: novoId(), ambiente: '', servico: '', descricao: '', mo: 0, ma: 0 }]);
-  }
-
-  function adicionarDoCatalogo() {
-    const item = (catalogo || []).find((c) => c.id === catalogoSelecionado);
-    if (!item) return;
-    setItens((lista) => [
-      ...lista,
-      { id: novoId(), ambiente: item.ambiente, servico: item.servico, descricao: '', mo: item.mo_padrao, ma: item.ma_padrao },
-    ]);
-  }
-
-  async function handleGerarIA() {
-    if (!descricaoIA.trim()) {
-      setAvisoIA('Descreva o que precisa ser feito antes de gerar.');
-      return;
-    }
-    setGerandoIA(true);
-    setAvisoIA('');
-    setErro('');
-    try {
-      const res = await fetch('/api/orcamentos/gerar-ia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descricao: descricaoIA, endereco }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAvisoIA(data.error || 'Erro ao gerar itens com IA');
-        return;
-      }
-      const novosItens = (data.itens || []).map((it) => ({ ...it, id: novoId() }));
-      setItens((lista) => [...lista, ...novosItens]);
-      setAvisoIA(
-        novosItens.length > 0
-          ? `${novosItens.length} item(ns) gerado(s) pela IA com base na sua própria base de dados. Revise os valores antes de salvar.`
-          : 'A IA não retornou itens — tente descrever de outra forma.'
-      );
-    } finally {
-      setGerandoIA(false);
-    }
-  }
 
   async function handleUploadVistoria(e) {
     const file = e.target.files?.[0];
@@ -114,7 +59,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
       setItens((lista) => [...lista, ...novosItens]);
       setAvisoVistoria(
         (data.resumo || `${novosItens.length} item(ns) extraído(s) da vistoria.`) +
-          (novosItens.length > 0 ? '\nRevise e preencha MO/MA antes de salvar.' : '')
+          (novosItens.length > 0 ? '\nOs itens vieram sem preço: use "Gerar valores com IA" logo abaixo da lista de itens, ou preencha à mão.' : '')
       );
     } finally {
       setEnviandoVistoria(false);
@@ -235,32 +180,6 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         </div>
       </div>
 
-      <div className="card p-5 border-l-4 border-l-accent">
-        <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-sm">Criar itens com IA</h3>
-          <span className="text-[10px] font-mono border border-linha rounded px-1.5 py-0.5 text-marinho/50">NOVO</span>
-        </div>
-        <p className="text-xs text-marinho/50 mb-3">
-          Descreva o imóvel/serviço e a IA sugere os itens (ambiente, serviço, MO e MA) com base no seu catálogo e nos orçamentos que você já fez para imóveis parecidos.
-        </p>
-        <textarea
-          value={descricaoIA}
-          onChange={(e) => setDescricaoIA(e.target.value)}
-          rows={3}
-          placeholder="Ex: Apartamento padrão, precisa de pintura de 2 quartos e sala, troca de piso do banheiro social e reparo elétrico na cozinha."
-          className="w-full border border-linha rounded px-3 py-2 bg-papel mb-3"
-        />
-        <button
-          type="button"
-          onClick={handleGerarIA}
-          disabled={gerandoIA}
-          className="bg-marinho text-white rounded px-4 py-2 text-sm font-semibold disabled:opacity-50"
-        >
-          {gerandoIA ? 'Gerando…' : 'Gerar itens com IA'}
-        </button>
-        {avisoIA && <div className="text-xs text-marinho/60 mt-2">{avisoIA}</div>}
-      </div>
-
       <div className="card p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-sm">Vistoria de saída (opcional)</h3>
@@ -273,78 +192,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         {avisoVistoria && <div className="text-xs text-marinho/60 mt-2 whitespace-pre-line">{avisoVistoria}</div>}
       </div>
 
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-sm">Itens do orçamento</h3>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          {catalogo && catalogo.length > 0 && (
-            <>
-              <select value={catalogoSelecionado} onChange={(e) => setCatalogoSelecionado(e.target.value)} className="border border-linha rounded px-2 py-1.5 bg-papel text-sm flex-1 min-w-[220px]">
-                {catalogo.map((c) => (
-                  <option key={c.id} value={c.id}>{c.ambiente} — {c.servico}</option>
-                ))}
-              </select>
-              <button type="button" onClick={adicionarDoCatalogo} className="border border-linha rounded px-3 py-1.5 text-sm">
-                Adicionar do catálogo
-              </button>
-            </>
-          )}
-          <button type="button" onClick={adicionarItemManual} className="border border-marinho text-marinho rounded px-3 py-1.5 text-sm">
-            + Item manual
-          </button>
-        </div>
-
-        {itens.length === 0 ? (
-          <div className="border border-dashed border-linha p-6 text-center text-marinho/40 text-sm">
-            Nenhum item ainda. Envie uma vistoria ou adicione manualmente.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {itens.map((it) => (
-              <div key={it.id} className="border border-linha rounded p-3 grid sm:grid-cols-12 gap-2 items-start text-sm">
-                <input
-                  className="sm:col-span-2 border border-linha rounded px-2 py-1 bg-papel"
-                  placeholder="Ambiente"
-                  value={it.ambiente}
-                  onChange={(e) => atualizarItem(it.id, 'ambiente', e.target.value)}
-                />
-                <input
-                  className="sm:col-span-2 border border-linha rounded px-2 py-1 bg-papel"
-                  placeholder="Serviço"
-                  value={it.servico}
-                  onChange={(e) => atualizarItem(it.id, 'servico', e.target.value)}
-                />
-                <textarea
-                  className="sm:col-span-4 border border-linha rounded px-2 py-1 bg-papel"
-                  placeholder="Descrição"
-                  rows={1}
-                  value={it.descricao}
-                  onChange={(e) => atualizarItem(it.id, 'descricao', e.target.value)}
-                />
-                <input
-                  type="number" step="0.01"
-                  className="sm:col-span-1 border border-linha rounded px-2 py-1 bg-papel"
-                  placeholder="MO"
-                  value={it.mo}
-                  onChange={(e) => atualizarItem(it.id, 'mo', e.target.value)}
-                />
-                <input
-                  type="number" step="0.01"
-                  className="sm:col-span-1 border border-linha rounded px-2 py-1 bg-papel"
-                  placeholder="MA"
-                  value={it.ma}
-                  onChange={(e) => atualizarItem(it.id, 'ma', e.target.value)}
-                />
-                <button type="button" onClick={() => removerItem(it.id)} className="sm:col-span-2 text-erro text-xs text-right">
-                  remover
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} />
 
       <div className="card p-5">
         <h3 className="font-semibold text-sm mb-3">Margem da FixIn (embutida, invisível para a imobiliária)</h3>

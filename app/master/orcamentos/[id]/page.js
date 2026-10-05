@@ -72,6 +72,22 @@ export default async function OrcamentoDetalhePage({ params }) {
         />
       </div>
 
+      {orcamento.status === 'pendente' && orcamento.solicitado_por && (() => {
+        const qtd = (itens || []).length;
+        const sem = (itens || []).filter((i) => (Number(i.mo) || 0) + (Number(i.ma) || 0) === 0).length;
+        return (
+          <div className="mb-6 rounded-lg border border-marinho/30 bg-marinho/5 p-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="text-sm">
+              <div className="font-semibold text-marinho">Solicitação nova de {orcamento.clientes?.nome_empresa} — {orcamento.solicitado_por}</div>
+              <div className="text-marinho/70 mt-0.5">
+                {qtd > 0 ? <>Chegaram <b>{qtd}</b> {qtd === 1 ? 'item' : 'itens'} da vistoria{sem > 0 ? <>, <b>{sem}</b> sem preço</> : ' (todos com preço)'}.</> : 'Veio só com a descrição, sem itens.'} Use as ferramentas de IA abaixo dos itens ou digite os preços à mão. Nada vai para a imobiliária até você gerar o PDF.
+              </div>
+            </div>
+            <a href="#ferramentas-ia" className="bg-marinho text-white text-sm font-semibold rounded-lg px-4 py-2 whitespace-nowrap">Ir para as ferramentas de IA ↓</a>
+          </div>
+        );
+      })()}
+
       {orcamento.descricao_solicitacao && (
         <div className="card p-4 mb-6 text-sm">
           <div className="text-xs text-marinho/50 mb-1">Solicitação{orcamento.solicitado_por ? ` de ${orcamento.solicitado_por}` : ''}</div>

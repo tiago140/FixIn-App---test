@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtBRL, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
+import EditorItensOrcamento from '@/components/EditorItensOrcamento';
 
 export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes }) {
   const router = useRouter();
@@ -27,16 +28,6 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const totalBase = calcularTotalItens(itens);
   const totalFinal = calcularTotalComMargem(itens, margem);
   const mostrarPagamentoPrestador = prestadorId && ['aprovado', 'em_execucao', 'finalizado'].includes(status);
-
-  function atualizarItem(id, campo, valor) {
-    setItens((lista) => lista.map((it) => (it.id === id ? { ...it, [campo]: valor } : it)));
-  }
-  function removerItem(id) {
-    setItens((lista) => lista.filter((it) => it.id !== id));
-  }
-  function adicionarItem() {
-    setItens((lista) => [...lista, { id: 'novo-' + Date.now(), ambiente: '', servico: '', descricao: '', mo: 0, ma: 0 }]);
-  }
 
   async function salvar() {
     setErro('');
@@ -103,24 +94,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded">{erro}</div>}
       {aviso && <div className="text-sm bg-sucesso/10 border border-sucesso text-sucesso px-3 py-2 rounded">{aviso}</div>}
 
-      <div className="card p-5">
-        <h3 className="font-semibold text-sm mb-3">Itens</h3>
-        <div className="space-y-3">
-          {itens.map((it) => (
-            <div key={it.id} className="border border-linha rounded p-3 grid sm:grid-cols-12 gap-2 items-start text-sm">
-              <input className="sm:col-span-2 border border-linha rounded px-2 py-1 bg-papel" value={it.ambiente} onChange={(e) => atualizarItem(it.id, 'ambiente', e.target.value)} placeholder="Ambiente" />
-              <input className="sm:col-span-2 border border-linha rounded px-2 py-1 bg-papel" value={it.servico} onChange={(e) => atualizarItem(it.id, 'servico', e.target.value)} placeholder="Serviço" />
-              <textarea className="sm:col-span-4 border border-linha rounded px-2 py-1 bg-papel" rows={1} value={it.descricao || ''} onChange={(e) => atualizarItem(it.id, 'descricao', e.target.value)} placeholder="Descrição" />
-              <input type="number" step="0.01" className="sm:col-span-1 border border-linha rounded px-2 py-1 bg-papel" value={it.mo} onChange={(e) => atualizarItem(it.id, 'mo', e.target.value)} placeholder="MO" />
-              <input type="number" step="0.01" className="sm:col-span-1 border border-linha rounded px-2 py-1 bg-papel" value={it.ma} onChange={(e) => atualizarItem(it.id, 'ma', e.target.value)} placeholder="MA" />
-              <button type="button" onClick={() => removerItem(it.id)} className="sm:col-span-2 text-erro text-xs text-right">remover</button>
-            </div>
-          ))}
-        </div>
-        <button type="button" onClick={adicionarItem} className="mt-3 border border-marinho text-marinho rounded px-3 py-1.5 text-sm">
-          + Item
-        </button>
-      </div>
+      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} />
 
       <div className="card p-5 grid sm:grid-cols-2 gap-4">
         {clientes && (

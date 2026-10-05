@@ -9,7 +9,7 @@ export default function SecaoOrcamentos({ titulo, cor, lista, basePath, verTodos
   const resto = lista.length - mostrar.length;
 
   return (
-    <section className="mb-8">
+    <section className="mb-8 scroll-mt-20">
       <div className="flex items-center gap-3 mb-3 pb-2 border-b-2" style={{ borderColor: cor }}>
         <span className="w-3 h-8 rounded-full" style={{ background: cor }} />
         <h2 className="font-slab text-xl sm:text-2xl font-bold text-marinho">{titulo}</h2>

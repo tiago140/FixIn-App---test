@@ -35,8 +35,8 @@ export default async function MasterDashboard() {
         subtitulo="Visão consolidada de todas as imobiliárias"
         direita={
           <>
-            <ChipIndicador n={n.aguardando} texto="aguardando aprovação" tom="info" />
-            <ChipIndicador n={n.atrasados} texto="em atraso" tom="erro" />
+            <ChipIndicador n={n.aguardando} texto="aguardando aprovação" tom="info" alvo="aguardando" />
+            <ChipIndicador n={n.atrasados} texto="em atraso" tom="erro" alvo="atraso" />
           </>
         }
       />
