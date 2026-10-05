@@ -550,3 +550,7 @@ drop policy if exists prestadores_select on public.prestadores;  -- antes: qualq
 -- "bloqueado_por_cliente" lembra quem foi bloqueado POR ISSO, para a reativação devolver o acesso só a esses.
 alter table public.clientes add column if not exists ativo boolean not null default true;
 alter table public.profiles add column if not exists bloqueado_por_cliente boolean not null default false;
+
+-- MARGEM com até 6 casas decimais (era numeric(5,2)): orçamentos que fecham em total redondo usam margens como 33,3333%;
+-- com 2 casas o total saía com centavos de diferença do PDF já enviado ao cliente. (A visão orcamento_itens_cliente foi recriada junto.)
+alter table public.orcamentos alter column margem_percentual type numeric(9,6);
