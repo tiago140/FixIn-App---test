@@ -47,6 +47,20 @@ export async function POST(req, { params }) {
 
   await supabase.from('orcamentos').update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() }).eq('id', id);
 
+  // "Só gerar PDF" (?enviar=0): salva o PDF e pronto — NÃO manda e-mail e NÃO muda o status. Serve para orçamentos que já foram
+  // enviados por outro meio (ex.: os importados do protótipo): regerar o PDF não pode reenviar nada ao cliente.
+  let soGerar = false;
+  try { soGerar = new URL(req.url).searchParams.get('enviar') === '0'; } catch (e) {}
+  if (soGerar) {
+    try {
+      await supabase.from('auditoria').insert({
+        acao: 'Gerou PDF (sem enviar e-mail)', detalhe: orcamento.numero, alvo_tipo: 'orcamento', alvo_id: id,
+        autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
+      });
+    } catch (e) {}
+    return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: null, status_novo: null, so_pdf: true });
+  }
+
   // Quem recebe: o administrador da imobiliária (todos os orçamentos) + quem solicitou este orçamento.
   const destino = await destinatariosDoOrcamento(supabase, id);
   const resultadoEmail = await enviarEmailOrcamentoPronto({

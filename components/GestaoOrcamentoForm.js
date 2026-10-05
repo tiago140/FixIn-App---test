@@ -62,6 +62,24 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
     return true;
   }
 
+  // Só gerar o PDF (sem e-mail e sem mudar o status): para orçamentos que já foram enviados por outro meio.
+  async function gerarSoPdf() {
+    setErro('');
+    setAviso('');
+    const salvou = await salvar({ silencioso: true });
+    if (!salvou) return;
+    setGerandoPdf(true);
+    const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf?enviar=0`, { method: 'POST' });
+    setGerandoPdf(false);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setErro(data.error || 'Erro ao gerar PDF');
+      return;
+    }
+    setAviso('PDF gerado e salvo. Nenhum e-mail foi enviado e o status não mudou. Use o link "Abrir último PDF gerado".');
+    router.refresh();
+  }
+
   // Gerar PDF e enviar: primeiro SALVA o que está na tela (inclusive o que a IA mexeu), para o PDF e o e-mail
   // nunca irem com dados desatualizados. Depois gera o PDF, envia o e-mail e passa o orçamento para "Enviado".
   async function gerarPdf() {
@@ -225,6 +243,13 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           ) : (
             <span className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: o PDF será gerado, mas não há para quem enviar.</span>
           )}
+        </div>
+
+        <div className="sm:col-span-2 -mt-2">
+          <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf} className="text-sm border border-linha bg-white rounded-lg px-3 py-1.5 font-semibold text-marinho hover:bg-papel disabled:opacity-50">
+            Só gerar o PDF (sem enviar e-mail)
+          </button>
+          <span className="text-xs text-marinho/50 ml-2">para orçamentos que já foram enviados por outro meio</span>
         </div>
 
         {orcamento.pdf_url && (
