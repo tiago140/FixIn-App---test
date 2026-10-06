@@ -55,10 +55,13 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         return;
       }
       setVistoriaTexto(data.texto_bruto || '');
+      const enderecoPreenchido = !!(data.endereco && !endereco.trim());
+      if (enderecoPreenchido) setEndereco(data.endereco);
       const novosItens = (data.itens || []).map((it) => ({ ...it, id: novoId() }));
       setItens((lista) => [...lista, ...novosItens]);
       setAvisoVistoria(
         (data.resumo || `${novosItens.length} item(ns) extraído(s) da vistoria.`) +
+          (enderecoPreenchido ? '\nEndereço do imóvel preenchido automaticamente pela vistoria.' : '') +
           (novosItens.length > 0 ? '\nOs itens vieram sem preço: use "Gerar valores com IA" logo abaixo da lista de itens, ou preencha à mão.' : '')
       );
     } finally {

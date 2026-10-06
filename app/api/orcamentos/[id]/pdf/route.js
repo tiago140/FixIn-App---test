@@ -3,6 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import { gerarPdfOrcamento } from '@/lib/gerarPdfOrcamento';
 import { enviarEmailOrcamentoPronto } from '@/lib/email';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
+import { nomeArquivoPdf, nomeSeguroStorage } from '@/lib/nomeArquivo';
 
 export const runtime = 'nodejs';
 
@@ -33,7 +34,10 @@ export async function POST(req, { params }) {
     return NextResponse.json({ error: 'erro ao gerar PDF: ' + e.message }, { status: 500 });
   }
 
-  const caminhoArquivo = `${id}/${orcamento.numero}.pdf`;
+  // Nome do arquivo: Imobiliária - Endereço completo - ORC-0000.pdf (o de e-mail leva acentos; o do armazenamento é só ASCII)
+  const nomeArquivo = nomeArquivoPdf({ imobiliaria: orcamento.clientes?.nome_empresa, endereco: orcamento.endereco, numero: orcamento.numero });
+  const caminhoArquivo = `${id}/${nomeSeguroStorage(nomeArquivo)}`;
+  const caminhoAntigo = `${id}/${orcamento.numero}.pdf`;
   const { error: erroUpload } = await supabase.storage
     .from('orcamentos-pdfs')
     .upload(caminhoArquivo, pdfBuffer, { contentType: 'application/pdf', upsert: true });
@@ -42,6 +46,8 @@ export async function POST(req, { params }) {
     return NextResponse.json({ error: 'erro ao salvar PDF: ' + erroUpload.message }, { status: 500 });
   }
 
+  // tira a versão antiga (nome só com o número) para não ficar PDF duplicado
+  if (caminhoAntigo !== caminhoArquivo) { try { await supabase.storage.from('orcamentos-pdfs').remove([caminhoAntigo]); } catch (e) {} }
   const { data: urlData } = supabase.storage.from('orcamentos-pdfs').getPublicUrl(caminhoArquivo);
   const pdfUrl = urlData.publicUrl;
 
@@ -70,6 +76,7 @@ export async function POST(req, { params }) {
     endereco: orcamento.endereco,
     linkPdf: pdfUrl,
     pdfBuffer,
+    nomeArquivo,
   });
 
   // Enviar = o orçamento passa para "Enviado" sozinho (Kanban, Controle e painel da imobiliária acompanham o status),

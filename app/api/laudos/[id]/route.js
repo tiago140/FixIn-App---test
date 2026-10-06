@@ -43,7 +43,7 @@ export async function PATCH(req, { params }) {
     let email = null;
     if (b.avisar_email) {
       const dest = await destinatariosDoCliente(supabase, laudo.cliente_id, { orcamentoId: laudo.orcamento_id });
-      email = await enviarEmailLaudoPublicado({ paraEmail: dest.emails, nomeImobiliaria: gerado.cliente?.nome_empresa, numero: laudo.numero, endereco: laudo.endereco, pdfBuffer: gerado.pdf });
+      email = await enviarEmailLaudoPublicado({ paraEmail: dest.emails, nomeImobiliaria: gerado.cliente?.nome_empresa, numero: laudo.numero, endereco: laudo.endereco, pdfBuffer: gerado.pdf, nomeArquivo: gerado.nomeArquivo });
     }
     await registrar(ctx, 'Publicou laudo de inspeção', `${laudo.numero}${email ? (email.enviado ? ` — e-mail enviado para ${email.para.join(', ')}` : ` — e-mail NÃO enviado (${email.motivo})`) : ''}`);
     return NextResponse.json({ ok: true, email });

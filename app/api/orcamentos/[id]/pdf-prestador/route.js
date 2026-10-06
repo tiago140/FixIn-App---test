@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { gerarPdfPrestador } from '@/lib/gerarPdfPrestador';
+import { nomeArquivoPdf } from '@/lib/nomeArquivo';
 
 export const runtime = 'nodejs';
 
@@ -14,7 +15,7 @@ export async function POST(req, { params }) {
   const id = params.id;
   const { data: orcamento, error: erroOrc } = await supabase
     .from('orcamentos')
-    .select('*, prestadores(nome)')
+    .select('*, prestadores(nome), clientes(nome_empresa)')
     .eq('id', id)
     .single();
   if (erroOrc || !orcamento) return NextResponse.json({ error: 'orçamento não encontrado' }, { status: 404 });
@@ -35,11 +36,13 @@ export async function POST(req, { params }) {
     autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
   });
 
+  const nomeBonito = nomeArquivoPdf({ imobiliaria: orcamento.clientes?.nome_empresa, endereco: orcamento.endereco, numero: orcamento.numero, sufixo: 'Prestador' });
+  const nomeSeguro = nomeBonito.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '-');
   return new NextResponse(pdfBuffer, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${orcamento.numero || 'ordem-servico'}-prestador.pdf"`,
+      'Content-Disposition': `inline; filename="${nomeSeguro}"; filename*=UTF-8''${encodeURIComponent(nomeBonito)}`,
     },
   });
 }
