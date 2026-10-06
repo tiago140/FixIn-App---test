@@ -3,10 +3,34 @@ import { useState } from 'react';
 import { Printer, Download, ExternalLink, Loader2 } from 'lucide-react';
 
 // Imprimir / baixar / abrir o PDF do orçamento (imobiliária). Disponível desde o envio e depois da aprovação.
-export default function BotoesPdfOrcamento({ pdfUrl, nomeArquivo }) {
+export default function BotoesPdfOrcamento({ pdfUrl: pdfInicial, nomeArquivo, orcamentoId }) {
+  const [pdfUrl, setPdfUrl] = useState(pdfInicial || null);
+  const [gerando, setGerando] = useState(false);
+  const [erro, setErro] = useState('');
   const [imprimindo, setImprimindo] = useState(false);
   const [baixando, setBaixando] = useState(false);
-  if (!pdfUrl) return null;
+  async function gerar() {
+    setGerando(true); setErro('');
+    try {
+      const r = await fetch(`/api/orcamentos/${orcamentoId}/pdf-cliente`, { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.pdf_url) throw new Error(d.error || 'não foi possível gerar o PDF');
+      setPdfUrl(d.pdf_url);
+    } catch (e) { setErro(e.message); }
+    setGerando(false);
+  }
+
+  if (!pdfUrl) {
+    if (!orcamentoId) return null;
+    return (
+      <div className="mt-3 print:hidden">
+        <button type="button" onClick={gerar} disabled={gerando} className="inline-flex items-center gap-2 rounded-lg bg-marinho px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+          {gerando ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />} {gerando ? 'Preparando o PDF…' : 'Preparar PDF para imprimir'}
+        </button>
+        {erro && <div className="text-sm text-erro mt-2">{erro}</div>}
+      </div>
+    );
+  }
 
   async function obterBlob() {
     const r = await fetch(pdfUrl, { cache: 'no-store' });

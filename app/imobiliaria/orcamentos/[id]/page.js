@@ -83,10 +83,10 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
         {['enviado', 'aprovado', 'em_execucao', 'finalizado', 'rejeitado'].includes(orcamento.status) && (
           <div className="card p-5">
             <div className="text-xs text-marinho/50">Orçamento em PDF</div>
-            {orcamento.pdf_url ? (
-              <BotoesPdfOrcamento pdfUrl={orcamento.pdf_url} nomeArquivo={`${orcamento.numero}.pdf`} />
+            {verEste ? (
+              <BotoesPdfOrcamento pdfUrl={orcamento.pdf_url} nomeArquivo={`${orcamento.numero}.pdf`} orcamentoId={orcamento.id} />
             ) : (
-              <div className="text-sm text-marinho/60 mt-1">O PDF deste orçamento ainda não foi gerado pela FixIn.</div>
+              <div className="text-sm text-marinho/60 mt-1">A impressão do orçamento com valores é feita pelo administrador da imobiliária.</div>
             )}
           </div>
         )}
