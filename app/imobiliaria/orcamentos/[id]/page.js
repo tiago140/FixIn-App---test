@@ -10,6 +10,7 @@ import DocumentosFiscais from '@/components/DocumentosFiscais';
 import ComprovantesPagamento from '@/components/ComprovantesPagamento';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import ResponderOrcamentoButtons from '@/components/ResponderOrcamentoButtons';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { imobiliariaTabs } from '@/lib/navTabs';
 import { veValores } from '@/lib/permissoes';
 import { fmtBRL, fmtDate } from '@/lib/format';
@@ -52,6 +53,11 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
     url: supabase.storage.from('comprovantes-pagamento').getPublicUrl(c.arquivo_path).data.publicUrl,
   }));
 
+  // O PDF do orçamento pode ser impresso por qualquer usuário da imobiliária (a visão protegida o esconde do operacional, então lemos só esse campo no servidor, após a checagem acima).
+  let pdfUrlImpressao = orcamento.pdf_url || null;
+  if (!pdfUrlImpressao) {
+    try { const { data: p } = await createAdminClient().from('orcamentos').select('pdf_url').eq('id', params.id).single(); pdfUrlImpressao = p?.pdf_url || null; } catch (e) {}
+  }
   const total = num(orcamento.total);
   // Administrador: vê tudo. Operacional: só valor e PDF dos orçamentos que ELA mesma solicitou — o banco já devolve nulo nos outros.
   const verEste = ver || total != null;
@@ -83,11 +89,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
         {['enviado', 'aprovado', 'em_execucao', 'finalizado', 'rejeitado'].includes(orcamento.status) && (
           <div className="card p-5">
             <div className="text-xs text-marinho/50">Orçamento em PDF</div>
-            {verEste ? (
-              <BotoesPdfOrcamento pdfUrl={orcamento.pdf_url} nomeArquivo={`${orcamento.numero}.pdf`} orcamentoId={orcamento.id} />
-            ) : (
-              <div className="text-sm text-marinho/60 mt-1">A impressão do orçamento com valores é feita pelo administrador da imobiliária.</div>
-            )}
+            <BotoesPdfOrcamento pdfUrl={pdfUrlImpressao} nomeArquivo={`${orcamento.numero}.pdf`} orcamentoId={orcamento.id} />
           </div>
         )}
         <div className="card p-5">
