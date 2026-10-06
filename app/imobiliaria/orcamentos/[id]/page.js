@@ -8,6 +8,7 @@ import StatusTag from '@/components/StatusTag';
 import Chat from '@/components/Chat';
 import DocumentosFiscais from '@/components/DocumentosFiscais';
 import ComprovantesPagamento from '@/components/ComprovantesPagamento';
+import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import ResponderOrcamentoButtons from '@/components/ResponderOrcamentoButtons';
 import { imobiliariaTabs } from '@/lib/navTabs';
 import { veValores } from '@/lib/permissoes';
@@ -100,11 +101,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
               <span className="font-mono">{fmtBRL(total)}</span>
             </div>
           )}
-          {orcamento.pdf_url && (
-            <a href={orcamento.pdf_url} target="_blank" rel="noreferrer" className="text-sm text-marinho underline block mt-2">
-              Abrir orçamento em PDF
-            </a>
-          )}
+          <BotoesPdfOrcamento pdfUrl={orcamento.pdf_url} nomeArquivo={`${orcamento.numero}.pdf`} />
         </div>
 
         {orcamento.status === 'enviado' && <ResponderOrcamentoButtons orcamentoId={orcamento.id} />}
