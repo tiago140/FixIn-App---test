@@ -67,17 +67,23 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   async function gerarSoPdf() {
     setErro('');
     setAviso('');
+    // abre a aba AGORA (dentro do clique) para o navegador não bloquear; o PDF entra nela quando ficar pronto
+    const aba = window.open('', '_blank');
     const salvou = await salvar({ silencioso: true });
-    if (!salvou) return;
+    if (!salvou) { if (aba) aba.close(); return; }
     setGerandoPdf(true);
-    const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf?enviar=0`, { method: 'POST' });
+    const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf?enviar=0&arquivo=1`, { method: 'POST' });
     setGerandoPdf(false);
-    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (aba) aba.close();
       setErro(data.error || 'Erro ao gerar PDF');
       return;
     }
-    setAviso('PDF gerado e salvo. Nenhum e-mail foi enviado e a etapa não mudou. Confira em "Abrir o PDF" e, quando estiver certo, clique em "Enviar por e-mail".');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    if (aba) aba.location.href = url; else window.open(url, '_blank');
+    setAviso('PDF gerado com a margem de ' + (Number(margem) || 0) + '% aplicada. Nenhum e-mail foi enviado e a etapa não mudou.');
     router.refresh();
   }
 
@@ -229,12 +235,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
             {gerandoPdf ? 'Gerando…' : 'Gerar PDF'}
           </button>
-          <p className="text-xs text-marinho/60">Salva o que está na tela e cria o PDF. <b>Não envia e-mail</b> e não muda a etapa.</p>
-          {orcamento.pdf_url && (
-            <a href={orcamento.pdf_url} target="_blank" rel="noreferrer" className="inline-block text-sm text-marinho underline font-semibold">
-              Abrir o PDF
-            </a>
-          )}
+          <p className="text-xs text-marinho/60">Salva o que está na tela, aplica a margem e <b>abre o PDF na hora</b>. <b>Não envia e-mail</b> e não muda a etapa.</p>
         </div>
 
         <div className="rounded border border-linha p-3 space-y-2">

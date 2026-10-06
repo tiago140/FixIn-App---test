@@ -40,7 +40,7 @@ export async function POST(req, { params }) {
   const caminhoAntigo = `${id}/${orcamento.numero}.pdf`;
   const { error: erroUpload } = await supabase.storage
     .from('orcamentos-pdfs')
-    .upload(caminhoArquivo, pdfBuffer, { contentType: 'application/pdf', upsert: true });
+    .upload(caminhoArquivo, pdfBuffer, { contentType: 'application/pdf', upsert: true, cacheControl: '0' });
 
   if (erroUpload) {
     return NextResponse.json({ error: 'erro ao salvar PDF: ' + erroUpload.message }, { status: 500 });
@@ -49,7 +49,8 @@ export async function POST(req, { params }) {
   // tira a versão antiga (nome só com o número) para não ficar PDF duplicado
   if (caminhoAntigo !== caminhoArquivo) { try { await supabase.storage.from('orcamentos-pdfs').remove([caminhoAntigo]); } catch (e) {} }
   const { data: urlData } = supabase.storage.from('orcamentos-pdfs').getPublicUrl(caminhoArquivo);
-  const pdfUrl = urlData.publicUrl;
+  // ?v= evita o navegador/CDN mostrar uma versão ANTIGA do PDF (o nome do arquivo é sempre o mesmo para o mesmo orçamento)
+  const pdfUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
   await supabase.from('orcamentos').update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() }).eq('id', id);
 
@@ -64,6 +65,17 @@ export async function POST(req, { params }) {
         autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
       });
     } catch (e) {}
+    // ?arquivo=1: devolve o próprio PDF (a tela abre direto, sem link intermediário)
+    if (new URL(req.url).searchParams.get('arquivo') === '1') {
+      return new NextResponse(pdfBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `inline; filename="${nomeArquivo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '-')}"; filename*=UTF-8''${encodeURIComponent(nomeArquivo)}`,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
     return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: null, status_novo: null, so_pdf: true });
   }
 
