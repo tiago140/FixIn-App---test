@@ -80,6 +80,16 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
       </div>
 
       <div className="space-y-6">
+        {['enviado', 'aprovado', 'em_execucao', 'finalizado', 'rejeitado'].includes(orcamento.status) && (
+          <div className="card p-5">
+            <div className="text-xs text-marinho/50">Orçamento em PDF</div>
+            {orcamento.pdf_url ? (
+              <BotoesPdfOrcamento pdfUrl={orcamento.pdf_url} nomeArquivo={`${orcamento.numero}.pdf`} />
+            ) : (
+              <div className="text-sm text-marinho/60 mt-1">O PDF deste orçamento ainda não foi gerado pela FixIn.</div>
+            )}
+          </div>
+        )}
         <div className="card p-5">
           <div className="text-xs text-marinho/50 mb-1">Ambientes e serviços</div>
           {(itens || []).map((it) => (
@@ -101,7 +111,6 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
               <span className="font-mono">{fmtBRL(total)}</span>
             </div>
           )}
-          <BotoesPdfOrcamento pdfUrl={orcamento.pdf_url} nomeArquivo={`${orcamento.numero}.pdf`} />
         </div>
 
         {orcamento.status === 'enviado' && <ResponderOrcamentoButtons orcamentoId={orcamento.id} />}
