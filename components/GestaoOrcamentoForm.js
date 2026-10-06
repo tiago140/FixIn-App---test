@@ -67,23 +67,25 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   async function gerarSoPdf() {
     setErro('');
     setAviso('');
-    // abre a aba AGORA (dentro do clique) para o navegador não bloquear; o PDF entra nela quando ficar pronto
-    const aba = window.open('', '_blank');
     const salvou = await salvar({ silencioso: true });
-    if (!salvou) { if (aba) aba.close(); return; }
+    if (!salvou) return;
     setGerandoPdf(true);
-    const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf?enviar=0&arquivo=1`, { method: 'POST' });
+    const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf?enviar=0`, { method: 'POST' });
     setGerandoPdf(false);
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      if (aba) aba.close();
       setErro(data.error || 'Erro ao gerar PDF');
       return;
     }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    if (aba) aba.location.href = url; else window.open(url, '_blank');
-    setAviso('PDF gerado com a margem de ' + (Number(margem) || 0) + '% aplicada. Nenhum e-mail foi enviado e a etapa não mudou.');
+    // baixa o arquivo já com o nome padrão: "Imobiliária - Endereço completo - ORC-0000.pdf"
+    const nome = data.nome_arquivo || `${orcamento.numero}.pdf`;
+    const a = document.createElement('a');
+    a.href = `/api/orcamentos/${orcamento.id}/pdf/${encodeURIComponent(nome)}`;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setAviso(`PDF gerado com margem de ${Number(margem) || 0}% e baixado como "${nome}". Nenhum e-mail foi enviado e a etapa não mudou.`);
     router.refresh();
   }
 
@@ -235,7 +237,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
             {gerandoPdf ? 'Gerando…' : 'Gerar PDF'}
           </button>
-          <p className="text-xs text-marinho/60">Salva o que está na tela, aplica a margem e <b>abre o PDF na hora</b>. <b>Não envia e-mail</b> e não muda a etapa.</p>
+          <p className="text-xs text-marinho/60">Salva o que está na tela, aplica a margem e <b>baixa o PDF</b> com o nome “Imobiliária - Endereço - ORC-0000”. <b>Não envia e-mail</b> e não muda a etapa.</p>
         </div>
 
         <div className="rounded border border-linha p-3 space-y-2">

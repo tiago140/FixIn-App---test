@@ -65,18 +65,7 @@ export async function POST(req, { params }) {
         autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
       });
     } catch (e) {}
-    // ?arquivo=1: devolve o próprio PDF (a tela abre direto, sem link intermediário)
-    if (new URL(req.url).searchParams.get('arquivo') === '1') {
-      return new NextResponse(pdfBuffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `inline; filename="${nomeArquivo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '-')}"; filename*=UTF-8''${encodeURIComponent(nomeArquivo)}`,
-          'Cache-Control': 'no-store',
-        },
-      });
-    }
-    return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: null, status_novo: null, so_pdf: true });
+    return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: null, status_novo: null, so_pdf: true, nome_arquivo: nomeArquivo });
   }
 
   // Quem recebe: o administrador da imobiliária (todos os orçamentos) + quem solicitou este orçamento.
