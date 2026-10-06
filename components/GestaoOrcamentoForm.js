@@ -21,6 +21,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const [itens, setItens] = useState(itensIniciais.map((it) => ({ ...it })));
   const [salvando, setSalvando] = useState(false);
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
   const [gerandoPdfPrestador, setGerandoPdfPrestador] = useState(false);
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
@@ -62,7 +63,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
     return true;
   }
 
-  // Só gerar o PDF (sem e-mail e sem mudar o status): para orçamentos que já foram enviados por outro meio.
+  // GERAR PDF: só salva o que está na tela e gera o arquivo. Não manda e-mail e não muda a etapa.
   async function gerarSoPdf() {
     setErro('');
     setAviso('');
@@ -76,20 +77,21 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       setErro(data.error || 'Erro ao gerar PDF');
       return;
     }
-    setAviso('PDF gerado e salvo. Nenhum e-mail foi enviado e o status não mudou. Use o link "Abrir último PDF gerado".');
+    setAviso('PDF gerado e salvo. Nenhum e-mail foi enviado e a etapa não mudou. Confira em "Abrir o PDF" e, quando estiver certo, clique em "Enviar por e-mail".');
     router.refresh();
   }
 
-  // Gerar PDF e enviar: primeiro SALVA o que está na tela (inclusive o que a IA mexeu), para o PDF e o e-mail
-  // nunca irem com dados desatualizados. Depois gera o PDF, envia o e-mail e passa o orçamento para "Enviado".
+  // ENVIAR POR E-MAIL: passo separado, só quando a pessoa clica. Salva o que está na tela, refaz o PDF com os dados
+  // atuais (para nunca ir desatualizado), envia o e-mail com o PDF anexo e passa o orçamento para "Enviado".
   async function gerarPdf() {
     setErro('');
     setAviso('');
+    if (emailsDestino.length > 0 && !window.confirm(`Enviar o orçamento ${orcamento.numero} por e-mail para:\n\n${emailsDestino.join('\n')}\n\nO orçamento passará para "Enviado".`)) return;
     const salvou = await salvar({ silencioso: true });
     if (!salvou) return;
-    setGerandoPdf(true);
+    setEnviandoEmail(true);
     const res = await fetch(`/api/orcamentos/${orcamento.id}/pdf`, { method: 'POST' });
-    setGerandoPdf(false);
+    setEnviandoEmail(false);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setErro(data.error || 'Erro ao gerar PDF');
@@ -191,16 +193,6 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-xs text-marinho/60 mb-1">Prestador responsável</label>
-          <select value={prestadorId} onChange={(e) => setPrestadorId(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
-            <option value="">— nenhum —</option>
-            {(prestadores || []).map((p) => (
-              <option key={p.id} value={p.id}>{p.nome}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="sm:col-span-2">
           <button
             type="button"
             onClick={() => setAtrasado((v) => !v)}
@@ -219,79 +211,104 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           <span className="font-mono">{fmtBRL(totalFinal)}</span>
         </div>
 
-        <div className="sm:col-span-2 flex gap-3 pt-2">
-          <button type="button" onClick={salvar} disabled={salvando} className="flex-1 bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
+        <div className="sm:col-span-2">
+          <button type="button" onClick={salvar} disabled={salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
             {salvando ? 'Salvando…' : 'Salvar alterações'}
           </button>
-          <button type="button" onClick={gerarPdf} disabled={gerandoPdf} className="flex-1 bg-verde text-white rounded py-2.5 font-semibold disabled:opacity-50">
-            {gerandoPdf ? 'Salvando e enviando…' : 'Gerar PDF e enviar por e-mail'}
+        </div>
+      </div>
+
+      {/* ───── 1) O QUE VAI PARA A IMOBILIÁRIA ───── */}
+      <div className="card p-5 space-y-3 border-l-4 border-l-verde">
+        <div>
+          <h3 className="font-semibold text-sm">Orçamento para a imobiliária</h3>
+          <p className="text-xs text-marinho/60">PDF no padrão FixIn, com o valor final (sem margem nem custo). Gerar o PDF e enviar por e-mail são dois passos separados.</p>
+        </div>
+        <div className="rounded border border-linha p-3 space-y-2">
+          <div className="text-xs font-semibold text-marinho/70">PASSO 1 — Gerar o PDF</div>
+          <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
+            {gerandoPdf ? 'Gerando…' : 'Gerar PDF'}
           </button>
+          <p className="text-xs text-marinho/60">Salva o que está na tela e cria o PDF. <b>Não envia e-mail</b> e não muda a etapa.</p>
+          {orcamento.pdf_url && (
+            <a href={orcamento.pdf_url} target="_blank" rel="noreferrer" className="inline-block text-sm text-marinho underline font-semibold">
+              Abrir o PDF
+            </a>
+          )}
         </div>
 
+        <div className="rounded border border-linha p-3 space-y-2">
+          <div className="text-xs font-semibold text-marinho/70">PASSO 2 — Enviar ao cliente</div>
+          <button type="button" onClick={gerarPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-verde text-white rounded py-2.5 font-semibold disabled:opacity-50">
+            {enviandoEmail ? 'Enviando…' : 'Enviar por e-mail'}
+          </button>
+          <div className="text-xs">
+            {emailsDestino.length > 0 ? (
+              <span className="text-marinho/60">Vai o PDF atualizado em anexo para: <b className="text-marinho">{emailsDestino.join(', ')}</b>. O orçamento passa para “Enviado”.</span>
+            ) : (
+              <span className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: não há para quem enviar.</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ───── 2) USO INTERNO: PRESTADOR ───── */}
+      <div className="card p-5 space-y-3 border-l-4 border-l-alerta">
+        <div>
+          <h3 className="font-semibold text-sm">Prestador — uso interno da FixIn</h3>
+          <p className="text-xs text-marinho/60">A imobiliária não vê esta parte. A ordem de serviço mostra só o custo base (sem margem) e nunca vai por e-mail ao cliente.</p>
+        </div>
+        <div>
+          <label className="block text-xs text-marinho/60 mb-1">Prestador responsável</label>
+          <select value={prestadorId} onChange={(e) => setPrestadorId(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
+            <option value="">— nenhum —</option>
+            {(prestadores || []).map((p) => (
+              <option key={p.id} value={p.id}>{p.nome}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-marinho/50 mt-1">Depois de escolher, use “Salvar alterações” (ou “Salvar dados do prestador” abaixo).</p>
+        </div>
         <button
           type="button"
           onClick={gerarPdfPrestador}
           disabled={gerandoPdfPrestador}
-          className="sm:col-span-2 w-full border border-linha text-marinho rounded py-2.5 font-semibold disabled:opacity-50 hover:bg-papel"
+          className="w-full border border-linha text-marinho rounded py-2.5 font-semibold disabled:opacity-50 hover:bg-papel"
         >
           📄 {gerandoPdfPrestador ? 'Gerando…' : 'Ordem de serviço do prestador (sem margem)'}
         </button>
 
-        <div className="sm:col-span-2 text-xs -mt-2">
-          {emailsDestino.length > 0 ? (
-            <span className="text-marinho/60">Ao enviar, o e-mail vai com o PDF anexo para: <b className="text-marinho">{emailsDestino.join(', ')}</b></span>
-          ) : (
-            <span className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: o PDF será gerado, mas não há para quem enviar.</span>
-          )}
-        </div>
-
-        <div className="sm:col-span-2 -mt-2">
-          <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf} className="text-sm border border-linha bg-white rounded-lg px-3 py-1.5 font-semibold text-marinho hover:bg-papel disabled:opacity-50">
-            Só gerar o PDF (sem enviar e-mail)
-          </button>
-          <span className="text-xs text-marinho/50 ml-2">para orçamentos que já foram enviados por outro meio</span>
-        </div>
-
-        {orcamento.pdf_url && (
-          <div className="sm:col-span-2">
-            <a href={orcamento.pdf_url} target="_blank" rel="noreferrer" className="text-sm text-marinho underline">
-              Abrir último PDF gerado
-            </a>
+        {mostrarPagamentoPrestador && (
+          <div className="pt-3 border-t border-linha">
+            <h4 className="font-semibold text-sm mb-3">Pagamento ao prestador — {prestadores?.find((p) => p.id === prestadorId)?.nome}</h4>
+            <div className="grid sm:grid-cols-2 gap-4 mb-3">
+              <div>
+                <label className="block text-xs text-marinho/60 mb-1">Valor combinado (R$)</label>
+                <input type="number" value={valorCombinado} onChange={(e) => setValorCombinado(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+              </div>
+              <div>
+                <label className="block text-xs text-marinho/60 mb-1">Valor de entrada (R$)</label>
+                <input type="number" value={valorEntrada} onChange={(e) => setValorEntrada(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs text-marinho/60 mb-1">Status do pagamento</label>
+              <select value={statusPagamentoPrestador} onChange={(e) => setStatusPagamentoPrestador(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
+                <option value="aguardando">Aguardando pagamento</option>
+                <option value="entrada_paga">Entrada paga — falta parcela final</option>
+                <option value="pago_total">Pago integralmente (realizado)</option>
+              </select>
+            </div>
+            {statusPagamentoPrestador === 'entrada_paga' && (
+              <div className="text-xs text-marinho/50 mb-3">
+                Falta pagar: {fmtBRL(Math.max(0, (Number(valorCombinado) || 0) - (Number(valorEntrada) || 0)))}
+              </div>
+            )}
           </div>
         )}
+        <button type="button" onClick={salvar} disabled={salvando} className="w-full bg-marinho text-white rounded py-2 text-sm font-semibold disabled:opacity-50">
+          {salvando ? 'Salvando…' : 'Salvar dados do prestador'}
+        </button>
       </div>
-
-      {mostrarPagamentoPrestador && (
-        <div className="card p-5">
-          <h3 className="font-semibold text-sm mb-3">Pagamento ao prestador — {prestadores?.find((p) => p.id === prestadorId)?.nome}</h3>
-          <div className="grid sm:grid-cols-2 gap-4 mb-3">
-            <div>
-              <label className="block text-xs text-marinho/60 mb-1">Valor combinado (R$)</label>
-              <input type="number" value={valorCombinado} onChange={(e) => setValorCombinado(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
-            </div>
-            <div>
-              <label className="block text-xs text-marinho/60 mb-1">Valor de entrada (R$)</label>
-              <input type="number" value={valorEntrada} onChange={(e) => setValorEntrada(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
-            </div>
-          </div>
-          <div className="mb-3">
-            <label className="block text-xs text-marinho/60 mb-1">Status do pagamento</label>
-            <select value={statusPagamentoPrestador} onChange={(e) => setStatusPagamentoPrestador(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
-              <option value="aguardando">Aguardando pagamento</option>
-              <option value="entrada_paga">Entrada paga — falta parcela final</option>
-              <option value="pago_total">Pago integralmente (realizado)</option>
-            </select>
-          </div>
-          {statusPagamentoPrestador === 'entrada_paga' && (
-            <div className="text-xs text-marinho/50 mb-3">
-              Falta pagar: {fmtBRL(Math.max(0, (Number(valorCombinado) || 0) - (Number(valorEntrada) || 0)))}
-            </div>
-          )}
-          <button type="button" onClick={salvar} disabled={salvando} className="w-full bg-marinho text-white rounded py-2 text-sm font-semibold disabled:opacity-50">
-            Salvar pagamento do prestador
-          </button>
-        </div>
-      )}
     </div>
   );
 }
