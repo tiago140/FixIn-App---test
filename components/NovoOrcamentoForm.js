@@ -99,12 +99,19 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         itens,
       }),
     });
-    setSalvando(false);
     const data = await res.json();
     if (!res.ok) {
+      setSalvando(false);
       setErro(data.error || 'Erro ao salvar orçamento');
       return;
     }
+    // Já gera o PDF no padrão FixIn (só gera e guarda: NÃO manda e-mail e NÃO muda a etapa — o envio ao cliente
+    // continua sendo um passo consciente, no botão "Gerar PDF e enviar por e-mail" do orçamento).
+    // Manutenção sem itens ainda não tem o que mostrar num PDF.
+    if (itens.length > 0) {
+      try { await fetch(`/api/orcamentos/${data.orcamento.id}/pdf?enviar=0`, { method: 'POST' }); } catch (e) {}
+    }
+    setSalvando(false);
     router.push(`/master/orcamentos/${data.orcamento.id}`);
     router.refresh();
   }
@@ -239,7 +246,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
       </div>
 
       <button disabled={salvando} className="w-full bg-verde text-white rounded py-3 font-semibold disabled:opacity-50">
-        {salvando ? 'Salvando…' : tipo === 'manutencao' ? 'Criar solicitação' : 'Criar orçamento'}
+        {salvando ? 'Salvando e gerando o PDF…' : tipo === 'manutencao' ? 'Criar solicitação' + (itens.length > 0 ? ' e gerar PDF' : '') : 'Criar orçamento e gerar PDF'}
       </button>
     </form>
   );
