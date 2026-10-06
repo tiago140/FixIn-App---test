@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtBRL, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 import EditorItensOrcamento from '@/components/EditorItensOrcamento';
+import { Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
 
 export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [] }) {
   const router = useRouter();
@@ -220,71 +221,52 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           <span className="font-mono">{fmtBRL(totalFinal)}</span>
         </div>
 
-        <div className="sm:col-span-2">
-          <button type="button" onClick={salvar} disabled={salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
-            {salvando ? 'Salvando…' : 'Salvar alterações'}
+        <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <button type="button" onClick={salvar} disabled={salvando} className="flex items-center justify-center gap-2 bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
+            {salvando ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {salvando ? 'Salvando…' : 'Salvar alterações'}
           </button>
+          <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="flex items-center justify-center gap-2 bg-verde text-white rounded py-2.5 font-semibold disabled:opacity-50">
+            {gerandoPdf ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />} {gerandoPdf ? 'Gerando…' : 'Gerar PDF'}
+          </button>
+          <button type="button" onClick={gerarPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="flex items-center justify-center gap-2 border border-verde text-verde bg-white rounded py-2.5 font-semibold hover:bg-verde/5 disabled:opacity-50">
+            {enviandoEmail ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />} {enviandoEmail ? 'Enviando…' : 'Enviar por e-mail'}
+          </button>
+        </div>
+        <div className="sm:col-span-2 text-xs text-marinho/60 -mt-2 space-y-0.5">
+          <p><b className="text-marinho">Gerar PDF</b> aplica a margem, baixa o arquivo e libera o orçamento para a imobiliária aprovar. <b className="text-marinho">Enviar por e-mail</b> só avisa a imobiliária, com o PDF anexo.</p>
+          {emailsDestino.length > 0 ? (
+            <p>E-mail vai para: <b className="text-marinho">{emailsDestino.join(', ')}</b></p>
+          ) : (
+            <p className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: não há para quem enviar o aviso.</p>
+          )}
         </div>
       </div>
 
-      {/* ───── 1) O QUE VAI PARA A IMOBILIÁRIA ───── */}
-      <div className="card p-5 space-y-3 border-l-4 border-l-verde">
-        <div>
-          <h3 className="font-semibold text-sm">Orçamento para a imobiliária</h3>
-          <p className="text-xs text-marinho/60">PDF no padrão FixIn, com o valor final (sem margem nem custo). “Gerar PDF” libera o orçamento para a imobiliária aprovar; o e-mail de aviso é um passo à parte.</p>
+      {/* Uso interno: a imobiliária não vê nada daqui */}
+      <div className="card p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm">Prestador</h3>
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-alerta bg-alerta/10 rounded px-2 py-0.5"><Lock size={11} /> uso interno</span>
         </div>
-        <div className="rounded border border-linha p-3 space-y-2">
-          <div className="text-xs font-semibold text-marinho/70">PASSO 1 — Gerar o PDF</div>
-          <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
-            {gerandoPdf ? 'Gerando…' : 'Gerar PDF'}
-          </button>
-          <p className="text-xs text-marinho/60">Salva o que está na tela, aplica a margem e <b>baixa o PDF</b> com o nome “Imobiliária - Endereço - ORC-0000”. Passa o orçamento para <b>Enviado</b> (a imobiliária já vê e pode aprovar ou recusar). <b>Não envia e-mail.</b></p>
-        </div>
-
-        <div className="rounded border border-linha p-3 space-y-2">
-          <div className="text-xs font-semibold text-marinho/70">PASSO 2 — Avisar a imobiliária por e-mail</div>
-          <button type="button" onClick={gerarPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-verde text-white rounded py-2.5 font-semibold disabled:opacity-50">
-            {enviandoEmail ? 'Enviando…' : 'Enviar por e-mail'}
-          </button>
-          <div className="text-xs">
-            {emailsDestino.length > 0 ? (
-              <span className="text-marinho/60">Vai o PDF atualizado em anexo para: <b className="text-marinho">{emailsDestino.join(', ')}</b>. É só o aviso por e-mail — o orçamento já está liberado para a imobiliária desde o “Gerar PDF”.</span>
-            ) : (
-              <span className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: não há para quem enviar.</span>
-            )}
+        <div className="grid sm:grid-cols-2 gap-3 items-end">
+          <div>
+            <label className="block text-xs text-marinho/60 mb-1">Prestador responsável</label>
+            <select value={prestadorId} onChange={(e) => setPrestadorId(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
+              <option value="">— nenhum —</option>
+              {(prestadores || []).map((p) => (
+                <option key={p.id} value={p.id}>{p.nome}</option>
+              ))}
+            </select>
           </div>
+          <button type="button" onClick={gerarPdfPrestador} disabled={gerandoPdfPrestador} className="flex items-center justify-center gap-2 border border-linha text-marinho rounded py-2 font-semibold disabled:opacity-50 hover:bg-papel">
+            {gerandoPdfPrestador ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />} {gerandoPdfPrestador ? 'Gerando…' : 'Ordem de serviço (sem margem)'}
+          </button>
         </div>
-      </div>
-
-      {/* ───── 2) USO INTERNO: PRESTADOR ───── */}
-      <div className="card p-5 space-y-3 border-l-4 border-l-alerta">
-        <div>
-          <h3 className="font-semibold text-sm">Prestador — uso interno da FixIn</h3>
-          <p className="text-xs text-marinho/60">A imobiliária não vê esta parte. A ordem de serviço mostra só o custo base (sem margem) e nunca vai por e-mail ao cliente.</p>
-        </div>
-        <div>
-          <label className="block text-xs text-marinho/60 mb-1">Prestador responsável</label>
-          <select value={prestadorId} onChange={(e) => setPrestadorId(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
-            <option value="">— nenhum —</option>
-            {(prestadores || []).map((p) => (
-              <option key={p.id} value={p.id}>{p.nome}</option>
-            ))}
-          </select>
-          <p className="text-[11px] text-marinho/50 mt-1">Depois de escolher, use “Salvar alterações” (ou “Salvar dados do prestador” abaixo).</p>
-        </div>
-        <button
-          type="button"
-          onClick={gerarPdfPrestador}
-          disabled={gerandoPdfPrestador}
-          className="w-full border border-linha text-marinho rounded py-2.5 font-semibold disabled:opacity-50 hover:bg-papel"
-        >
-          📄 {gerandoPdfPrestador ? 'Gerando…' : 'Ordem de serviço do prestador (sem margem)'}
-        </button>
 
         {mostrarPagamentoPrestador && (
-          <div className="pt-3 border-t border-linha">
-            <h4 className="font-semibold text-sm mb-3">Pagamento ao prestador — {prestadores?.find((p) => p.id === prestadorId)?.nome}</h4>
-            <div className="grid sm:grid-cols-2 gap-4 mb-3">
+          <div className="pt-3 border-t border-linha space-y-3">
+            <h4 className="font-semibold text-sm">Pagamento ao prestador — {prestadores?.find((p) => p.id === prestadorId)?.nome}</h4>
+            <div className="grid sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-marinho/60 mb-1">Valor combinado (R$)</label>
                 <input type="number" value={valorCombinado} onChange={(e) => setValorCombinado(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
@@ -293,25 +275,27 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
                 <label className="block text-xs text-marinho/60 mb-1">Valor de entrada (R$)</label>
                 <input type="number" value={valorEntrada} onChange={(e) => setValorEntrada(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
               </div>
-            </div>
-            <div className="mb-3">
-              <label className="block text-xs text-marinho/60 mb-1">Status do pagamento</label>
-              <select value={statusPagamentoPrestador} onChange={(e) => setStatusPagamentoPrestador(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
-                <option value="aguardando">Aguardando pagamento</option>
-                <option value="entrada_paga">Entrada paga — falta parcela final</option>
-                <option value="pago_total">Pago integralmente (realizado)</option>
-              </select>
+              <div>
+                <label className="block text-xs text-marinho/60 mb-1">Status do pagamento</label>
+                <select value={statusPagamentoPrestador} onChange={(e) => setStatusPagamentoPrestador(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
+                  <option value="aguardando">Aguardando pagamento</option>
+                  <option value="entrada_paga">Entrada paga — falta parcela final</option>
+                  <option value="pago_total">Pago integralmente (realizado)</option>
+                </select>
+              </div>
             </div>
             {statusPagamentoPrestador === 'entrada_paga' && (
-              <div className="text-xs text-marinho/50 mb-3">
+              <div className="text-xs text-marinho/50">
                 Falta pagar: {fmtBRL(Math.max(0, (Number(valorCombinado) || 0) - (Number(valorEntrada) || 0)))}
               </div>
             )}
           </div>
         )}
-        <button type="button" onClick={salvar} disabled={salvando} className="w-full bg-marinho text-white rounded py-2 text-sm font-semibold disabled:opacity-50">
-          {salvando ? 'Salvando…' : 'Salvar dados do prestador'}
-        </button>
+        <div className="flex justify-end">
+          <button type="button" onClick={salvar} disabled={salvando} className="border border-marinho text-marinho rounded px-4 py-1.5 text-sm font-semibold hover:bg-marinho/5 disabled:opacity-50">
+            Salvar dados do prestador
+          </button>
+        </div>
       </div>
     </div>
   );
