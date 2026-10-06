@@ -77,6 +77,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       setErro(data.error || 'Erro ao gerar PDF');
       return;
     }
+    if (data.status_novo) setStatus(data.status_novo);
     // baixa o arquivo já com o nome padrão: "Imobiliária - Endereço completo - ORC-0000.pdf"
     const nome = data.nome_arquivo || `${orcamento.numero}.pdf`;
     const a = document.createElement('a');
@@ -85,7 +86,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setAviso(`PDF gerado com margem de ${Number(margem) || 0}% e baixado como "${nome}". Nenhum e-mail foi enviado e a etapa não mudou.`);
+    setAviso(`PDF gerado com margem de ${Number(margem) || 0}% e baixado como "${nome}". Nenhum e-mail foi enviado.${data.status_novo ? ' O orçamento passou para "Enviado" e já aparece para a imobiliária aprovar.' : ''}`);
     router.refresh();
   }
 
@@ -230,24 +231,24 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       <div className="card p-5 space-y-3 border-l-4 border-l-verde">
         <div>
           <h3 className="font-semibold text-sm">Orçamento para a imobiliária</h3>
-          <p className="text-xs text-marinho/60">PDF no padrão FixIn, com o valor final (sem margem nem custo). Gerar o PDF e enviar por e-mail são dois passos separados.</p>
+          <p className="text-xs text-marinho/60">PDF no padrão FixIn, com o valor final (sem margem nem custo). “Gerar PDF” libera o orçamento para a imobiliária aprovar; o e-mail de aviso é um passo à parte.</p>
         </div>
         <div className="rounded border border-linha p-3 space-y-2">
           <div className="text-xs font-semibold text-marinho/70">PASSO 1 — Gerar o PDF</div>
           <button type="button" onClick={gerarSoPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
             {gerandoPdf ? 'Gerando…' : 'Gerar PDF'}
           </button>
-          <p className="text-xs text-marinho/60">Salva o que está na tela, aplica a margem e <b>baixa o PDF</b> com o nome “Imobiliária - Endereço - ORC-0000”. <b>Não envia e-mail</b> e não muda a etapa.</p>
+          <p className="text-xs text-marinho/60">Salva o que está na tela, aplica a margem e <b>baixa o PDF</b> com o nome “Imobiliária - Endereço - ORC-0000”. Passa o orçamento para <b>Enviado</b> (a imobiliária já vê e pode aprovar ou recusar). <b>Não envia e-mail.</b></p>
         </div>
 
         <div className="rounded border border-linha p-3 space-y-2">
-          <div className="text-xs font-semibold text-marinho/70">PASSO 2 — Enviar ao cliente</div>
+          <div className="text-xs font-semibold text-marinho/70">PASSO 2 — Avisar a imobiliária por e-mail</div>
           <button type="button" onClick={gerarPdf} disabled={gerandoPdf || enviandoEmail || salvando} className="w-full bg-verde text-white rounded py-2.5 font-semibold disabled:opacity-50">
             {enviandoEmail ? 'Enviando…' : 'Enviar por e-mail'}
           </button>
           <div className="text-xs">
             {emailsDestino.length > 0 ? (
-              <span className="text-marinho/60">Vai o PDF atualizado em anexo para: <b className="text-marinho">{emailsDestino.join(', ')}</b>. O orçamento passa para “Enviado”.</span>
+              <span className="text-marinho/60">Vai o PDF atualizado em anexo para: <b className="text-marinho">{emailsDestino.join(', ')}</b>. É só o aviso por e-mail — o orçamento já está liberado para a imobiliária desde o “Gerar PDF”.</span>
             ) : (
               <span className="text-erro font-semibold">Esta imobiliária não tem nenhum e-mail de usuário ativo cadastrado: não há para quem enviar.</span>
             )}

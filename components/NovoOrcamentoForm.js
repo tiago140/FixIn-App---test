@@ -109,7 +109,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
     // continua sendo um passo consciente, no botão "Gerar PDF e enviar por e-mail" do orçamento).
     // Manutenção sem itens ainda não tem o que mostrar num PDF.
     if (itens.length > 0) {
-      try { await fetch(`/api/orcamentos/${data.orcamento.id}/pdf?enviar=0`, { method: 'POST' }); } catch (e) {}
+      try { await fetch(`/api/orcamentos/${data.orcamento.id}/pdf?enviar=0&manter=1`, { method: 'POST' }); } catch (e) {}
     }
     setSalvando(false);
     router.push(`/master/orcamentos/${data.orcamento.id}`);

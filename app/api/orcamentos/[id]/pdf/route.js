@@ -54,18 +54,26 @@ export async function POST(req, { params }) {
 
   await supabase.from('orcamentos').update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() }).eq('id', id);
 
-  // "Só gerar PDF" (?enviar=0): salva o PDF e pronto — NÃO manda e-mail e NÃO muda o status. Serve para orçamentos que já foram
-  // enviados por outro meio (ex.: os importados do protótipo): regerar o PDF não pode reenviar nada ao cliente.
+  // "Gerar PDF" (?enviar=0): salva o PDF e passa o orçamento para "Enviado", que é quando ele aparece para a imobiliária
+  // aprovar ou recusar. NÃO manda e-mail: o e-mail é um passo separado ("Enviar por e-mail").
+  // Só sai de Pendente/Em preparação; orçamento que já está adiante (ex.: Aprovado) mantém a etapa.
   let soGerar = false;
   try { soGerar = new URL(req.url).searchParams.get('enviar') === '0'; } catch (e) {}
   if (soGerar) {
+    let statusNovo = null;
+    // ?manter=1 (usado ao CRIAR o orçamento): gera o PDF mas deixa a etapa como está — ainda pode faltar preencher valores
+    const manter = new URL(req.url).searchParams.get('manter') === '1';
+    if (!manter && ['pendente', 'em_preparacao'].includes(orcamento.status)) {
+      const { error: erroStatus } = await supabase.from('orcamentos').update({ status: 'enviado', atualizado_em: new Date().toISOString() }).eq('id', id);
+      if (!erroStatus) statusNovo = 'enviado';
+    }
     try {
       await supabase.from('auditoria').insert({
-        acao: 'Gerou PDF (sem enviar e-mail)', detalhe: orcamento.numero, alvo_tipo: 'orcamento', alvo_id: id,
+        acao: 'Gerou PDF do orçamento (sem e-mail)', detalhe: `${orcamento.numero}${statusNovo ? ' — passou para Enviado (liberado para a imobiliária aprovar)' : ''}`, alvo_tipo: 'orcamento', alvo_id: id,
         autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
       });
     } catch (e) {}
-    return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: null, status_novo: null, so_pdf: true, nome_arquivo: nomeArquivo });
+    return NextResponse.json({ ok: true, pdf_url: pdfUrl, email: null, status_novo: statusNovo, so_pdf: true, nome_arquivo: nomeArquivo });
   }
 
   // Quem recebe: o administrador da imobiliária (todos os orçamentos) + quem solicitou este orçamento.
