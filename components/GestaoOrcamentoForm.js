@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtBRL, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 import EditorItensOrcamento from '@/components/EditorItensOrcamento';
+import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import { Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
 
 export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [] }) {
   const router = useRouter();
   const [status, setStatus] = useState(orcamento.status);
+  const [pdfUrlAtual, setPdfUrlAtual] = useState(orcamento.pdf_url || null);
   const [clienteId, setClienteId] = useState(orcamento.cliente_id);
   const [confirmandoCliente, setConfirmandoCliente] = useState(null);
   const [margem, setMargem] = useState(orcamento.margem_percentual);
@@ -79,6 +81,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       return;
     }
     if (data.status_novo) setStatus(data.status_novo);
+    if (data.pdf_url) setPdfUrlAtual(data.pdf_url);
     // baixa o arquivo já com o nome padrão: "Imobiliária - Endereço completo - ORC-0000.pdf"
     const nome = data.nome_arquivo || `${orcamento.numero}.pdf`;
     const a = document.createElement('a');
@@ -108,6 +111,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       return;
     }
     if (data.status_novo) setStatus(data.status_novo);
+    if (data.pdf_url) setPdfUrlAtual(data.pdf_url);
     const quem = (data.email?.para || []).join(', ');
     if (data.email?.enviado) {
       setAviso(`PDF gerado e e-mail enviado para ${quem}.${data.status_novo ? ' O orçamento passou para "Enviado" (Kanban e Controle já refletem).' : ''}`);
@@ -232,6 +236,11 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             {enviandoEmail ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />} {enviandoEmail ? 'Enviando…' : 'Enviar por e-mail'}
           </button>
         </div>
+        {pdfUrlAtual && (
+          <div className="sm:col-span-2 -mt-2">
+            <BotoesPdfOrcamento pdfUrl={pdfUrlAtual} nomeArquivo={`${orcamento.numero}.pdf`} />
+          </div>
+        )}
         <div className="sm:col-span-2 text-xs text-marinho/60 -mt-2 space-y-0.5">
           <p><b className="text-marinho">Gerar PDF</b> aplica a margem, baixa o arquivo e libera o orçamento para a imobiliária aprovar. <b className="text-marinho">Enviar por e-mail</b> só avisa a imobiliária, com o PDF anexo.</p>
           {emailsDestino.length > 0 ? (
