@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
@@ -23,7 +25,13 @@ export default async function ImobiliariaKanban() {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <PageHeader icone="kanban" titulo="Orçamentos" etiqueta={profile.empresa} subtitulo="Acompanhamento dos seus orçamentos — somente visualização" />
+      <PageHeader icone="kanban" titulo="Orçamentos" etiqueta={profile.empresa} subtitulo="Acompanhamento dos seus orçamentos — somente visualização"
+        direita={
+          <Link href="/imobiliaria/solicitar" className="inline-flex items-center gap-2 bg-verde text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow hover:brightness-110 transition">
+            <Plus size={18} /> Novo orçamento
+          </Link>
+        }
+      />
       <KanbanBoard orcamentos={orcamentos} basePath="/imobiliaria/orcamentos" readOnly veValores={veValores(profile)} />
     </AppShell>
   );
