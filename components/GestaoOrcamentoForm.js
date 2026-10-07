@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { fmtBRL, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 import EditorItensOrcamento from '@/components/EditorItensOrcamento';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
-import { Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
+import { Upload, Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
 
 export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [] }) {
   const router = useRouter();
   const [status, setStatus] = useState(orcamento.status);
+  const [enviandoVistoria, setEnviandoVistoria] = useState(false);
+  const [avisoVistoria, setAvisoVistoria] = useState('');
   const [pdfUrlAtual, setPdfUrlAtual] = useState(orcamento.pdf_url || null);
   const [clienteId, setClienteId] = useState(orcamento.cliente_id);
   const [confirmandoCliente, setConfirmandoCliente] = useState(null);
@@ -138,10 +140,43 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
     setGerandoPdfPrestador(false);
   }
 
+  async function subirVistoria(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEnviandoVistoria(true); setAvisoVistoria(''); setErro('');
+    try {
+      const fd = new FormData();
+      fd.append('arquivo', file);
+      const res = await fetch('/api/vistoria/parse', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setErro(data.error || 'Erro ao ler o PDF da vistoria'); return; }
+      const novos = (data.itens || []).map((it, i) => ({ ...it, id: `novo-vist-${Date.now()}-${i}` }));
+      setItens((lista) => [...lista, ...novos]);
+      setAvisoVistoria((data.resumo || `${novos.length} item(ns) extraído(s) da vistoria.`) + (novos.length > 0 ? ' Os itens foram adicionados à lista abaixo, sem preço: use "Gerar valores com IA" ou preencha à mão e clique em Salvar alterações.' : ''));
+    } catch (err) {
+      setErro('Não foi possível ler a vistoria. Tente de novo.');
+    } finally {
+      setEnviandoVistoria(false);
+      e.target.value = '';
+    }
+  }
+
   return (
     <div className="space-y-6">
       {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded">{erro}</div>}
       {aviso && <div className="text-sm bg-sucesso/10 border border-sucesso text-sucesso px-3 py-2 rounded">{aviso}</div>}
+
+      <div className="card p-4 flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[220px]">
+          <div className="font-semibold text-sm">Vistoria de saída</div>
+          <div className="text-xs text-marinho/60">Suba o PDF da vistoria: o sistema extrai os ambientes e serviços e adiciona aos itens deste orçamento.</div>
+          {avisoVistoria && <div className="text-xs text-sucesso mt-1">{avisoVistoria}</div>}
+        </div>
+        <label className="inline-flex items-center gap-2 cursor-pointer border border-marinho text-marinho rounded-lg px-4 py-2 text-sm font-semibold hover:bg-marinho/5">
+          {enviandoVistoria ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} {enviandoVistoria ? 'Lendo PDF…' : 'Subir vistoria de saída'}
+          <input type="file" accept="application/pdf" onChange={subirVistoria} disabled={enviandoVistoria} className="hidden" />
+        </label>
+      </div>
 
       <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} />
 
