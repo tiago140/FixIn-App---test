@@ -606,3 +606,20 @@ language sql stable security definer set search_path = public as $f$
        from public.orcamentos o where o.id = p_id)
   end
 $f$;
+
+-- =====================================================================================================
+-- REGRA: valores de orçamento sempre arredondados PARA CIMA, em reais inteiros (nunca R$ 1.650,55).
+-- Arredonda cada linha (mão de obra e material, já com a margem). Espelha lib/format.js (arredondarParaCima).
+-- =====================================================================================================
+create or replace function public.arredonda_cima(v numeric) returns numeric
+language sql immutable as $f$ select ceil(round(coalesce(v,0), 2)) $f$;
+
+create or replace function public.total_orcamento_interno(p_id uuid) returns numeric
+language sql stable security definer set search_path = public as $f$
+  select coalesce((
+    select sum(public.arredonda_cima(coalesce(i.mo,0) * f.fator) + public.arredonda_cima(coalesce(i.ma,0) * f.fator))
+    from public.orcamento_itens i
+    cross join (select 1 + coalesce((select o.margem_percentual from public.orcamentos o where o.id = p_id), 0) / 100 as fator) f
+    where i.orcamento_id = p_id
+  ), 0)
+$f$;
