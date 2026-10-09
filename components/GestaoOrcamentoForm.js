@@ -13,6 +13,20 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
   const [avisoVistoria, setAvisoVistoria] = useState('');
   const [pdfUrlAtual, setPdfUrlAtual] = useState(orcamento.pdf_url || null);
+  const [pdf2Url, setPdf2Url] = useState(orcamento.pdf2_url || null);
+  const [gerando2, setGerando2] = useState(false);
+  const [msg2, setMsg2] = useState('');
+  async function gerarOrcamento2() {
+    setGerando2(true); setMsg2('');
+    try {
+      const r = await fetch(`/api/orcamentos/${orcamento.id}/pdf2`, { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.pdf_url) throw new Error(d.error || 'não foi possível gerar o Orçamento 2');
+      setPdf2Url(d.pdf_url);
+      setMsg2(d.ia ? 'Orçamento 2 gerado, com os textos reescritos.' : 'Orçamento 2 gerado (a IA não respondeu, então os textos ficaram como no original).');
+    } catch (e) { setMsg2('Erro: ' + e.message); }
+    setGerando2(false);
+  }
   const [clienteId, setClienteId] = useState(orcamento.cliente_id);
   const [confirmandoCliente, setConfirmandoCliente] = useState(null);
   const [margem, setMargem] = useState(orcamento.margem_percentual);
@@ -276,6 +290,15 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             <BotoesPdfOrcamento pdfUrl={pdfUrlAtual} nomeArquivo={`${orcamento.numero}.pdf`} />
           </div>
         )}
+        <div className="sm:col-span-2 rounded-lg border border-marinho/15 bg-marinho/[0.03] p-4">
+          <div className="font-semibold text-sm">Orçamento 2</div>
+          <p className="text-xs text-marinho/60 mt-1">Segunda versão do PDF, emitida pela sua outra empresa (Davi Moreira Construtor), com textos reescritos e valores 30% acima do valor final (MO e material, arredondados para cima). Só é gerada quando você clica, não muda a etapa e não vai para a imobiliária.</p>
+          <button type="button" onClick={gerarOrcamento2} disabled={gerando2 || salvando} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-verde bg-white px-4 py-2.5 text-sm font-semibold text-verde hover:bg-verde/5 disabled:opacity-50">
+            {gerando2 ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />} {gerando2 ? 'Gerando…' : pdf2Url ? 'Gerar o Orçamento 2 de novo' : 'Gerar segundo orçamento'}
+          </button>
+          {msg2 && <div className={`text-sm mt-2 ${msg2.startsWith('Erro') ? 'text-erro' : 'text-marinho/70'}`}>{msg2}</div>}
+          {pdf2Url && <BotoesPdfOrcamento key={pdf2Url} pdfUrl={pdf2Url} nomeArquivo={`${orcamento.numero} - Orcamento 2.pdf`} />}
+        </div>
         <div className="sm:col-span-2 text-xs text-marinho/60 -mt-2 space-y-0.5">
           <p><b className="text-marinho">Gerar PDF</b> aplica a margem, baixa o arquivo e libera o orçamento para a imobiliária aprovar. <b className="text-marinho">Enviar por e-mail</b> só avisa a imobiliária, com o PDF anexo.</p>
           {emailsDestino.length > 0 ? (
