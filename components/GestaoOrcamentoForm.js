@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fmtBRL, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
+import { fmtBRL, fmtDataHora, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 import EditorItensOrcamento from '@/components/EditorItensOrcamento';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import { Upload, Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
@@ -241,6 +241,16 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
+        </div>
+        <div className="sm:col-span-2 rounded-lg border border-linha bg-papel px-4 py-3 text-sm">
+          <div className="text-xs text-marinho/60 mb-0.5">Aprovação do orçamento</div>
+          {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) ? (
+            <div><b className="text-sucesso">Aprovado</b>{orcamento.aprovado_em ? ` em ${fmtDataHora(orcamento.aprovado_em)}` : ''} por <b className="text-marinho">{orcamento.aprovado_por_nome || 'nome não registrado (aprovado antes deste campo existir)'}</b></div>
+          ) : orcamento.status === 'rejeitado' ? (
+            <div><b className="text-erro">Recusado</b> pela imobiliária</div>
+          ) : (
+            <div className="text-marinho/70">Ainda não aprovado.</div>
+          )}
         </div>
         <div>
           <label className="block text-xs text-marinho/60 mb-1">Margem (%)</label>

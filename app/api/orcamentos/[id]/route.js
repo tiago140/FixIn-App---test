@@ -80,7 +80,12 @@ export async function PATCH(req, { params }) {
 
   if (Object.keys(camposOrcamento).length > 0) {
     camposOrcamento.atualizado_em = new Date().toISOString();
-    if (camposOrcamento.status === 'aprovado') camposOrcamento.aprovado_em = new Date().toISOString();
+    // só marca a aprovação quando o status MUDA para aprovado (salvar de novo não refaz a data nem o nome)
+    if (camposOrcamento.status === 'aprovado' && antes?.status !== 'aprovado') {
+      camposOrcamento.aprovado_em = new Date().toISOString();
+      camposOrcamento.aprovado_por_nome = `${profile.nome_completo} (FixIn)`;
+      camposOrcamento.aprovado_por_id = user.id;
+    }
     if (camposOrcamento.status) camposOrcamento.migrado_automaticamente = false;
     const { error } = await supabase.from('orcamentos').update(camposOrcamento).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

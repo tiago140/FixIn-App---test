@@ -623,3 +623,7 @@ language sql stable security definer set search_path = public as $f$
     where i.orcamento_id = p_id
   ), 0)
 $f$;
+
+-- QUEM APROVOU: orcamentos.aprovado_por_nome / aprovado_por_id são preenchidos em responder_orcamento() (imobiliária)
+-- e na edição do dono (grava "Nome (FixIn)"). A visão orcamentos_cliente expõe aprovado_por_nome.
+alter table public.orcamentos add column if not exists aprovado_por_nome text, add column if not exists aprovado_por_id uuid;

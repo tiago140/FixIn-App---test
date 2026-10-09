@@ -13,7 +13,7 @@ import ResponderOrcamentoButtons from '@/components/ResponderOrcamentoButtons';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { imobiliariaTabs } from '@/lib/navTabs';
 import { veValores } from '@/lib/permissoes';
-import { fmtBRL, fmtDate } from '@/lib/format';
+import { fmtBRL, fmtDate, fmtDataHora } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,6 +86,12 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
       </div>
 
       <div className="space-y-6">
+        {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && (
+          <div className="card p-5">
+            <div className="text-xs text-marinho/50">Aprovação</div>
+            <div className="text-sm mt-1"><b className="text-sucesso">Aprovado</b>{orcamento.aprovado_em ? ` em ${fmtDataHora(orcamento.aprovado_em)}` : ''} por <b className="text-marinho">{orcamento.aprovado_por_nome || 'nome não registrado'}</b></div>
+          </div>
+        )}
         {['enviado', 'aprovado', 'em_execucao', 'finalizado', 'rejeitado'].includes(orcamento.status) && (
           <div className="card p-5">
             <div className="text-xs text-marinho/50">Orçamento em PDF</div>
