@@ -34,7 +34,7 @@ p{margin:0}
 .drop.open{display:block}
 .drop a{display:block;padding:14px 20px;text-decoration:none;color:#182F50;font-weight:500;border-bottom:1px solid #EEF0EA}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:10px}
-.logo{display:block;height:46px;width:auto}
+.logo{display:block;height:46px;width:auto;max-width:none;flex:none;object-fit:contain}.top .wrap>a:first-child{flex:none;margin-left:-6px}
 .nav{display:flex;align-items:center;gap:18px;font-size:14px;font-weight:500}
 .nav a{white-space:nowrap}
 .nav a{text-decoration:none;color:var(--mute)}
@@ -46,7 +46,7 @@ p{margin:0}
 .btn-line:hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
 .hero{background:var(--hero-bg);color:var(--hero-fg)}
 .hero>.wrap:first-child{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;padding-block:72px 40px}
-.stats{list-style:none;margin:0;padding:22px 0 34px;border-top:1px solid rgba(255,255,255,.16);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.stats{list-style:none;margin:0;padding:22px 0 34px;border-top:1px solid rgba(255,255,255,.16);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .stats b{display:block;font-size:clamp(22px,3vw,30px);font-weight:700;color:#fff;line-height:1.1}
 .stats span{display:block;margin-top:4px;font-size:13.5px;color:var(--hero-mute)}
 .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--hero-mute)}
@@ -193,7 +193,6 @@ a:focus-visible,button:focus-visible{outline:3px solid #B8862E;outline-offset:2p
   </aside>
 </div>
   <div class="wrap"><ul class="stats">
-    <li><b>R$ 0</b><span>na pré-vistoria de saída</span></li>
     <li><b>24h</b><span>para o orçamento</span></li>
     <li><b>15 dias</b><span>imóvel pronto, em média</span></li>
     <li><b>8h às 20h</b><span>suporte de seg a dom</span></li>
@@ -341,11 +340,11 @@ a:focus-visible,button:focus-visible{outline:3px solid #B8862E;outline-offset:2p
   $$('.svc').forEach(function(b){b.addEventListener('click',function(){svc(+b.getAttribute('data-s'))})});svc(0);
   // benefícios por público
   var BN=[
-   {t:'Para a imobiliária',l:['Rescisões mais rápidas e previsíveis','Menos conflitos e menos retrabalho','Menos tempo com imóvel parado','Até 80% menos risco de inadimplência','Atendimento profissional, um diferencial no mercado','Receita extra: 10% de comissão sobre cada orçamento aprovado, paga todo dia 20 do mês seguinte'],d:'Exemplo: orçamento de R$ 5.000 aprovado e executado = <em>R$ 500</em> de comissão, sem investimento e sem risco operacional.'},
+   {t:'Para a imobiliária',l:['Rescisões mais rápidas e previsíveis','Menos conflitos e menos retrabalho','Menos tempo com imóvel parado','Até 80% menos risco de inadimplência','Atendimento profissional, um diferencial no mercado'],d:''},
    {t:'Para o locatário',l:['Sabe exatamente o que fazer na entrega','Orientação antecipada, sem se perder','Orçamento justo, em até 24h','Reparos em até 24h após a aprovação','Processo transparente e sem estresse','Suporte humanizado para dúvidas'],d:'Locatário tranquilo é locatário que <em>não se torna inadimplente</em>.'},
    {t:'Para o locador',l:['Retorno rápido ao mercado','Mais tranquilidade, com processo organizado','Preservação do patrimônio','Reparos feitos por equipe especializada','A imobiliária gerencia tudo, sem desgaste'],d:'Imóvel pronto em até 15 dias = <em>nova receita</em> de aluguel começando mais cedo.'}];
   function ben(i){var d=BN[i];$$('.aba').forEach(function(b,k){b.setAttribute('aria-selected',k==i)});
-    $('#bDet').innerHTML='<h3>'+d.t+'</h3><ul>'+d.l.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul><p class="dest">'+d.d+'</p>'}
+    $('#bDet').innerHTML='<h3>'+d.t+'</h3><ul>'+d.l.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>'+(d.d?'<p class="dest">'+d.d+'</p>':'')}
   $$('.aba').forEach(function(b){b.addEventListener('click',function(){ben(+b.getAttribute('data-b'))})});ben(0);
   // como funciona
   var PS=[
