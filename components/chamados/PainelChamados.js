@@ -6,6 +6,16 @@ import { fmtDataHoraSP } from '@/lib/format';
 import LinkQr from './LinkQr';
 import DetalheChamado from './DetalheChamado';
 
+async function MasterLinks({ supabase }) {
+  const { data } = await supabase.from('clientes').select('id, nome_empresa, slug_chamados').not('slug_chamados', 'is', null).order('nome_empresa');
+  return (
+    <details className="bg-white border border-linha rounded-lg p-4 mb-6">
+      <summary className="cursor-pointer font-semibold text-marinho">Links e QR de cada imobiliária</summary>
+      <div className="mt-3 space-y-3">{(data || []).map((c) => <LinkQr key={c.id} slug={c.slug_chamados} nome={c.nome_empresa} />)}</div>
+    </details>
+  );
+}
+
 const ORDEM_PRIO = { urgente: 0, alta: 1, normal: 2, baixa: 3 };
 
 // Lista (já filtrada pelas regras do banco: dono vê tudo, imobiliária só os dela).
@@ -25,6 +35,8 @@ export async function ListaChamadosPainel({ supabase, base, master, profile, fil
   }
   return (
     <div>
+      <div className="mb-4"><Link href={`${base}/novo`} className="inline-block bg-marinho text-white font-semibold rounded-md px-4 py-2 text-sm">+ Novo chamado</Link></div>
+      {master && <MasterLinks supabase={supabase} />}
       {slug && <LinkQr slug={slug} nome={nome} />}
       <div className="flex gap-2 flex-wrap mb-4">
         <Link href={base} className={`text-sm rounded-full px-3 py-1 border ${!filtro ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho'}`}>Todos</Link>
