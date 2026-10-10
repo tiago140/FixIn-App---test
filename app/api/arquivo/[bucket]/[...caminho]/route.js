@@ -12,7 +12,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // O "Orçamento 2" (outra empresa, +30%) é só do dono.
 export async function GET(req, { params }) {
   const { bucket } = params;
-  const caminho = (params.caminho || []).map((p) => decodeURIComponent(p)).join('/');
+  const dec = (p) => { try { return decodeURIComponent(p); } catch (e) { return p; } };
+  const caminho = (params.caminho || []).map(dec).join('/');
   if (!BUCKETS_PRIVADOS.includes(bucket) || !caminho || caminho.includes('..')) return NextResponse.json({ error: 'não encontrado' }, { status: 404 });
 
   const { user, profile, supabase } = await getProfile();
