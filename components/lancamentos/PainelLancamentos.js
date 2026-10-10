@@ -7,7 +7,7 @@ import { fmtBRL, fmtDate } from '@/lib/format';
 import { STATUS_LANC, CATEGORIAS_RECEBER, CATEGORIAS_PAGAR, emAberto, saldoAberto, vencido, somarDias } from '@/lib/lancamentos';
 
 const FILTROS = [
-  ['aberto', 'Em aberto'], ['vencidos', 'Vencidos'], ['pagos', 'Pagos'], ['cancelados', 'Cancelados'], ['todos', 'Todos'],
+  ['aberto', 'Em aberto'], ['conferir', 'Para conferir'], ['liberados', 'Liberados'], ['vencidos', 'Vencidos'], ['pagos', 'Pagos'], ['cancelados', 'Cancelados'], ['todos', 'Todos'],
 ];
 const campo = 'border border-linha rounded px-3 py-2 bg-papel text-sm w-full';
 
@@ -71,6 +71,8 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       if (l.tipo !== aba) return false;
       if (filtro === 'aberto' && !emAberto(l)) return false;
       if (filtro === 'vencidos' && !vencido(l, hoje)) return false;
+      if (filtro === 'conferir' && !(l.tipo === 'receber' && (compsDoOrc[l.orcamento_id] || []).some((c) => !c.verificado))) return false;
+      if (filtro === 'liberados' && !(l.tipo === 'pagar' && l.status === 'previsto' && lancamentos.some((r) => r.orcamento_id && r.orcamento_id === l.orcamento_id && r.tipo === 'receber' && r.status === 'pago'))) return false;
       if (filtro === 'pagos' && l.status !== 'pago') return false;
       if (filtro === 'cancelados' && l.status !== 'cancelado') return false;
       if (q) {
@@ -79,7 +81,7 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       }
       return true;
     });
-  }, [lancamentos, aba, filtro, busca, hoje]);
+  }, [lancamentos, aba, filtro, busca, hoje, compsDoOrc]);
 
   async function acao(id, corpo) {
     setOcupado(id); setMsg('');
@@ -116,13 +118,14 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
         aprovar={lancamentos.filter((l) => l.tipo === 'pagar' && l.status === 'previsto' && lancamentos.some((r) => r.orcamento_id && r.orcamento_id === l.orcamento_id && r.tipo === 'receber' && r.status === 'pago'))}
         vencidosReceber={lancamentos.filter((l) => l.tipo === 'receber' && vencido(l, hoje))}
         vencidosPagar={lancamentos.filter((l) => l.tipo === 'pagar' && vencido(l, hoje))}
-        ir={(tipo, f) => { setAba(tipo); setFiltro(f); }}
+        ir={(tipo, f) => { setAba(tipo); setFiltro(f); setNovo(false); setTimeout(() => document.getElementById('lista-contas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
       />
       <div className="grid lg:grid-cols-2 gap-4 mb-6">
         <PorOrcamento lancamentos={lancamentos} pagarDoOrcamento={pagarDoOrcamento} />
         <Proximos30 lancamentos={lancamentos} hoje={hoje} />
       </div>
 
+      <div id="lista-contas" className="scroll-mt-4" />
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {[['receber', 'A receber'], ['pagar', 'A pagar']].map(([k, t]) => (
           <button key={k} onClick={() => { setAba(k); setNovo(false); }} className={`px-4 py-2 rounded-lg text-sm font-semibold border ${aba === k ? 'bg-marinho text-white border-marinho' : 'bg-white border-linha text-marinho'}`}>{t}</button>
@@ -292,8 +295,8 @@ function NovoLancamento({ tipo, clientes, prestadores, hoje, onFeito }) {
 
 function PainelHoje({ pendentes, nomeDoOrc, aprovar, vencidosReceber, vencidosPagar, ir }) {
   const itens = [
-    pendentes.length > 0 && { k: 'c', t: `${pendentes.length} comprovante${pendentes.length > 1 ? 's' : ''} para conferir`, d: pendentes.slice(0, 2).map((c) => nomeDoOrc(c.orcamento_id)).join(' · '), a: () => ir('receber', 'aberto'), cor: 'text-amber-700' },
-    aprovar.length > 0 && { k: 'p', t: `${aprovar.length} pagamento${aprovar.length > 1 ? 's' : ''} ao prestador liberado${aprovar.length > 1 ? 's' : ''} (cliente já pagou)`, d: 'Dinheiro entrou: aprove para pagar', a: () => ir('pagar', 'aberto'), cor: 'text-marinho' },
+    pendentes.length > 0 && { k: 'c', t: `${pendentes.length} comprovante${pendentes.length > 1 ? 's' : ''} para conferir`, d: pendentes.slice(0, 2).map((c) => nomeDoOrc(c.orcamento_id)).join(' · '), a: () => ir('receber', 'conferir'), cor: 'text-amber-700' },
+    aprovar.length > 0 && { k: 'p', t: `${aprovar.length} pagamento${aprovar.length > 1 ? 's' : ''} ao prestador liberado${aprovar.length > 1 ? 's' : ''} (cliente já pagou)`, d: 'Dinheiro entrou: aprove para pagar', a: () => ir('pagar', 'liberados'), cor: 'text-marinho' },
     vencidosReceber.length > 0 && { k: 'vr', t: `${vencidosReceber.length} recebimento${vencidosReceber.length > 1 ? 's' : ''} vencido${vencidosReceber.length > 1 ? 's' : ''}`, d: '', a: () => ir('receber', 'vencidos'), cor: 'text-red-700' },
     vencidosPagar.length > 0 && { k: 'vp', t: `${vencidosPagar.length} conta${vencidosPagar.length > 1 ? 's' : ''} a pagar vencida${vencidosPagar.length > 1 ? 's' : ''}`, d: '', a: () => ir('pagar', 'vencidos'), cor: 'text-red-700' },
   ].filter(Boolean);
