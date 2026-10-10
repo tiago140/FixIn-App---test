@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { acessoChamado } from '@/lib/chamados';
+import { acessoChamado, BUCKET_CHAMADOS } from '@/lib/chamados';
 
 // Cria o orçamento deste chamado (já com o endereço) e liga os dois. Os itens são preenchidos na tela do orçamento.
 export async function POST(req, { params }) {
@@ -28,6 +28,20 @@ export async function POST(req, { params }) {
     id = data;
   }
   const admin = createAdminClient();
+  // Texto do pedido do cliente no topo do orçamento ("Solicitação") e as fotos dele no chat do orçamento.
+  const contato = [ch.solicitante_telefone, ch.solicitante_email].filter(Boolean).join(' · ');
+  const texto = `Chamado ${ch.numero} — ${ch.titulo}\n${ch.solicitante_tipo === 'locador' ? 'Locador' : 'Locatário'}: ${ch.solicitante_nome}${contato ? ` (${contato})` : ''}\n\n${ch.descricao}`;
+  await admin.from('orcamentos').update({ descricao_solicitacao: texto, solicitado_por: ch.solicitante_nome }).eq('id', id);
+  try {
+    const { data: anexos } = await admin.from('chamado_mensagens').select('anexo_path, anexo_tipo').eq('chamado_id', ch.id).not('anexo_path', 'is', null).order('criado_em');
+    for (const an of anexos || []) {
+      const { data: blob } = await admin.storage.from(BUCKET_CHAMADOS).download(an.anexo_path);
+      if (!blob) continue;
+      const destino = `${id}/chamado-${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${an.anexo_path.split('/').pop()}`;
+      const { error: up } = await admin.storage.from('chat-anexos').upload(destino, Buffer.from(await blob.arrayBuffer()), { contentType: an.anexo_tipo });
+      if (!up) await admin.from('mensagens').insert({ orcamento_id: id, autor_id: null, autor_nome: `${ch.solicitante_nome} (chamado ${ch.numero})`, autor_role: 'chamado', texto: '', anexo_path: destino, anexo_tipo: an.anexo_tipo });
+    }
+  } catch (e) {}
   await admin.from('chamados').update({ orcamento_id: id, status: 'em_analise', atualizado_em: new Date().toISOString() }).eq('id', ch.id);
   await admin.from('chamado_mensagens').insert({ chamado_id: ch.id, autor_tipo: 'sistema', autor_nome: 'Sistema', texto: 'Estamos preparando o orçamento deste chamado.' });
   return NextResponse.json({ ok: true, id });
