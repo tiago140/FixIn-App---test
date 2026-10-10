@@ -13,7 +13,7 @@ export default async function ImobiliariaAvisos() {
   if (!user) redirect('/login');
   if (profile.role === 'master') redirect('/master/dashboard');
 
-  const { visitas, atrasos, mensagens } = await buscarAvisos(supabase, profile);
+  const { visitas, atrasos, mensagens, chamados } = await buscarAvisos(supabase, profile);
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
@@ -23,7 +23,7 @@ export default async function ImobiliariaAvisos() {
         etiqueta={profile.empresa}
         subtitulo="Clique num aviso para dispensá-lo"
       />
-      <AvisosList visitas={visitas} atrasos={atrasos} mensagens={mensagens} />
+      <AvisosList visitas={visitas} atrasos={atrasos} mensagens={mensagens} chamados={chamados} />
     </AppShell>
   );
 }

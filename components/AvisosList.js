@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fmtBRL, fmtDataHoraSP } from '@/lib/format';
 
-export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensagens }) {
+export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensagens, chamados = [] }) {
   const [vistos, setVistos] = useState({});
 
   useEffect(() => {
@@ -29,9 +29,10 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
   const solicitacoesVisiveis = (solicitacoes || []).filter((s) => !vistos[s.key]);
   const visitasVisiveis = (visitas || []).filter((v) => !vistos[v.key]);
   const atrasosVisiveis = (atrasos || []).filter((a) => !vistos[a.key]);
+  const chamadosVisiveis = (chamados || []).filter((c) => !vistos[c.key]);
   const mensagensVisiveis = (mensagens || []).filter((m) => !vistos[m.key]);
 
-  if (solicitacoesVisiveis.length === 0 && visitasVisiveis.length === 0 && atrasosVisiveis.length === 0 && mensagensVisiveis.length === 0) {
+  if (solicitacoesVisiveis.length === 0 && visitasVisiveis.length === 0 && atrasosVisiveis.length === 0 && mensagensVisiveis.length === 0 && chamadosVisiveis.length === 0) {
     return <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum aviso no momento. Tudo em dia.</div>;
   }
 
@@ -56,6 +57,27 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
                   <Link href={s.link} className="bg-marinho text-white text-sm font-semibold rounded-lg px-4 py-2">Abrir e orçar</Link>
                   <button type="button" onClick={() => dispensar(s.key)} className="text-xs text-marinho/50 underline">dispensar aviso</button>
                 </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+      {chamadosVisiveis.length > 0 && (
+        <>
+          <h2 className="font-semibold text-xl mb-2 mt-5">Chamados</h2>
+          {chamadosVisiveis.map((c) => (
+            <div key={c.key} onClick={() => dispensar(c.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-verde">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 text-white ${c.novo ? 'bg-marinho' : 'bg-info'}`}>{c.novo ? 'Novo chamado' : 'Nova resposta'}</span>
+                  <span className="text-[11px] font-mono text-marinho/50">{c.subtitulo}</span>
+                </div>
+                {c.criado_em && <div className="text-[11px] font-semibold text-marinho/60">{fmtDataHoraSP(c.criado_em)}</div>}
+              </div>
+              <div className="font-semibold mt-1">{c.titulo}</div>
+              <div className="text-xs text-marinho/60 mt-1">{c.detalhe}</div>
+              <div className="text-xs text-marinho/50 mt-1.5">
+                <Link href={c.link} className="underline" onClick={(e) => e.stopPropagation()}>Abrir chamado</Link> · clique aqui para dispensar
               </div>
             </div>
           ))}
