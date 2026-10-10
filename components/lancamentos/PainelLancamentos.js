@@ -19,6 +19,7 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
   const [novo, setNovo] = useState(false);
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState('');
+  const [atribuindo, setAtribuindo] = useState(null); // { id, prestador_id, valor }
   const [pagando, setPagando] = useState(null); // { id, valor, data }
 
   const pagarDoOrcamento = useMemo(() => {
@@ -56,7 +57,7 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       const j = await r.json().catch(() => ({}));
       if (!r.ok) setMsg(j.error || 'Não foi possível concluir.');
       else {
-        setPagando(null);
+        setPagando(null); setAtribuindo(null);
         const origem = lancamentos.find((x) => x.id === id);
         const filha = origem && origem.tipo === 'receber' && corpo.acao === 'pagar' ? pagarDoOrcamento[origem.orcamento_id] : null;
         if (filha && filha.status === 'previsto' && confirm(`Recebido! Enviar agora para Contas a pagar: ${filha.prestadores?.nome || 'prestador'} · ${fmtBRL(filha.valor)}?`)) {
@@ -127,6 +128,11 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                   {emAberto(l) && !(l.tipo === 'pagar' && l.status !== 'aprovado') && (
                     <Btn onClick={() => setPagando({ id: l.id, valor: String(saldoAberto(l)).replace('.', ','), data: hoje })} off={ocupado === l.id}>{l.tipo === 'receber' ? 'Marcar recebido' : 'Marcar pago'}</Btn>
                   )}
+                  {l.tipo === 'receber' && l.status !== 'cancelado' && (
+                    <Btn suave onClick={() => setAtribuindo({ id: l.id, prestador_id: pagarDoOrcamento[l.orcamento_id]?.prestador_id || '', valor: pagarDoOrcamento[l.orcamento_id] ? String(pagarDoOrcamento[l.orcamento_id].valor).replace('.', ',') : '' })}>
+                      {pagarDoOrcamento[l.orcamento_id] ? 'Alterar prestador' : 'Atribuir prestador'}
+                    </Btn>
+                  )}
                   {l.tipo === 'receber' && l.status === 'pago' && pagarDoOrcamento[l.orcamento_id]?.status === 'previsto' && (
                     <Btn onClick={() => acao(pagarDoOrcamento[l.orcamento_id].id, { acao: 'aprovar' })} off={ocupado === pagarDoOrcamento[l.orcamento_id].id}>Enviar para contas a pagar</Btn>
                   )}
@@ -136,6 +142,19 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
 
                 {l.tipo === 'pagar' && l.status === 'previsto' && l.orcamento_id && (
                   <p className="text-xs text-marinho/60 mt-2">Aguarda o recebimento da imobiliária para ser enviada ao pagamento (ou aprove manualmente).</p>
+                )}
+
+                {atribuindo?.id === l.id && (
+                  <div className="mt-3 flex flex-wrap items-end gap-2 bg-papel rounded p-3">
+                    <label className="text-xs">Prestador
+                      <select className={campo + ' mt-1'} value={atribuindo.prestador_id} onChange={(e) => setAtribuindo({ ...atribuindo, prestador_id: e.target.value })}>
+                        <option value="">—</option>{prestadores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-xs">Valor que ele cobra (R$)<input className={campo + ' mt-1'} value={atribuindo.valor} onChange={(e) => setAtribuindo({ ...atribuindo, valor: e.target.value })} inputMode="decimal" /></label>
+                    <Btn onClick={() => acao(l.id, { acao: 'atribuir', prestador_id: atribuindo.prestador_id, valor: atribuindo.valor })} off={ocupado === l.id}>Salvar</Btn>
+                    <Btn suave onClick={() => setAtribuindo(null)}>Fechar</Btn>
+                  </div>
                 )}
 
                 {pagando?.id === l.id && (
