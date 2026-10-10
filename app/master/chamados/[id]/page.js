@@ -12,7 +12,7 @@ export default async function Page({ params }) {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/chamados');
-  const corpo = await DetalheChamadoPainel({ supabase, id: params.id, master: true, orcamentoHref: '/master/orcamentos' });
+  const corpo = await DetalheChamadoPainel({ supabase, id: params.id, master: true, podeExcluir: !!profile.dono, orcamentoHref: '/master/orcamentos' });
   if (!corpo) notFound();
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">

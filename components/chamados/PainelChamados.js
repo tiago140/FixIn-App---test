@@ -65,10 +65,10 @@ export async function ListaChamadosPainel({ supabase, base, master, profile, fil
   );
 }
 
-export async function DetalheChamadoPainel({ supabase, id, master, orcamentoHref }) {
+export async function DetalheChamadoPainel({ supabase, id, master, orcamentoHref, podeExcluir = false }) {
   const { data: c } = await supabase.from('chamados').select('*, clientes(nome_empresa)').eq('id', id).maybeSingle();
   if (!c) return null;
   const { data: msgs } = await supabase.from('chamado_mensagens').select('*').eq('chamado_id', id).order('criado_em');
   const mensagens = await comLinksTemporarios(createAdminClient(), msgs); // só chega aqui depois do banco confirmar que o chamado é visível para este usuário
-  return <DetalheChamado chamado={c} mensagens={mensagens} meuTipo={master ? 'fixin' : 'imobiliaria'} orcamentoHref={orcamentoHref} empresa={master ? c.clientes?.nome_empresa : null} />;
+  return <DetalheChamado chamado={c} mensagens={mensagens} meuTipo={master ? 'fixin' : 'imobiliaria'} orcamentoHref={orcamentoHref} podeExcluir={podeExcluir} empresa={master ? c.clientes?.nome_empresa : null} />;
 }

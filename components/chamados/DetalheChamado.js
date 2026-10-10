@@ -7,7 +7,7 @@ import EnviarMensagem from './EnviarMensagem';
 import { STATUS_CHAMADO, PRIORIDADES, COR_STATUS_CHAMADO } from '@/lib/chamadosTextos';
 import { fmtDataHoraSP } from '@/lib/format';
 
-export default function DetalheChamado({ chamado: c, mensagens, meuTipo, orcamentoHref, empresa }) {
+export default function DetalheChamado({ chamado: c, mensagens, meuTipo, orcamentoHref, empresa, podeExcluir = false }) {
   const router = useRouter();
   const [msg, setMsg] = useState('');
   const [link, setLink] = useState('');
@@ -29,6 +29,16 @@ export default function DetalheChamado({ chamado: c, mensagens, meuTipo, orcamen
     setOcupado(false);
     if (!r.ok) { setMsg(j.error || 'Erro ao criar orçamento.'); return; }
     router.push(`${orcamentoHref}/${j.id}`);
+  }
+  async function excluir() {
+    if (!confirm('Excluir este chamado por completo (mensagens e fotos)? Não dá para desfazer. O orçamento ligado a ele, se houver, NÃO é apagado.')) return;
+    setOcupado(true);
+    const r = await fetch(`/api/chamados/${c.id}`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    setOcupado(false);
+    if (!r.ok) { setMsg(j.error || 'Erro ao excluir.'); return; }
+    router.push('/master/chamados');
+    router.refresh();
   }
   async function novoLink() {
     if (!confirm('Gerar um link novo? O link atual do solicitante deixa de funcionar.')) return;
@@ -95,6 +105,7 @@ export default function DetalheChamado({ chamado: c, mensagens, meuTipo, orcamen
               <p className="text-erro mt-1">Mostrado só agora. Envie ao solicitante.</p>
             </div>
           )}
+          {podeExcluir && <button disabled={ocupado} onClick={excluir} className="w-full border border-erro text-erro rounded-md px-3 py-2 text-sm hover:bg-erro/10 disabled:opacity-50">Excluir chamado</button>}
           {msg && <p className="text-sm text-erro">{msg}</p>}
         </div>
       </div>
