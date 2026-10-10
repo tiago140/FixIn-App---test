@@ -6,8 +6,12 @@ import { fmtBRL, fmtDataHoraSP } from '@/lib/format';
 
 export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensagens, chamados = [] }) {
   const [vistos, setVistos] = useState({});
+  const [aba, setAba] = useState('todos');
 
   useEffect(() => {
+    try {
+      setAba(localStorage.getItem('fixin_avisos_aba') || 'todos');
+    } catch (e) {}
     try {
       setVistos(JSON.parse(localStorage.getItem('fixin_avisos_vistos') || '{}'));
     } catch (e) {
@@ -36,9 +40,28 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
     return <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum aviso no momento. Tudo em dia.</div>;
   }
 
+  function escolherAba(a) {
+    setAba(a);
+    try { localStorage.setItem('fixin_avisos_aba', a); } catch (e) {}
+  }
+  const ABAS = [
+    ['todos', 'Todos', solicitacoesVisiveis.length + chamadosVisiveis.length + mensagensVisiveis.length + visitasVisiveis.length + atrasosVisiveis.length],
+    ['solicitacoes', 'Orçamentos novos', solicitacoesVisiveis.length],
+    ['chamados', 'Chamados', chamadosVisiveis.length],
+    ['mensagens', 'Mensagens', mensagensVisiveis.length],
+    ['visitas', 'Visitas', visitasVisiveis.length],
+    ['atrasos', 'Atrasos', atrasosVisiveis.length],
+  ].filter(([k, , n]) => k === 'todos' || n > 0 || aba === k);
+  const ver = (k) => aba === 'todos' || aba === k;
+
   return (
     <div>
-      {solicitacoesVisiveis.length > 0 && (
+      <div className="flex gap-2 flex-wrap mb-4">
+        {ABAS.map(([k, rotulo, n]) => (
+          <button key={k} type="button" onClick={() => escolherAba(k)} className={`text-xs rounded-full px-3 py-1 border ${aba === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo} ({n})</button>
+        ))}
+      </div>
+      {solicitacoesVisiveis.length > 0 && ver('solicitacoes') && (
         <>
           <h2 className="font-semibold text-xl mb-2">Novos orçamentos solicitados</h2>
           {solicitacoesVisiveis.map((s) => (
@@ -62,7 +85,7 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
           ))}
         </>
       )}
-      {chamadosVisiveis.length > 0 && (
+      {chamadosVisiveis.length > 0 && ver('chamados') && (
         <>
           <h2 className="font-semibold text-xl mb-2 mt-5">Chamados</h2>
           {chamadosVisiveis.map((c) => (
@@ -83,7 +106,7 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
           ))}
         </>
       )}
-      {mensagensVisiveis.length > 0 && (
+      {mensagensVisiveis.length > 0 && ver('mensagens') && (
         <>
           <h2 className="font-semibold text-xl mb-2 mt-5">Novas mensagens no chat</h2>
           {mensagensVisiveis.map((m) => (
@@ -104,7 +127,7 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
           ))}
         </>
       )}
-      {visitasVisiveis.length > 0 && (
+      {visitasVisiveis.length > 0 && ver('visitas') && (
         <>
           <h2 className="font-semibold text-xl mb-2 mt-5">Visitas aguardando aprovação</h2>
           {visitasVisiveis.map((v) => (
@@ -123,7 +146,7 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
           ))}
         </>
       )}
-      {atrasosVisiveis.length > 0 && (
+      {atrasosVisiveis.length > 0 && ver('atrasos') && (
         <>
           <h2 className="font-semibold text-xl mb-2 mt-5">Pagamentos em atraso</h2>
           {atrasosVisiveis.map((a) => (

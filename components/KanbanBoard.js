@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { KANBAN_COLS, STATUS_LABEL, fmtBRL, fmtDataHoraSP, diasDesde, calcularTotalComMargem, estaAtrasado } from '@/lib/format';
 import { resumoEspeciais } from '@/lib/itensEspeciais';
@@ -23,10 +23,35 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
   const [dragId, setDragId] = useState(null);
   const [busca, setBusca] = useState('');
   const [ordem, setOrdem] = useState('padrao');
+  const [filtro, setFiltro] = useState('todos');
+
+  // Lembra o filtro e a ordem escolhidos neste navegador
+  useEffect(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem('fixin_kanban_prefs') || '{}');
+      if (p.filtro) setFiltro(p.filtro);
+      if (p.ordem) setOrdem(p.ordem);
+    } catch (e) {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('fixin_kanban_prefs', JSON.stringify({ filtro, ordem })); } catch (e) {}
+  }, [filtro, ordem]);
+
   const termos = norm(busca).split(/\s+/).filter(Boolean);
   const indice = useMemo(() => new Map(itens.map((o) => [o.id, textoBusca(o)])), [itens]);
   // todos os termos digitados precisam aparecer (em qualquer ordem) — "vicencia 33" acha "Rua Vicencia ... Apto 33"
-  const visiveis = termos.length ? itens.filter((o) => termos.every((t) => (indice.get(o.id) || '').includes(t))) : itens;
+  const porBusca = termos.length ? itens.filter((o) => termos.every((t) => (indice.get(o.id) || '').includes(t))) : itens;
+  const FILTROS = [
+    ['todos', 'Todos', () => true],
+    ['aprovados_semana', 'Aprovados esta semana', (o) => o.aprovado_em && diasDesde(o.aprovado_em) <= 7],
+    ['aprovados_mes', 'Aprovados no mês', (o) => o.aprovado_em && diasDesde(o.aprovado_em) <= 30],
+    ['atrasados', 'Em atraso', (o) => estaAtrasado(o)],
+    ['atencao', 'Com item de atenção', (o) => o.orcamento_itens && resumoEspeciais(o.orcamento_itens).total > 0],
+    ['seguro', 'Seguro fiança', (o) => !!o.seguro_fianca],
+    ['sem_aprovacao_7', 'Enviados há mais de 7 dias', (o) => o.status === 'enviado' && o.criado_em && diasDesde(o.criado_em) > 7],
+  ];
+  const regra = (FILTROS.find((f) => f[0] === filtro) || FILTROS[0])[2];
+  const visiveis = filtro === 'todos' ? porBusca : porBusca.filter(regra);
 
   const totalDe = (o) => (o.total != null ? Number(o.total) : o.orcamento_itens ? calcularTotalComMargem(o.orcamento_itens, o.margem_percentual) : Infinity);
   const qtdItensDe = (o) => (o.orcamento_itens ? o.orcamento_itens.length : Number(o.qtd_itens) || 0);
@@ -83,19 +108,24 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
           <option value="menor_valor">Menor valor primeiro</option>
         </select>
       </label>
-      {termos.length > 0 && (
+      <div className="basis-full flex gap-2 flex-wrap">
+        {FILTROS.map(([k, rotulo]) => (
+          <button key={k} type="button" onClick={() => setFiltro(k)} className={`text-xs rounded-full px-3 py-1 border ${filtro === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo}</button>
+        ))}
+      </div>
+      {(termos.length > 0 || filtro !== 'todos') && (
         <span className="text-xs text-marinho/60">
           {visiveis.length === 0 ? 'Nenhum orçamento encontrado' : `${visiveis.length} de ${itens.length} orçamento(s)`}
         </span>
       )}
     </div>
-    <div className="flex gap-3 overflow-x-auto pb-3">
+    <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-proximity">
       {KANBAN_COLS.map((status) => {
         const doStatus = ordenar(visiveis.filter((o) => (o.status || 'pendente') === status), status);
         return (
           <div
             key={status}
-            className="flex-shrink-0 w-72 bg-white border border-linha rounded max-h-[70vh] flex flex-col"
+            className="flex-shrink-0 w-[85vw] sm:w-72 snap-start bg-white border border-linha rounded max-h-[70vh] flex flex-col"
             onDragOver={(e) => !readOnly && e.preventDefault()}
             onDrop={(e) => {
               if (readOnly) return;
