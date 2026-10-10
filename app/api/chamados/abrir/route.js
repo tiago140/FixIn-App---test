@@ -26,7 +26,7 @@ export async function POST(req) {
   if (!slug || !nome || !endereco || !titulo || !descricao) return NextResponse.json({ error: 'Preencha nome, endereço, assunto e descrição.' }, { status: 400 });
   if (!email && !telefone) return NextResponse.json({ error: 'Informe um e-mail ou um telefone para contato.' }, { status: 400 });
   if (email && !emailValido(email)) return NextResponse.json({ error: 'O e-mail informado não parece válido.' }, { status: 400 });
-  const erroArq = validarArquivos(files);
+  const erroArq = await validarArquivos(files);
   if (erroArq) return NextResponse.json({ error: erroArq }, { status: 400 });
 
   const admin = createAdminClient();

@@ -15,7 +15,7 @@ export async function POST(req, { params }) {
   const texto = limpar(fd.get('texto'), 3000);
   const files = fd.getAll('arquivos').filter((f) => f && typeof f === 'object' && f.size > 0);
   if (!texto && files.length === 0) return NextResponse.json({ error: 'Escreva uma mensagem ou anexe um arquivo.' }, { status: 400 });
-  const erroArq = validarArquivos(files);
+  const erroArq = await validarArquivos(files);
   if (erroArq) return NextResponse.json({ error: erroArq }, { status: 400 });
 
   const admin = createAdminClient();

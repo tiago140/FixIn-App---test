@@ -22,7 +22,7 @@ export async function POST(req) {
   if (!clienteId) return NextResponse.json({ error: 'Selecione a imobiliária.' }, { status: 400 });
   if (!nome || !endereco || !titulo || !descricao) return NextResponse.json({ error: 'Preencha nome, endereço, assunto e descrição.' }, { status: 400 });
   if (email && !emailValido(email)) return NextResponse.json({ error: 'E-mail inválido.' }, { status: 400 });
-  const erroArq = validarArquivos(files);
+  const erroArq = await validarArquivos(files);
   if (erroArq) return NextResponse.json({ error: erroArq }, { status: 400 });
 
   const admin = createAdminClient();
