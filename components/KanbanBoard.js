@@ -124,6 +124,7 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
                     <span className="block font-mono text-[10px] text-marinho/50">
                       {o.numero} {o.tipo === 'manutencao' ? '· MANUT.' : ''}
                     </span>
+                    {o.seguro_fianca && <span className="inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wide bg-marinho text-white rounded px-1.5 py-0.5">Seguro fiança</span>}
                     <div className="font-semibold mt-0.5">{o.endereco}</div>
                     {veValores && total != null && <div className="font-mono mt-0.5">{fmtBRL(total)}</div>}
                     {['aprovado', 'em_execucao', 'finalizado'].includes(status) && o.aprovado_em && (

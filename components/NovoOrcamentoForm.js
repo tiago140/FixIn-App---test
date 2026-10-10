@@ -26,6 +26,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
   const [cnpjClienteFinal, setCnpjClienteFinal] = useState('');
   const [margem, setMargem] = useState(20);
   const [margemCustom, setMargemCustom] = useState('');
+  const [seguroFianca, setSeguroFianca] = useState(false);
   const [itens, setItens] = useState([]);
   const [vistoriaTexto, setVistoriaTexto] = useState('');
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
@@ -96,6 +97,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         cnpj_cliente_final: cnpjClienteFinal,
         margem_percentual: margemEfetiva,
         vistoria_texto_bruto: vistoriaTexto || null,
+        seguro_fianca: seguroFianca,
         itens,
       }),
     });
@@ -136,6 +138,9 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
             <option value="manutencao">Manutenção (contrato ativo)</option>
           </select>
         </div>
+        <label className="flex items-center gap-2 text-sm font-semibold text-marinho cursor-pointer">
+          <input type="checkbox" checked={seguroFianca} onChange={(e) => setSeguroFianca(e.target.checked)} className="w-4 h-4" /> Seguro fiança (orçamento item a item: Pintura geral, Reparos, Faxina e limpeza)
+        </label>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-marinho/60 mb-1">Imobiliária</label>
@@ -202,7 +207,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         {avisoVistoria && <div className="text-xs text-marinho/60 mt-2 whitespace-pre-line">{avisoVistoria}</div>}
       </div>
 
-      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} />
+      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} seguroFianca={seguroFianca} />
 
       <div className="card p-5">
         <h3 className="font-semibold text-sm mb-3">Margem da FixIn (embutida, invisível para a imobiliária)</h3>

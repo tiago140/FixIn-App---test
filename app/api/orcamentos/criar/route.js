@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
+import { organizarSeguroFianca } from '@/lib/seguroFianca';
 
 export async function POST(req) {
   const { user, profile, supabase } = await getProfile();
@@ -21,8 +22,10 @@ export async function POST(req) {
     cnpj_cliente_final,
     margem_percentual,
     vistoria_texto_bruto,
-    itens,
+    seguro_fianca,
   } = body;
+  const seguro = seguro_fianca === true;
+  const itens = seguro ? organizarSeguroFianca(body.itens || [], { dividir: true }) : body.itens;
 
   if (!cliente_id || !endereco) {
     return NextResponse.json({ error: 'selecione a imobiliária e informe o endereço' }, { status: 400 });
@@ -46,6 +49,7 @@ export async function POST(req) {
       cnpj_cliente_final: cnpj_cliente_final || null,
       margem_percentual: margem_percentual || 0,
       vistoria_texto_bruto: vistoria_texto_bruto || null,
+      seguro_fianca: seguro,
       status: 'pendente',
       criado_por: user.id,
     })

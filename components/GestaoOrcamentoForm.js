@@ -14,6 +14,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
   const [avisoVistoria, setAvisoVistoria] = useState('');
   const [pdfUrlAtual, setPdfUrlAtual] = useState(orcamento.pdf_url || null);
+  const [seguroFianca, setSeguroFianca] = useState(!!orcamento.seguro_fianca);
   const [pdf2Url, setPdf2Url] = useState(orcamento.pdf2_url || null);
   const [gerando2, setGerando2] = useState(false);
   const [msg2, setMsg2] = useState('');
@@ -59,6 +60,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         status,
+        seguro_fianca: seguroFianca,
         margem_percentual: Number(margem) || 0,
         valor_pago: Number(valorPago) || 0,
         garantia,
@@ -193,7 +195,10 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
         </label>
       </div>
 
-      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} />
+      <label className="card p-4 flex items-center gap-2 text-sm font-semibold text-marinho cursor-pointer">
+        <input type="checkbox" checked={seguroFianca} onChange={(e) => setSeguroFianca(e.target.checked)} className="w-4 h-4" /> Seguro fiança {orcamento.solicitado_por ? '(marcado pela imobiliária quando "Sim")' : ''}
+      </label>
+      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} seguroFianca={seguroFianca} />
 
       <div className="card p-5 grid sm:grid-cols-2 gap-4">
         {clientes && (

@@ -12,6 +12,7 @@ export default function SolicitarOrcamentoForm() {
     nome_cliente_final: '',
     cpf_cliente_final: '',
     cnpj_cliente_final: '',
+    seguro_fianca: 'nao',
   });
   const [itens, setItens] = useState([]);
   const [vistoriaTexto, setVistoriaTexto] = useState('');
@@ -61,7 +62,7 @@ export default function SolicitarOrcamentoForm() {
     const res = await fetch('/api/orcamentos/solicitar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, itens, vistoria_texto_bruto: vistoriaTexto || null }),
+      body: JSON.stringify({ ...form, seguro_fianca: form.seguro_fianca === 'sim', itens, vistoria_texto_bruto: vistoriaTexto || null }),
     });
     setSalvando(false);
     const data = await res.json();
@@ -84,6 +85,17 @@ export default function SolicitarOrcamentoForm() {
             <option value="rescisao">Rescisão / desocupação</option>
             <option value="manutencao">Manutenção (contrato ativo)</option>
           </select>
+        </div>
+        <div>
+          <label className="block text-xs text-marinho/60 mb-1">Seguro fiança?</label>
+          <div className="flex gap-3">
+            {[['nao', 'Não'], ['sim', 'Sim']].map(([v, l]) => (
+              <label key={v} className={`flex-1 text-center cursor-pointer rounded border px-3 py-2 text-sm font-semibold ${form.seguro_fianca === v ? 'border-marinho bg-marinho text-white' : 'border-linha bg-papel text-marinho/70'}`}>
+                <input type="radio" name="seguro_fianca" value={v} checked={form.seguro_fianca === v} onChange={set('seguro_fianca')} className="sr-only" /> {l}
+              </label>
+            ))}
+          </div>
+          {form.seguro_fianca === 'sim' && <p className="text-xs text-marinho/60 mt-1">O orçamento será montado item a item, em Pintura geral, Reparos e Faxina e limpeza.</p>}
         </div>
         <div>
           <label className="block text-xs text-marinho/60 mb-1">Endereço do imóvel</label>

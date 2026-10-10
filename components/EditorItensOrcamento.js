@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Wand2, Undo2, Plus, Trash2, Loader2, PackagePlus } from 'lucide-react';
 import { fmtBRL } from '@/lib/format';
 import { categoriaEspecial } from '@/lib/itensEspeciais';
+import { organizarSeguroFianca, GRUPOS_SEGURO_FIANCA } from '@/lib/seguroFianca';
 import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 
 let seq = 0;
@@ -46,7 +47,7 @@ const COLUNAS = 'md:grid-cols-[minmax(0,1.3fr)_minmax(0,2.4fr)_8.5rem_8.5rem_7.5
 const campo = 'w-full border border-linha rounded px-2 py-1.5 bg-papel text-sm';
 
 // Itens do orçamento (tabela agrupada por ambiente) + ferramentas de IA logo abaixo, para quem é o dono.
-export default function EditorItensOrcamento({ itens, setItens, endereco = '', catalogo = [] }) {
+export default function EditorItensOrcamento({ itens, setItens, endereco = '', catalogo = [], seguroFianca = false }) {
   const [marcas, setMarcas] = useState({});
   const [desfazer, setDesfazer] = useState(null);
   const [ocupado, setOcupado] = useState(null); // 'valores' | 'editar' | 'criar'
@@ -166,6 +167,20 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
 
   return (
     <div className="space-y-6">
+      {seguroFianca && (
+        <div className="rounded-lg border border-marinho/30 bg-marinho/5 px-4 py-3 text-sm flex gap-3 items-center flex-wrap">
+          <div className="flex-1 min-w-[240px]">
+            <div className="font-semibold text-marinho">Seguro fiança: orçamento item a item</div>
+            <div className="text-marinho/70">Ordem: {GRUPOS_SEGURO_FIANCA.join(' → ')}. Itens juntos (ex.: "pintura, gabinete danificado") são separados em itens diferentes; os novos entram sem preço.</div>
+          </div>
+          <button type="button" onClick={() => {
+            const antes = itens.length;
+            const novos = organizarSeguroFianca(itens, { dividir: true });
+            setItens(novos);
+            setMsg({ tipo: 'ok', texto: `Organizado no formato seguro fiança: ${antes} → ${novos.length} itens. Preencha o preço dos itens novos e salve.` });
+          }} className="bg-marinho text-white rounded-lg px-4 py-2 text-sm font-semibold">Organizar para seguro fiança</button>
+        </div>
+      )}
       <AlertaItensEspeciais itens={itens} />
       <div className="card p-0 overflow-hidden">
         <div className="px-5 pt-5 pb-3 flex items-center gap-3 flex-wrap">
