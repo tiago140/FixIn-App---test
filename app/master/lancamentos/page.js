@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { hojeSP } from '@/lib/lancamentos';
+import { urlArquivo } from '@/lib/arquivos';
 import PainelLancamentos from '@/components/lancamentos/PainelLancamentos';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,14 @@ export default async function LancamentosPage() {
     supabase.from('prestadores').select('id, nome').order('nome'),
   ]);
 
+  // Comprovantes que as imobiliárias enviaram no orçamento (para conferir sem sair daqui).
+  const ids = [...new Set((lancamentos || []).map((l) => l.orcamento_id).filter(Boolean))];
+  let comprovantes = [];
+  if (ids.length) {
+    const { data } = await supabase.from('orcamento_comprovantes').select('id, orcamento_id, tipo_pagamento, valor, data_pagamento, verificado, arquivo_path, criado_em').in('orcamento_id', ids).order('criado_em', { ascending: true });
+    comprovantes = (data || []).map((c) => ({ ...c, url: urlArquivo('comprovantes-pagamento', c.arquivo_path) }));
+  }
+
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader icone="financeiro" titulo="Contas" subtitulo="A receber e a pagar — controle interno, visível somente para você" />
@@ -28,6 +37,7 @@ export default async function LancamentosPage() {
         lancamentos={lancamentos || []}
         clientes={clientes || []}
         prestadores={prestadores || []}
+        comprovantes={comprovantes}
         hoje={hojeSP()}
       />
     </AppShell>

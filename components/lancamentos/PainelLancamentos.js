@@ -1,17 +1,17 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDownCircle, ArrowUpCircle, AlertTriangle, Scale } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, AlertTriangle, Scale, FileCheck2, CheckCircle2 } from 'lucide-react';
 import KpiCard from '@/components/KpiCard';
 import { fmtBRL, fmtDate } from '@/lib/format';
-import { STATUS_LANC, CATEGORIAS_RECEBER, CATEGORIAS_PAGAR, emAberto, saldoAberto, vencido } from '@/lib/lancamentos';
+import { STATUS_LANC, CATEGORIAS_RECEBER, CATEGORIAS_PAGAR, emAberto, saldoAberto, vencido, somarDias } from '@/lib/lancamentos';
 
 const FILTROS = [
   ['aberto', 'Em aberto'], ['vencidos', 'Vencidos'], ['pagos', 'Pagos'], ['cancelados', 'Cancelados'], ['todos', 'Todos'],
 ];
 const campo = 'border border-linha rounded px-3 py-2 bg-papel text-sm w-full';
 
-export default function PainelLancamentos({ lancamentos, clientes, prestadores, hoje }) {
+export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], hoje }) {
   const router = useRouter();
   const [aba, setAba] = useState('receber');
   const [filtro, setFiltro] = useState('aberto');
@@ -27,6 +27,37 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
     lancamentos.forEach((x) => { if (x.tipo === 'pagar' && x.orcamento_id && x.status !== 'cancelado') m[x.orcamento_id] = x; });
     return m;
   }, [lancamentos]);
+
+  const compsDoOrc = useMemo(() => {
+    const m = {};
+    comprovantes.forEach((c) => { (m[c.orcamento_id] = m[c.orcamento_id] || []).push(c); });
+    return m;
+  }, [comprovantes]);
+  const pendentesConferir = comprovantes.filter((c) => !c.verificado && lancamentos.some((l) => l.orcamento_id === c.orcamento_id && l.tipo === 'receber' && l.status !== 'cancelado'));
+  const nomeDoOrc = (id) => lancamentos.find((l) => l.orcamento_id === id && l.tipo === 'receber')?.descricao || 'Orçamento';
+
+  // Confere o comprovante: usa o mesmo caminho que a tela do orçamento (valor pago acumulado e status).
+  async function conferir(c) {
+    const rec = lancamentos.find((l) => l.orcamento_id === c.orcamento_id && l.tipo === 'receber' && l.status !== 'cancelado');
+    if (!rec) return;
+    const jaConferido = (compsDoOrc[c.orcamento_id] || []).filter((x) => x.verificado).reduce((a, x) => a + Number(x.valor || 0), 0);
+    const acumulado = Math.min(Number(rec.valor), Math.round((jaConferido + Number(c.valor || 0)) * 100) / 100);
+    if (!confirm(`Confirmar que ${fmtBRL(c.valor)} entraram? O recebido deste orçamento ficará em ${fmtBRL(acumulado)}.`)) return;
+    setOcupado(c.id); setMsg('');
+    try {
+      const r = await fetch(`/api/orcamentos/${c.orcamento_id}/comprovantes`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comprovante_id: c.id, valor_pago: acumulado, pagamento_cliente_status: acumulado >= Number(rec.valor) ? 'pago_total' : 'entrada_paga' }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { setMsg(j.error || 'Não foi possível confirmar.'); }
+      else {
+        const filha = pagarDoOrcamento[c.orcamento_id];
+        if (filha && filha.status === 'previsto' && confirm(`Recebido! Enviar agora para Contas a pagar: ${filha.prestadores?.nome || 'prestador'} · ${fmtBRL(filha.valor)}?`)) {
+          await fetch(`/api/lancamentos/${filha.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'aprovar' }) });
+        }
+        router.refresh();
+      }
+    } catch (e) { setMsg('Falha de conexão. Tente de novo.'); }
+    setOcupado('');
+  }
 
   const soma = (tipo, fn) => lancamentos.filter((l) => l.tipo === tipo && fn(l)).reduce((a, l) => a + saldoAberto(l), 0);
   const receberAberto = soma('receber', () => true);
@@ -78,6 +109,20 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
         <KpiCard icone={Scale} cor={receberAberto - pagarAberto >= 0 ? '#3F7A5E' : '#B91C1C'} num={fmtBRL(receberAberto - pagarAberto)} lbl="Saldo previsto" />
       </div>
 
+
+      <PainelHoje
+        pendentes={pendentesConferir}
+        nomeDoOrc={nomeDoOrc}
+        aprovar={lancamentos.filter((l) => l.tipo === 'pagar' && l.status === 'previsto' && lancamentos.some((r) => r.orcamento_id && r.orcamento_id === l.orcamento_id && r.tipo === 'receber' && r.status === 'pago'))}
+        vencidosReceber={lancamentos.filter((l) => l.tipo === 'receber' && vencido(l, hoje))}
+        vencidosPagar={lancamentos.filter((l) => l.tipo === 'pagar' && vencido(l, hoje))}
+        ir={(tipo, f) => { setAba(tipo); setFiltro(f); }}
+      />
+      <div className="grid lg:grid-cols-2 gap-4 mb-6">
+        <PorOrcamento lancamentos={lancamentos} pagarDoOrcamento={pagarDoOrcamento} />
+        <Proximos30 lancamentos={lancamentos} hoje={hoje} />
+      </div>
+
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {[['receber', 'A receber'], ['pagar', 'A pagar']].map(([k, t]) => (
           <button key={k} onClick={() => { setAba(k); setNovo(false); }} className={`px-4 py-2 rounded-lg text-sm font-semibold border ${aba === k ? 'bg-marinho text-white border-marinho' : 'bg-white border-linha text-marinho'}`}>{t}</button>
@@ -122,6 +167,27 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                     </span>
                   </div>
                 </div>
+
+                {l.tipo === 'receber' && Number(l.valor) > 0 && (
+                  <div className="mt-3">
+                    <div className="h-2 rounded bg-marinho/10 overflow-hidden"><div className="h-2 bg-verde" style={{ width: `${Math.min(100, (Number(l.valor_pago || 0) / Number(l.valor)) * 100)}%` }} /></div>
+                    <div className="text-[11px] text-marinho/60 mt-1">Entrada 50% {fmtBRL(Number(l.valor) / 2)} · Saldo 50% {fmtBRL(Number(l.valor) / 2)} · recebido {fmtBRL(l.valor_pago || 0)}</div>
+                  </div>
+                )}
+                {l.tipo === 'receber' && (compsDoOrc[l.orcamento_id] || []).length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {compsDoOrc[l.orcamento_id].map((c) => (
+                      <div key={c.id} className="flex flex-wrap items-center gap-2 text-xs border border-linha rounded px-2 py-1.5">
+                        <a href={c.url} target="_blank" rel="noreferrer" className="underline text-marinho">Comprovante — {c.tipo_pagamento === 'integral' ? 'integral' : 'entrada 50%'}</a>
+                        <span className="text-marinho/60">{fmtBRL(c.valor)} · pago em {fmtDate(c.data_pagamento)}</span>
+                        <span className="flex-1" />
+                        {c.verificado
+                          ? <span className="text-verde font-semibold">✓ Conferido</span>
+                          : <><span className="text-amber-700 font-semibold">Aguardando conferência</span><Btn onClick={() => conferir(c)} off={ocupado === c.id}>Conferir e confirmar</Btn></>}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-2 mt-3">
                   {l.tipo === 'pagar' && l.status === 'previsto' && <Btn onClick={() => acao(l.id, { acao: 'aprovar' })} off={ocupado === l.id}>Aprovar para pagar</Btn>}
@@ -220,5 +286,84 @@ function NovoLancamento({ tipo, clientes, prestadores, hoje, onFeito }) {
       {erro && <p className="text-sm text-red-700 sm:col-span-2">{erro}</p>}
       <div className="sm:col-span-2"><button disabled={salvando} className="bg-marinho text-white rounded px-4 py-2 text-sm font-semibold disabled:opacity-50">{salvando ? 'Salvando…' : 'Salvar lançamento'}</button></div>
     </form>
+  );
+}
+
+
+function PainelHoje({ pendentes, nomeDoOrc, aprovar, vencidosReceber, vencidosPagar, ir }) {
+  const itens = [
+    pendentes.length > 0 && { k: 'c', t: `${pendentes.length} comprovante${pendentes.length > 1 ? 's' : ''} para conferir`, d: pendentes.slice(0, 2).map((c) => nomeDoOrc(c.orcamento_id)).join(' · '), a: () => ir('receber', 'aberto'), cor: 'text-amber-700' },
+    aprovar.length > 0 && { k: 'p', t: `${aprovar.length} pagamento${aprovar.length > 1 ? 's' : ''} ao prestador liberado${aprovar.length > 1 ? 's' : ''} (cliente já pagou)`, d: 'Dinheiro entrou: aprove para pagar', a: () => ir('pagar', 'aberto'), cor: 'text-marinho' },
+    vencidosReceber.length > 0 && { k: 'vr', t: `${vencidosReceber.length} recebimento${vencidosReceber.length > 1 ? 's' : ''} vencido${vencidosReceber.length > 1 ? 's' : ''}`, d: '', a: () => ir('receber', 'vencidos'), cor: 'text-red-700' },
+    vencidosPagar.length > 0 && { k: 'vp', t: `${vencidosPagar.length} conta${vencidosPagar.length > 1 ? 's' : ''} a pagar vencida${vencidosPagar.length > 1 ? 's' : ''}`, d: '', a: () => ir('pagar', 'vencidos'), cor: 'text-red-700' },
+  ].filter(Boolean);
+  return (
+    <div className="card p-4 mb-6 border-l-4 border-l-accent">
+      <div className="flex items-center gap-2 font-semibold text-sm mb-2"><FileCheck2 size={18} /> Precisa de você hoje</div>
+      {itens.length === 0 ? (
+        <div className="flex items-center gap-2 text-sm text-verde"><CheckCircle2 size={18} /> Tudo em dia. Nada esperando por você.</div>
+      ) : (
+        <div className="space-y-1">
+          {itens.map((i) => (
+            <button key={i.k} onClick={i.a} className="w-full text-left flex flex-wrap items-baseline gap-2 py-1.5 border-b border-linha last:border-0 hover:bg-papel">
+              <span className={`text-sm font-semibold ${i.cor}`}>{i.t}</span>
+              {i.d && <span className="text-xs text-marinho/60">{i.d}</span>}
+              <span className="ml-auto text-xs text-marinho/50">ver →</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PorOrcamento({ lancamentos, pagarDoOrcamento }) {
+  const linhas = lancamentos.filter((l) => l.tipo === 'receber' && l.orcamento_id && l.status !== 'cancelado' && l.status !== 'pago').slice(0, 6);
+  return (
+    <div className="card p-4">
+      <h3 className="font-semibold text-sm mb-3">Por orçamento em andamento</h3>
+      {linhas.length === 0 ? <p className="text-sm text-marinho/60">Nenhum orçamento com valor em aberto.</p> : (
+        <div className="space-y-3">
+          {linhas.map((l) => {
+            const p = pagarDoOrcamento[l.orcamento_id];
+            const pct = Math.min(100, (Number(l.valor_pago || 0) / Number(l.valor)) * 100);
+            return (
+              <div key={l.id}>
+                <div className="flex justify-between gap-2 text-xs"><span className="truncate font-medium">{l.descricao.replace(/^Orçamento\s*/, '')}</span><span className="whitespace-nowrap">{fmtBRL(l.valor_pago || 0)} / {fmtBRL(l.valor)}</span></div>
+                <div className="h-2 rounded bg-marinho/10 overflow-hidden my-1"><div className="h-2 bg-verde" style={{ width: `${pct}%` }} /></div>
+                <div className="text-[11px] text-marinho/60">{p ? `Prestador ${p.prestadores?.nome || ''} ${fmtBRL(p.valor)} · sua margem ${fmtBRL(Number(l.valor) - Number(p.valor))}` : 'Sem prestador atribuído'}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Proximos30({ lancamentos, hoje }) {
+  const fim = somarDias(hoje, 30);
+  const faixas = [0, 1, 2, 3].map((i) => ({ de: somarDias(hoje, i * 7 + (i ? 1 : 0)), ate: i === 3 ? fim : somarDias(hoje, i * 7 + 7), rot: i === 0 ? 'Esta semana' : i === 3 ? 'Dias 22-30' : `Dias ${i * 7 + 1}-${i * 7 + 7}`, ent: 0, sai: 0 }));
+  lancamentos.filter(emAberto).forEach((l) => {
+    const venc = l.vencimento < hoje ? hoje : l.vencimento;
+    const f = faixas.find((x) => venc >= x.de && venc <= x.ate);
+    if (!f) return;
+    if (l.tipo === 'receber') f.ent += saldoAberto(l); else f.sai += saldoAberto(l);
+  });
+  const max = Math.max(1, ...faixas.map((f) => Math.max(f.ent, f.sai)));
+  return (
+    <div className="card p-4">
+      <h3 className="font-semibold text-sm mb-1">Próximos 30 dias</h3>
+      <p className="text-[11px] text-marinho/50 mb-3">Atrasados entram em "Esta semana".</p>
+      <div className="space-y-3">
+        {faixas.map((f) => (
+          <div key={f.rot}>
+            <div className="text-xs font-medium mb-1">{f.rot}</div>
+            <div className="flex items-center gap-2 text-[11px]"><span className="w-14 text-verde">Entra</span><div className="flex-1 h-2 rounded bg-marinho/5"><div className="h-2 rounded bg-verde" style={{ width: `${(f.ent / max) * 100}%` }} /></div><span className="w-24 text-right">{fmtBRL(f.ent)}</span></div>
+            <div className="flex items-center gap-2 text-[11px] mt-0.5"><span className="w-14 text-marinho">Sai</span><div className="flex-1 h-2 rounded bg-marinho/5"><div className="h-2 rounded bg-marinho" style={{ width: `${(f.sai / max) * 100}%` }} /></div><span className="w-24 text-right">{fmtBRL(f.sai)}</span></div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
