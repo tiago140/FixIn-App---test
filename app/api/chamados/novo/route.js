@@ -1,7 +1,8 @@
+import { avisarSolicitante } from '@/lib/chamadosEmail';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { novoToken, hashToken, limpar, emailValido, validarArquivos, salvarAnexos } from '@/lib/chamados';
+import { novoToken, camposToken, digitosTelefone, limpar, emailValido, validarArquivos, salvarAnexos } from '@/lib/chamados';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -27,10 +28,11 @@ export async function POST(req) {
   const token = novoToken();
   const { data: ch, error } = await admin.from('chamados').insert({
     cliente_id: clienteId, solicitante_tipo: tipo, solicitante_nome: nome, solicitante_email: email || null, solicitante_telefone: telefone || null,
-    endereco, titulo, descricao, token_hash: hashToken(token),
-  }).select('id, numero').single();
+    endereco, titulo, descricao, ...camposToken(token), telefone_digitos: digitosTelefone(telefone) || null,
+  }).select('*').single();
   if (error || !ch) return NextResponse.json({ error: 'Não foi possível abrir o chamado.' }, { status: 500 });
   if (files.length) await salvarAnexos(admin, ch.id, files, { tipo: profile.role === 'master' ? 'fixin' : 'imobiliaria', nome: profile.nome_completo || 'Equipe' });
+  await avisarSolicitante(admin, ch, 'aberto');
   try { await admin.from('auditoria').insert({ acao: 'Chamado aberto internamente', detalhe: `${ch.numero} · ${tipo}`, alvo_tipo: 'chamado', alvo_id: ch.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {}
   return NextResponse.json({ ok: true, id: ch.id, numero: ch.numero, token });
 }

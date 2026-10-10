@@ -19,6 +19,7 @@ export default async function PaginaAbrirChamado({ params }) {
         </div>
         <div className="h-1 bg-gradient-to-r from-marinho via-[#2C5570] to-verde mb-4" />
         <FormAbrirChamado slug={slug} imobiliaria={cli.nome_empresa} />
+        <p className="text-center text-sm mt-4"><a href="/chamados/recuperar" className="underline text-marinho">Já abri um chamado e perdi o link</a></p>
       </div>
     </main>
   );

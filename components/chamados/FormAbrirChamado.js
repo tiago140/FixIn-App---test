@@ -36,7 +36,8 @@ export default function FormAbrirChamado({ slug, imobiliaria }) {
             <a href={link} className="block mt-4 bg-marinho text-white font-semibold rounded-md px-4 py-3">Acompanhar meu chamado</a>
             <div className="mt-3 text-xs break-all bg-fundo border border-linha rounded p-2">{link}</div>
             <button type="button" onClick={() => { navigator.clipboard?.writeText(link); setCopiado(true); }} className="mt-2 text-sm underline text-marinho">{copiado ? 'Link copiado!' : 'Copiar link'}</button>
-            <p className="text-xs text-erro mt-3">Este link é pessoal: quem tiver acesso a ele vê o chamado. Não compartilhe.</p>
+            <p className="text-xs text-marinho/70 mt-3">{ok.email_enviado ? 'Também enviamos este link para o seu e-mail.' : 'Se informou e-mail, enviaremos o link também por lá.'} Perdeu? Use “Recuperar link” na página de chamados.</p>
+            <p className="text-xs text-erro mt-2">Este link é pessoal: quem tiver acesso a ele vê o chamado. Não compartilhe.</p>
           </>
         )}
       </div>

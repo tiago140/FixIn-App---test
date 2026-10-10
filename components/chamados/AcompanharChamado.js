@@ -30,7 +30,7 @@ export default function AcompanharChamado({ token }) {
     setDecidindo(false); carregar();
   }
 
-  if (erro) return <div className="bg-white border border-linha rounded-lg p-8 text-center text-marinho">{erro}</div>;
+  if (erro) return <div className="bg-white border border-linha rounded-lg p-8 text-center text-marinho">{erro}<p className="mt-3 text-sm"><a href="/chamados/recuperar" className="underline">Recuperar o link do meu chamado</a></p></div>;
   if (!dados) return <div className="text-center text-marinho/60 py-10">Carregando…</div>;
   const { chamado: c, mensagens, orcamento: o } = dados;
 
