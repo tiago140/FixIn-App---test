@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { urlArquivo } from '@/lib/arquivos';
 import { createClient } from '@/lib/supabase/client';
 
 import { fmtDataHoraSP } from '@/lib/format';
@@ -78,7 +79,7 @@ export default function Chat({ orcamentoId, profile, mensagensIniciais }) {
   }
 
   function urlAnexo(path) {
-    return supabase.storage.from('chat-anexos').getPublicUrl(path).data.publicUrl;
+    return urlArquivo('chat-anexos', path);
   }
 
   return (

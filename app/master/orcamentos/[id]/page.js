@@ -1,3 +1,4 @@
+import { urlArquivo } from '@/lib/arquivos';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
@@ -40,7 +41,7 @@ export default async function OrcamentoDetalhePage({ params }) {
 
   const documentos = (documentosRaw || []).map((d) => ({
     ...d,
-    url: supabase.storage.from('documentos-fiscais').getPublicUrl(d.arquivo_path).data.publicUrl,
+    url: urlArquivo('documentos-fiscais', d.arquivo_path),
   }));
 
   const { data: comprovantesRaw } = await supabase
@@ -50,7 +51,7 @@ export default async function OrcamentoDetalhePage({ params }) {
     .order('criado_em', { ascending: false });
   const comprovantes = (comprovantesRaw || []).map((c) => ({
     ...c,
-    url: supabase.storage.from('comprovantes-pagamento').getPublicUrl(c.arquivo_path).data.publicUrl,
+    url: urlArquivo('comprovantes-pagamento', c.arquivo_path),
   }));
   const total = calcularTotalComMargem(itens, orcamento.margem_percentual);
   const destino = await destinatariosDoOrcamento(supabase, params.id);

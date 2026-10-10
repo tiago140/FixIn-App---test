@@ -1,3 +1,5 @@
+import { urlArquivo } from '@/lib/arquivos';
+import { urlSite } from '@/lib/chamados';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { gerarPdfOrcamento } from '@/lib/gerarPdfOrcamento';
@@ -48,9 +50,8 @@ export async function POST(req, { params }) {
 
   // tira a versão antiga (nome só com o número) para não ficar PDF duplicado
   if (caminhoAntigo !== caminhoArquivo) { try { await supabase.storage.from('orcamentos-pdfs').remove([caminhoAntigo]); } catch (e) {} }
-  const { data: urlData } = supabase.storage.from('orcamentos-pdfs').getPublicUrl(caminhoArquivo);
   // ?v= evita o navegador/CDN mostrar uma versão ANTIGA do PDF (o nome do arquivo é sempre o mesmo para o mesmo orçamento)
-  const pdfUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminhoArquivo)}?v=${Date.now()}`;
 
   await supabase.from('orcamentos').update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() }).eq('id', id);
 
@@ -83,7 +84,7 @@ export async function POST(req, { params }) {
     nomeImobiliaria: orcamento.clientes?.nome_empresa,
     numero: orcamento.numero,
     endereco: orcamento.endereco,
-    linkPdf: pdfUrl,
+    linkPdf: `${urlSite()}${pdfUrl}`,
     pdfBuffer,
     nomeArquivo,
   });

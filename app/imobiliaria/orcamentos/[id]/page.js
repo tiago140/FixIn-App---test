@@ -1,3 +1,4 @@
+import { urlArquivo } from '@/lib/arquivos';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
@@ -39,7 +40,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
 
   const documentos = (documentosRaw || []).map((d) => ({
     ...d,
-    url: supabase.storage.from('documentos-fiscais').getPublicUrl(d.arquivo_path).data.publicUrl,
+    url: urlArquivo('documentos-fiscais', d.arquivo_path),
   }));
 
   const { data: comprovantesRaw } = await supabase
@@ -50,7 +51,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
   const comprovantes = (comprovantesRaw || []).map((c) => ({
     ...c,
     valor: num(c.valor),
-    url: supabase.storage.from('comprovantes-pagamento').getPublicUrl(c.arquivo_path).data.publicUrl,
+    url: urlArquivo('comprovantes-pagamento', c.arquivo_path),
   }));
 
   // O PDF do orçamento pode ser impresso por qualquer usuário da imobiliária (a visão protegida o esconde do operacional, então lemos só esse campo no servidor, após a checagem acima).

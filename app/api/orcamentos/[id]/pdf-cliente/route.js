@@ -1,3 +1,4 @@
+import { urlArquivo } from '@/lib/arquivos';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -34,8 +35,7 @@ export async function POST(req, { params }) {
   const caminho = `${params.id}/${nomeSeguroStorage(nome)}`;
   const { error: erroUp } = await admin.storage.from('orcamentos-pdfs').upload(caminho, buf, { contentType: 'application/pdf', upsert: true, cacheControl: '0' });
   if (erroUp) return NextResponse.json({ error: 'erro ao salvar PDF: ' + erroUp.message }, { status: 500 });
-  const { data: u } = admin.storage.from('orcamentos-pdfs').getPublicUrl(caminho);
-  const pdfUrl = `${u.publicUrl}?v=${Date.now()}`;
+  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminho)}?v=${Date.now()}`;
   await admin.from('orcamentos').update({ pdf_url: pdfUrl }).eq('id', params.id);
   return NextResponse.json({ ok: true, pdf_url: pdfUrl, nome_arquivo: nome });
 }

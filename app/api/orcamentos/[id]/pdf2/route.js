@@ -1,3 +1,4 @@
+import { urlArquivo } from '@/lib/arquivos';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { gerarPdfOrcamento2 } from '@/lib/gerarPdfOrcamento2';
@@ -28,8 +29,7 @@ export async function POST(req, { params }) {
   const caminho = `${id}/${nomeSeguroStorage(nome)}`;
   const { error: erroUp } = await supabase.storage.from('orcamentos-pdfs').upload(caminho, pdf, { contentType: 'application/pdf', upsert: true, cacheControl: '0' });
   if (erroUp) return NextResponse.json({ error: 'erro ao salvar PDF: ' + erroUp.message }, { status: 500 });
-  const { data: u } = supabase.storage.from('orcamentos-pdfs').getPublicUrl(caminho);
-  const pdfUrl = `${u.publicUrl}?v=${Date.now()}`;
+  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminho)}?v=${Date.now()}`;
   await supabase.from('orcamentos').update({ pdf2_url: pdfUrl }).eq('id', id);
 
   try {

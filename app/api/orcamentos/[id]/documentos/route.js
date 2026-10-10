@@ -1,3 +1,4 @@
+import { urlArquivo } from '@/lib/arquivos';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 
@@ -28,8 +29,7 @@ export async function POST(req, { params }) {
   });
   if (erroInsert) return NextResponse.json({ error: erroInsert.message }, { status: 400 });
 
-  const { data: urlData } = supabase.storage.from('documentos-fiscais').getPublicUrl(caminho);
-  return NextResponse.json({ ok: true, url: urlData.publicUrl });
+  return NextResponse.json({ ok: true, url: urlArquivo('documentos-fiscais', caminho) });
 }
 
 export async function DELETE(req, { params }) {
