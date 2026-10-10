@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fmtBRL } from '@/lib/format';
+import { fmtBRL, fmtDataHoraSP } from '@/lib/format';
 
 export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensagens }) {
   const [vistos, setVistos] = useState({});
@@ -47,6 +47,7 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 bg-marinho text-white">Novo</span>
                     <span className="text-[11px] font-mono text-marinho/50">{s.subtitulo}</span>
+                    {s.criado_em && <span className="text-[11px] text-marinho/50">· {fmtDataHoraSP(s.criado_em)}</span>}
                   </div>
                   <div className="font-semibold text-lg mt-1">{s.titulo}</div>
                   <div className="text-xs text-marinho/60 mt-0.5">{s.detalhe}</div>
@@ -65,7 +66,10 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
           <h2 className="font-semibold text-xl mb-2 mt-5">Novas mensagens no chat</h2>
           {mensagensVisiveis.map((m) => (
             <div key={m.key} onClick={() => dispensar(m.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-info">
-              <div className="text-[11px] font-mono text-marinho/50">{m.subtitulo}</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[11px] font-mono text-marinho/50">{m.subtitulo}</div>
+                {m.criado_em && <div className="text-[11px] font-semibold text-marinho/60">{fmtDataHoraSP(m.criado_em)}</div>}
+              </div>
               <div className="font-semibold">{m.titulo}</div>
               <div className="text-xs text-marinho/60 mt-1">{m.detalhe}</div>
               <div className="text-xs text-marinho/50 mt-1.5">

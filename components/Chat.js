@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-function fmtHora(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
+import { fmtDataHoraSP } from '@/lib/format';
+import { tocarSomAviso } from '@/lib/somAviso';
+
+const fmtHora = fmtDataHoraSP; // data e hora completas em cada mensagem
 
 export default function Chat({ orcamentoId, profile, mensagensIniciais }) {
   const supabase = createClient();
@@ -24,6 +24,7 @@ export default function Chat({ orcamentoId, profile, mensagensIniciais }) {
         (payload) => {
           setMensagens((atual) => {
             if (atual.some((m) => m.id === payload.new.id)) return atual;
+            if (payload.new.autor_id !== profile.id) tocarSomAviso();
             return [...atual, payload.new];
           });
         }

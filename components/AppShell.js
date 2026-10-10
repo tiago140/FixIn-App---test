@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { ChevronsLeft, ChevronsRight, LogOut, Menu, MessageCircle } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, LogOut, Menu, MessageCircle, Volume2, VolumeX } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { rotuloPerfil } from '@/lib/permissoes';
+import { destravarSom, somLigado, definirSom, tocarSomAviso } from '@/lib/somAviso';
 
 // Cor da etiqueta de perfil (sobre o fundo azul-marinho da barra)
 const COR_PERFIL = { Dono: '#B8862E', 'Equipe FixIn': '#3B6B8C', Administrador: '#3F7A5E', Operacional: '#6B7280' };
@@ -32,17 +33,50 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
     } catch (e) {}
   }, []);
 
-  // bolinha vermelha do menu "Avisos": avisos atuais que ainda não foram dispensados
+  // bolinha vermelha do menu "Avisos": avisos atuais que ainda não foram dispensados.
+  // Consulta de novo a cada 30 s (e ao voltar para a aba); aviso NOVO toca o sinal sonoro.
+  const [som, setSom] = useState(true);
+  const chavesConhecidas = useRef(null);
+  useEffect(() => {
+    setSom(somLigado());
+    destravarSom();
+  }, []);
   useEffect(() => {
     let vivo = true;
-    fetch('/api/avisos/chaves')
-      .then((r) => (r.ok ? r.json() : { chaves: [] }))
-      .then((d) => vivo && setChavesAvisos(d.chaves || []))
-      .catch(() => {});
+    function buscar() {
+      fetch('/api/avisos/chaves')
+        .then((r) => (r.ok ? r.json() : { chaves: [] }))
+        .then((d) => {
+          if (!vivo) return;
+          const chaves = d.chaves || [];
+          if (chavesConhecidas.current) {
+            let dispensados = {};
+            try { dispensados = JSON.parse(localStorage.getItem('fixin_avisos_vistos') || '{}'); } catch (e) {}
+            const novos = chaves.filter((k) => !chavesConhecidas.current.has(k) && !dispensados[k]);
+            if (novos.length > 0) tocarSomAviso();
+          }
+          chavesConhecidas.current = new Set(chaves);
+          setChavesAvisos(chaves);
+        })
+        .catch(() => {});
+    }
+    buscar();
+    const timer = setInterval(buscar, 30000);
+    const aoVoltar = () => { if (document.visibilityState === 'visible') buscar(); };
+    document.addEventListener('visibilitychange', aoVoltar);
     return () => {
       vivo = false;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', aoVoltar);
     };
   }, [pathname]);
+
+  function alternarSom() {
+    const novo = !som;
+    setSom(novo);
+    definirSom(novo);
+    if (novo) tocarSomAviso();
+  }
 
   useEffect(() => {
     const ler = () => {
@@ -117,6 +151,9 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
           >
             <MessageCircle size={18} /> <span className="hidden sm:inline">Suporte</span>
           </a>
+          <button onClick={alternarSom} className="bg-white/10 hover:bg-white/20 border border-white/25 text-white rounded-lg px-2.5 py-2 flex items-center gap-2" title={som ? 'Som dos avisos ligado (clique para desligar)' : 'Som dos avisos desligado (clique para ligar)'}>
+            {som ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
           <ThemeToggle />
           <button onClick={sair} className="bg-white/10 hover:bg-white/20 border border-white/25 text-white rounded-lg px-2.5 sm:px-3 py-2 flex items-center gap-2" title="Sair">
             <LogOut size={18} /> <span className="hidden sm:inline">Sair</span>
