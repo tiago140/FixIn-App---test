@@ -21,6 +21,12 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
   const [ocupado, setOcupado] = useState('');
   const [pagando, setPagando] = useState(null); // { id, valor, data }
 
+  const pagarDoOrcamento = useMemo(() => {
+    const m = {};
+    lancamentos.forEach((x) => { if (x.tipo === 'pagar' && x.orcamento_id && x.status !== 'cancelado') m[x.orcamento_id] = x; });
+    return m;
+  }, [lancamentos]);
+
   const soma = (tipo, fn) => lancamentos.filter((l) => l.tipo === tipo && fn(l)).reduce((a, l) => a + saldoAberto(l), 0);
   const receberAberto = soma('receber', () => true);
   const receberVencido = soma('receber', (l) => vencido(l, hoje));
@@ -49,7 +55,15 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       const r = await fetch(`/api/lancamentos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) setMsg(j.error || 'Não foi possível concluir.');
-      else { setPagando(null); router.refresh(); }
+      else {
+        setPagando(null);
+        const origem = lancamentos.find((x) => x.id === id);
+        const filha = origem && origem.tipo === 'receber' && corpo.acao === 'pagar' ? pagarDoOrcamento[origem.orcamento_id] : null;
+        if (filha && filha.status === 'previsto' && confirm(`Recebido! Enviar agora para Contas a pagar: ${filha.prestadores?.nome || 'prestador'} · ${fmtBRL(filha.valor)}?`)) {
+          await fetch(`/api/lancamentos/${filha.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'aprovar' }) });
+        }
+        router.refresh();
+      }
     } catch (e) { setMsg('Falha de conexão. Tente de novo.'); }
     setOcupado('');
   }
@@ -113,9 +127,16 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                   {emAberto(l) && !(l.tipo === 'pagar' && l.status !== 'aprovado') && (
                     <Btn onClick={() => setPagando({ id: l.id, valor: String(saldoAberto(l)).replace('.', ','), data: hoje })} off={ocupado === l.id}>{l.tipo === 'receber' ? 'Marcar recebido' : 'Marcar pago'}</Btn>
                   )}
+                  {l.tipo === 'receber' && l.status === 'pago' && pagarDoOrcamento[l.orcamento_id]?.status === 'previsto' && (
+                    <Btn onClick={() => acao(pagarDoOrcamento[l.orcamento_id].id, { acao: 'aprovar' })} off={ocupado === pagarDoOrcamento[l.orcamento_id].id}>Enviar para contas a pagar</Btn>
+                  )}
                   {emAberto(l) && <Btn suave onClick={() => confirm('Cancelar este lançamento?') && acao(l.id, { acao: 'cancelar' })} off={ocupado === l.id}>Cancelar</Btn>}
                   {!emAberto(l) && <Btn suave onClick={() => acao(l.id, { acao: 'reabrir' })} off={ocupado === l.id}>Reabrir</Btn>}
                 </div>
+
+                {l.tipo === 'pagar' && l.status === 'previsto' && l.orcamento_id && (
+                  <p className="text-xs text-marinho/60 mt-2">Aguarda o recebimento da imobiliária para ser enviada ao pagamento (ou aprove manualmente).</p>
+                )}
 
                 {pagando?.id === l.id && (
                   <div className="mt-3 flex flex-wrap items-end gap-2 bg-papel rounded p-3">
