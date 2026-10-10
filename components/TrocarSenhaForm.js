@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import SenhaInput from '@/components/SenhaInput';
-import { createClient } from '@/lib/supabase/client';
-import { SENHA_MIN } from '@/lib/senha';
+import { SENHA_MIN, validarSenhaForte } from '@/lib/senha';
 
-export default function TrocarSenhaForm() {
-  const supabase = createClient();
+export default function TrocarSenhaForm({ obrigatoria = false }) {
   const [nova, setNova] = useState('');
   const [confirma, setConfirma] = useState('');
   const [erro, setErro] = useState('');
@@ -20,9 +18,13 @@ export default function TrocarSenhaForm() {
     if (nova.length < SENHA_MIN) return setErro(`A senha precisa ter pelo menos ${SENHA_MIN} caracteres.`);
     if (nova !== confirma) return setErro('As duas senhas não são iguais.');
     setSalvando(true);
-    const { error } = await supabase.auth.updateUser({ password: nova });
+    const fraca = validarSenhaForte(nova);
+    if (fraca) { setSalvando(false); return setErro(fraca); }
+    const r = await fetch('/api/conta/senha', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: nova }) });
+    const j = await r.json().catch(() => ({}));
     setSalvando(false);
-    if (error) return setErro(error.message);
+    if (!r.ok) return setErro(j.error || 'Não foi possível trocar a senha.');
+    if (obrigatoria) { window.location.href = '/'; return; }
     setOk(true);
     setNova('');
     setConfirma('');
@@ -30,7 +32,8 @@ export default function TrocarSenhaForm() {
 
   return (
     <form onSubmit={enviar} className="card p-5 space-y-4 max-w-md">
-      <h2 className="font-semibold text-sm">Trocar minha senha</h2>
+      <h2 className="font-semibold text-sm">{obrigatoria ? 'Crie a sua senha pessoal para continuar' : 'Trocar minha senha'}</h2>
+      <p className="text-xs text-marinho/60">Mínimo de {SENHA_MIN} caracteres, com letras e números.</p>
       {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded">{erro}</div>}
       {ok && <div className="text-sm bg-sucesso/10 border border-sucesso text-sucesso px-3 py-2 rounded">Senha alterada. Use a nova senha no próximo login.</div>}
       <div>

@@ -26,7 +26,18 @@ export async function middleware(request) {
     }
   );
 
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Áreas internas: senha provisória precisa ser trocada, e quem ativou verificação em duas etapas precisa concluí-la.
+  const caminho = request.nextUrl.pathname;
+  const interna = caminho === '/' || caminho.startsWith('/master') || caminho.startsWith('/imobiliaria') || caminho.startsWith('/conta');
+  if (user && interna) {
+    if (user.app_metadata?.trocar_senha === true) return NextResponse.redirect(new URL('/trocar-senha', request.url));
+    try {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') return NextResponse.redirect(new URL('/login?mfa=1', request.url));
+    } catch (e) {}
+  }
 
   return response;
 }

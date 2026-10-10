@@ -46,6 +46,7 @@ export async function POST(req) {
     email,
     password: senha,
     email_confirm: true,
+    app_metadata: { trocar_senha: true },
   });
 
   if (createError) {

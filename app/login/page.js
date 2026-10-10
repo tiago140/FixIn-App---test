@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SenhaInput from '@/components/SenhaInput';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -12,6 +12,26 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [etapaMfa, setEtapaMfa] = useState(false);
+  const [codigo, setCodigo] = useState('');
+
+  // Voltou do sistema pedindo a verificação em duas etapas (sessão já existe, falta o código)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mfa') === '1') setEtapaMfa(true);
+  }, []);
+
+  async function verificarCodigo(e) {
+    e.preventDefault();
+    setErro(''); setCarregando(true);
+    const { data: f } = await supabase.auth.mfa.listFactors();
+    const fator = (f?.totp || []).find((x) => x.status === 'verified');
+    if (!fator) { setCarregando(false); return setErro('Nenhum aplicativo de verificação encontrado.'); }
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: fator.id, code: codigo.replace(/\s/g, '') });
+    setCarregando(false);
+    if (error) return setErro('Código incorreto ou vencido. Tente de novo.');
+    router.push('/');
+    router.refresh();
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,8 +50,24 @@ export default function LoginPage() {
       return;
     }
 
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') { setEtapaMfa(true); return; }
     router.push('/');
     router.refresh();
+  }
+
+  if (etapaMfa) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <form onSubmit={verificarCodigo} className="card p-6 space-y-4 w-full max-w-sm">
+          <div className="font-slab text-xl font-bold text-marinho">Verificação em duas etapas</div>
+          <p className="text-sm text-marinho/70">Digite o código de 6 números do seu aplicativo autenticador (Google Authenticator, Microsoft Authenticator, Authy…).</p>
+          {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded">{erro}</div>}
+          <input inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={codigo} onChange={(e) => setCodigo(e.target.value)} required className="w-full border border-linha rounded px-3 py-2 bg-papel text-center text-2xl tracking-widest font-mono" />
+          <button disabled={carregando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">{carregando ? 'Verificando…' : 'Confirmar'}</button>
+        </form>
+      </div>
+    );
   }
 
   return (

@@ -98,7 +98,7 @@ export async function PATCH(req, { params }) {
     if (eu) return erro('A sua senha é trocada em "Minha conta".', 400);
     const erroSenha = validarSenha(corpo.senha);
     if (erroSenha) return erro(erroSenha);
-    const { error } = await admin.auth.admin.updateUserById(alvo.id, { password: corpo.senha });
+    const { error } = await admin.auth.admin.updateUserById(alvo.id, { password: corpo.senha, app_metadata: { trocar_senha: true } });
     if (error) return erro(error.message);
     await registrar(ctx, 'Redefiniu a senha de usuário da equipe');
     return NextResponse.json({ ok: true });
