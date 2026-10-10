@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/pendencia-financeira", "schedule": "0 13 * * *" }
+    {
+      "path": "/api/cron/pendencia-financeira",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/backup",
+      "schedule": "0 7 * * *"
+    }
   ]
 }

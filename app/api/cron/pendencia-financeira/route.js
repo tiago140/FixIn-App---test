@@ -12,7 +12,7 @@ export const maxDuration = 60;
 // qualquer um na internet disparando e-mail em massa pros seus clientes.
 export async function GET(req) {
   const auth = req.headers.get('authorization');
-  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'não autorizado' }, { status: 401 });
   }
 
