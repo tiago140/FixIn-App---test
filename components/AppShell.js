@@ -168,7 +168,7 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
           }`}
         >
           <div className="flex-1">
-            {tabs.map((t) => {
+            {tabs.filter((t) => !t.dono || profile?.dono).map((t) => {
               const active = pathname === t.href || pathname.startsWith(t.href + '/');
               const ehAvisos = t.href.endsWith('/avisos');
               return (
