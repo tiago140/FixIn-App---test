@@ -1,4 +1,5 @@
 import { avisarSolicitante } from '@/lib/chamadosEmail';
+import { criarCodigoAcesso } from '@/lib/chamados';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { novoToken, camposToken, digitosTelefone, hashIp, ipDaRequisicao, limpar, emailValido, validarArquivos, salvarAnexos, passouLimite } from '@/lib/chamados';
@@ -43,9 +44,10 @@ export async function POST(req) {
   if (error || !ch) return NextResponse.json({ error: 'Não foi possível abrir o chamado agora. Tente de novo.' }, { status: 500 });
 
   if (files.length) await salvarAnexos(admin, ch.id, files, { tipo: 'externo', nome });
-  await avisarSolicitante(admin, ch, 'aberto');
+  const codigo = await criarCodigoAcesso(admin, ch.id);
+  await avisarSolicitante(admin, ch, 'aberto', { codigo });
   try {
     await admin.from('auditoria').insert({ acao: 'Chamado aberto pelo link externo', detalhe: `${ch.numero} · ${cli.nome_empresa} · ${tipo}`, alvo_tipo: 'chamado', alvo_id: ch.id, autor_nome: nome, autor_role: 'externo' });
   } catch (e) {}
-  return NextResponse.json({ ok: true, numero: ch.numero, token });
+  return NextResponse.json({ ok: true, numero: ch.numero, token, codigo });
 }

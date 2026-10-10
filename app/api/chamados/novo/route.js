@@ -1,4 +1,5 @@
 import { avisarSolicitante } from '@/lib/chamadosEmail';
+import { criarCodigoAcesso } from '@/lib/chamados';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -32,7 +33,8 @@ export async function POST(req) {
   }).select('*').single();
   if (error || !ch) return NextResponse.json({ error: 'Não foi possível abrir o chamado.' }, { status: 500 });
   if (files.length) await salvarAnexos(admin, ch.id, files, { tipo: profile.role === 'master' ? 'fixin' : 'imobiliaria', nome: profile.nome_completo || 'Equipe' });
-  await avisarSolicitante(admin, ch, 'aberto');
+  const codigo = await criarCodigoAcesso(admin, ch.id);
+  await avisarSolicitante(admin, ch, 'aberto', { codigo });
   try { await admin.from('auditoria').insert({ acao: 'Chamado aberto internamente', detalhe: `${ch.numero} · ${tipo}`, alvo_tipo: 'chamado', alvo_id: ch.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {}
-  return NextResponse.json({ ok: true, id: ch.id, numero: ch.numero, token });
+  return NextResponse.json({ ok: true, id: ch.id, numero: ch.numero, token, codigo });
 }

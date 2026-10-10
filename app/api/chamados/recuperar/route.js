@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { hashIp, ipDaRequisicao, limpar, emailValido, digitosTelefone, linkDoChamado } from '@/lib/chamados';
+import { hashCodigo, normalizarCodigo, hashIp, ipDaRequisicao, limpar, emailValido, digitosTelefone, linkDoChamado } from '@/lib/chamados';
 import { enviarEmailChamado } from '@/lib/email';
 
 export const runtime = 'nodejs';
@@ -19,12 +19,24 @@ export async function POST(req) {
   const ip = hashIp(ipDaRequisicao(req));
   const desde = new Date(Date.now() - 3600 * 1000).toISOString();
   const { count } = await admin.from('chamado_recuperacoes').select('id', { count: 'exact', head: true }).eq('ip_hash', ip).gte('criado_em', desde);
-  if ((count || 0) >= 5) return NextResponse.json({ error: 'Muitas tentativas. Tente novamente mais tarde.' }, { status: 429 });
+  if ((count || 0) >= 10) return NextResponse.json({ error: 'Muitas tentativas. Tente novamente mais tarde.' }, { status: 429 });
   await admin.from('chamado_recuperacoes').insert({ ip_hash: ip });
 
+  const codigo = normalizarCodigo(body.codigo);
   const porEmail = emailValido(contato);
   const dig = digitosTelefone(contato);
   if (!porEmail && dig.length < 8) return NextResponse.json({ error: 'Informe um e-mail ou telefone válido.' }, { status: 400 });
+
+  // Com o código de acesso: contato + código batendo, o chamado abre direto (sem e-mail).
+  if (codigo) {
+    if (codigo.length !== 6) return NextResponse.json({ error: 'O código de acesso tem 6 letras/números.' }, { status: 400 });
+    let qc = admin.from('chamados').select('*').neq('status', 'cancelado').not('codigo_hash', 'is', null).order('criado_em', { ascending: false }).limit(50);
+    qc = porEmail ? qc.eq('solicitante_email', contato) : qc.eq('telefone_digitos', dig);
+    const { data: cand } = await qc;
+    const achou = (cand || []).find((c) => c.codigo_hash === hashCodigo(c.id, codigo));
+    if (!achou) return NextResponse.json({ error: 'Não encontramos um chamado com esse contato e código. Confira os dados.' }, { status: 404 });
+    return NextResponse.json({ ok: true, link: await linkDoChamado(admin, achou) });
+  }
 
   let q = admin.from('chamados').select('*, clientes(nome_empresa)').not('solicitante_email', 'is', null).neq('status', 'cancelado').order('criado_em', { ascending: false }).limit(5);
   q = porEmail ? q.eq('solicitante_email', contato) : q.eq('telefone_digitos', dig);

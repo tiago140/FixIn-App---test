@@ -28,6 +28,7 @@ export default function NovoChamadoForm({ clientes, base }) {
         <h2 className="font-slab text-2xl font-bold text-marinho">Chamado {ok.numero} aberto</h2>
         <p className="text-sm text-marinho/70 mt-2">Se quiser que o solicitante acompanhe, envie este link a ele (aparece só agora; depois dá para gerar outro no chamado):</p>
         <div className="text-xs break-all bg-fundo border border-linha rounded p-2 mt-2">{link}</div>
+        {ok.codigo && <p className="text-sm mt-2">Protocolo: <strong className="font-mono">{ok.numero}</strong> · código de acesso: <strong className="font-mono tracking-widest">{ok.codigo.slice(0, 3)}-{ok.codigo.slice(3)}</strong> (passe ao solicitante; não aparece de novo).</p>}
         <div className="flex gap-2 mt-3">
           <button onClick={() => navigator.clipboard?.writeText(link)} className="border border-linha rounded-md px-3 py-1.5 text-sm">Copiar link</button>
           <button onClick={() => router.push(`${base}/${ok.id}`)} className="bg-marinho text-white rounded-md px-4 py-1.5 text-sm font-semibold">Abrir chamado</button>

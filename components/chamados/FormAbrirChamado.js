@@ -31,6 +31,14 @@ export default function FormAbrirChamado({ slug, imobiliaria }) {
         <div className="text-4xl mb-2">✅</div>
         <h2 className="font-slab text-2xl font-bold text-marinho">Chamado {ok.numero || ''} aberto!</h2>
         <p className="text-marinho/70 mt-2">A {imobiliaria} já foi avisada. Guarde o link abaixo: é por ele que você acompanha, conversa e aprova o orçamento.</p>
+        {ok.codigo && (
+          <div className="mt-4 border-2 border-dashed border-marinho/40 rounded-lg p-4 bg-fundo">
+            <div className="text-xs uppercase tracking-wide text-marinho/60">Seu protocolo — salve ou tire um print</div>
+            <div className="font-mono text-lg font-bold text-marinho mt-1">{ok.numero}</div>
+            <div className="font-mono text-3xl font-bold tracking-[0.25em] text-marinho">{ok.codigo.slice(0, 3)}-{ok.codigo.slice(3)}</div>
+            <p className="text-xs text-marinho/70 mt-2">Se perder o link, entre em “Já abri um chamado e perdi o link” e informe seu e-mail ou telefone e este código. Ele não será mostrado de novo.</p>
+          </div>
+        )}
         {link && (
           <>
             <a href={link} className="block mt-4 bg-marinho text-white font-semibold rounded-md px-4 py-3">Acompanhar meu chamado</a>
