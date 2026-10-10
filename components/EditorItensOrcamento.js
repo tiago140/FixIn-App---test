@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, Wand2, Undo2, Plus, Trash2, Loader2, PackagePlus } from 'lucide-react';
 import { fmtBRL } from '@/lib/format';
+import { categoriaEspecial } from '@/lib/itensEspeciais';
+import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 
 let seq = 0;
 const novoId = () => `novo-ed-${++seq}-${Date.now()}`; // prefixo "novo-": a tela de gestão trata como item a ser criado
@@ -164,6 +166,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
 
   return (
     <div className="space-y-6">
+      <AlertaItensEspeciais itens={itens} />
       <div className="card p-0 overflow-hidden">
         <div className="px-5 pt-5 pb-3 flex items-center gap-3 flex-wrap">
           <h3 className="font-slab text-xl font-bold text-marinho">Itens do orçamento</h3>
@@ -211,13 +214,15 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
                   {g.itens.map((it) => {
                     const origem = marcas[it.id];
                     const sem = semPreco(it);
+                    const especial = categoriaEspecial(it);
                     return (
-                      <div key={it.id} data-item={it.id} className={`grid grid-cols-2 ${COLUNAS} gap-2 px-5 py-3 border-t border-linha/70 items-start border-l-4 ${sem ? 'border-l-alerta bg-alerta/5' : 'border-l-transparent'}`}>
+                      <div key={it.id} data-item={it.id} className={`grid grid-cols-2 ${COLUNAS} gap-2 px-5 py-3 border-t border-linha/70 items-start border-l-4 ${sem || especial ? 'border-l-alerta bg-alerta/5' : 'border-l-transparent'}`}>
                         <div className="col-span-2 md:col-span-1">
                           <label className="md:hidden block text-[11px] text-marinho/50 mb-0.5">Serviço</label>
                           <input aria-label="Serviço" className={campo} value={it.servico} onChange={(e) => atualizar(it.id, 'servico', e.target.value)} placeholder="Serviço" />
-                          {(sem || origem) && (
+                          {(sem || origem || especial) && (
                             <div className="mt-1 flex gap-1.5 flex-wrap">
+                              {especial && <span title="Item que pede atenção ao orçar" className="text-[10px] font-bold uppercase rounded px-1.5 py-0.5 bg-alerta text-white">⚠ {especial.rotulo}</span>}
                               {sem && <span className="text-[10px] font-bold uppercase text-alerta">sem preço</span>}
                               {origem && <span title={ORIGEM[origem]} className="text-[10px] font-bold rounded px-1.5 py-0.5 bg-marinho text-white">IA · {origem === 'catalogo' ? 'catálogo' : origem === 'historico' ? 'seu histórico' : origem === 'estimativa' ? 'estimativa' : origem === 'editado' ? 'alterado' : 'novo'}</span>}
                             </div>

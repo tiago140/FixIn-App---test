@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtBRL, fmtDataHora, calcularTotalItens, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 import EditorItensOrcamento from '@/components/EditorItensOrcamento';
+import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import { Upload, Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
 
@@ -284,6 +285,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           <span className="font-mono">{fmtBRL(totalFinal)}</span>
         </div>
 
+        <div className="sm:col-span-2"><AlertaItensEspeciais itens={itens} /></div>
         <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
           <button type="button" onClick={salvar} disabled={salvando} className="flex items-center justify-center gap-2 bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">
             {salvando ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {salvando ? 'Salvando…' : 'Salvar alterações'}

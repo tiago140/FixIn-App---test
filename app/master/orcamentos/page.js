@@ -15,7 +15,7 @@ export default async function OrcamentosPage() {
 
   const { data: orcamentos } = await supabase
     .from('orcamentos')
-    .select('*, clientes(nome_empresa), orcamento_itens(mo, ma)')
+    .select('*, clientes(nome_empresa), orcamento_itens(servico, descricao, ambiente, mo, ma)')
     .order('criado_em', { ascending: false });
 
   return (
