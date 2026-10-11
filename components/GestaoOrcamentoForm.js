@@ -198,7 +198,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       <label className="card p-4 flex items-center gap-2 text-sm font-semibold text-marinho cursor-pointer">
         <input type="checkbox" checked={seguroFianca} onChange={(e) => setSeguroFianca(e.target.checked)} className="w-4 h-4" /> Seguro fiança {orcamento.solicitado_por ? '(marcado pela imobiliária quando "Sim")' : ''}
       </label>
-      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} seguroFianca={seguroFianca} />
+      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} seguroFianca={seguroFianca} margem={Number(margem) || 0} />
 
       <div className="card p-5 grid sm:grid-cols-2 gap-4">
         {clientes && (

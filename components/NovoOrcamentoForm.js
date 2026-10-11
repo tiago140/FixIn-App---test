@@ -207,7 +207,7 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         {avisoVistoria && <div className="text-xs text-marinho/60 mt-2 whitespace-pre-line">{avisoVistoria}</div>}
       </div>
 
-      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} seguroFianca={seguroFianca} />
+      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} seguroFianca={seguroFianca} margem={margemEfetiva} />
 
       <div className="card p-5">
         <h3 className="font-semibold text-sm mb-3">Margem da FixIn (embutida, invisível para a imobiliária)</h3>

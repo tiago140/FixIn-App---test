@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
-import { ErroIA, LIMITE_ITENS, normalizarItemEntrada, semPreco, carregarBase, promptPrecos, chamarClaude, extrairJson, aplicarPrecos } from '@/lib/iaOrcamento';
+import { ErroIA, LIMITE_ITENS, normalizarItemEntrada, semPreco, carregarBase, promptPrecos, chamarClaudeDetalhado, extrairJson, aplicarPrecos } from '@/lib/iaOrcamento';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -26,9 +26,10 @@ export async function POST(req) {
     const base = await carregarBase(supabase);
     const jaPrecificados = itens.filter((i) => !semPreco(i)).slice(0, 60).map((i) => ({ ambiente: i.ambiente, servico: i.servico, mo: i.mo, ma: i.ma }));
     const prompt = promptPrecos({ base, alvos, jaPrecificados: soSemPreco ? jaPrecificados : [], instrucao: String(corpo.instrucao || '').slice(0, 600), endereco: String(corpo.endereco || '').slice(0, 200) });
-    const resposta = extrairJson(await chamarClaude({ prompt, maxTokens: 4000 }));
+    const { texto, cortada } = await chamarClaudeDetalhado({ prompt, maxTokens: 8000 });
+    const resposta = extrairJson(texto, { tolerante: true });
     const r = aplicarPrecos(alvos, resposta);
-    return NextResponse.json({ ...r, total_alvos: alvos.length });
+    return NextResponse.json({ ...r, total_alvos: alvos.length, aviso_cortada: cortada ? 'A resposta da IA veio incompleta: rode de novo para os itens restantes (deixe marcado "só os sem preço").' : undefined });
   } catch (e) {
     if (e instanceof ErroIA) return NextResponse.json({ error: e.message }, { status: e.status });
     return NextResponse.json({ error: 'Não foi possível gerar os valores agora.' }, { status: 500 });

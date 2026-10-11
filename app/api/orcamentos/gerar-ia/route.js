@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
-import { ErroIA, numeroSeguro, carregarBase, chamarClaude, extrairJson } from '@/lib/iaOrcamento';
+import { ErroIA, numeroSeguro, carregarBase, chamarClaudeDetalhado, extrairJson } from '@/lib/iaOrcamento';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -26,7 +26,8 @@ ENDEREÇO/IMÓVEL: ${endereco || 'não informado'}
 DESCRIÇÃO DO QUE PRECISA SER FEITO: ${descricao}
 
 Responda APENAS com JSON válido, sem texto antes ou depois: {"itens":[{"ambiente":"...","servico":"...","descricao":"...","mo":100.00,"ma":50.00}]}`;
-    const parsed = extrairJson(await chamarClaude({ prompt, maxTokens: 4000 }));
+    const { texto: bruto, cortada } = await chamarClaudeDetalhado({ prompt, maxTokens: 8000 });
+    const parsed = extrairJson(bruto, { tolerante: true });
     const itens = (Array.isArray(parsed.itens) ? parsed.itens : [])
       .slice(0, 60)
       .map((it) => ({
@@ -37,7 +38,7 @@ Responda APENAS com JSON válido, sem texto antes ou depois: {"itens":[{"ambient
         ma: numeroSeguro(it.ma) ?? 0,
       }))
       .filter((it) => it.servico);
-    return NextResponse.json({ itens });
+    return NextResponse.json({ itens, aviso: cortada ? 'A resposta da IA era grande: vieram só os itens completos. Peça o restante em outra rodada.' : undefined });
   } catch (e) {
     if (e instanceof ErroIA) return NextResponse.json({ error: e.message }, { status: e.status });
     return NextResponse.json({ error: 'Não foi possível criar os itens agora.' }, { status: 500 });

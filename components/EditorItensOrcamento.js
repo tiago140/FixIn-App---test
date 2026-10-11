@@ -47,7 +47,7 @@ const COLUNAS = 'md:grid-cols-[minmax(0,1.3fr)_minmax(0,2.4fr)_8.5rem_8.5rem_7.5
 const campo = 'w-full border border-linha rounded px-2 py-1.5 bg-papel text-sm';
 
 // Itens do orçamento (tabela agrupada por ambiente) + ferramentas de IA logo abaixo, para quem é o dono.
-export default function EditorItensOrcamento({ itens, setItens, endereco = '', catalogo = [], seguroFianca = false }) {
+export default function EditorItensOrcamento({ itens, setItens, endereco = '', catalogo = [], seguroFianca = false, margem = 0 }) {
   const [marcas, setMarcas] = useState({});
   const [desfazer, setDesfazer] = useState(null);
   const [ocupado, setOcupado] = useState(null); // 'valores' | 'editar' | 'criar'
@@ -118,7 +118,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
     const faltou = (data.total_alvos || 0) - valores.length;
     setMsg({
       tipo: 'ok',
-      texto: `${valores.length} de ${data.total_alvos} item(ns) com valor sugerido (${o.catalogo || 0} do seu catálogo, ${o.historico || 0} de orçamentos seus, ${o.estimativa || 0} estimados pelo mercado).${faltou > 0 ? ` ${faltou} ficaram sem preço: a IA entendeu que não geram custo ou não conseguiu estimar — preencha à mão se precisar.` : ''} Revise antes de salvar.`,
+      texto: `${valores.length} de ${data.total_alvos} item(ns) com valor sugerido (${o.catalogo || 0} do seu catálogo, ${o.historico || 0} de orçamentos seus, ${o.estimativa || 0} estimados pelo mercado).${faltou > 0 ? ` ${faltou} ficaram sem preço: a IA entendeu que não geram custo ou não conseguiu estimar — preencha à mão se precisar.` : ''} ${data.aviso_cortada ? ' ' + data.aviso_cortada : ''} Revise antes de salvar.`,
     });
   }
 
@@ -126,7 +126,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
     if (!comando.trim()) return setMsg({ tipo: 'erro', texto: 'Escreva o que você quer mudar nos itens.' });
     setMsg(null);
     setOcupado('editar');
-    const { data, erro } = await chamarIA('/api/orcamentos/editar-ia', { itens, endereco, instrucao: comando });
+    const { data, erro } = await chamarIA('/api/orcamentos/editar-ia', { itens, endereco, instrucao: comando, margem });
     setOcupado(null);
     if (erro) return setMsg({ tipo: 'erro', texto: erro });
     const c = data.contagem || {};
@@ -135,7 +135,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
     setItens(data.itens);
     setMarcas((m) => ({ ...m, ...(data.marcados || {}) }));
     setComando('');
-    setMsg({ tipo: 'ok', texto: `${data.resumo} (${c.alterados} alterado(s), ${c.adicionados} novo(s), ${c.removidos} removido(s)). Revise antes de salvar.` });
+    setMsg({ tipo: 'ok', texto: `${data.resumo} (${c.alterados} alterado(s), ${c.adicionados} novo(s), ${c.removidos} removido(s)).${data.aviso ? ' ' + data.aviso : ''} Revise antes de salvar.` });
   }
 
   async function criarComIA() {
@@ -151,7 +151,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
     setItens((l) => [...l, ...novos]);
     setMarcas((m) => ({ ...m, ...Object.fromEntries(novos.map((n) => [n.id, 'ia'])) }));
     setDescCriar('');
-    setMsg({ tipo: 'ok', texto: `${novos.length} item(ns) criado(s) pela IA com base na sua base de dados. Revise os valores antes de salvar.` });
+    setMsg({ tipo: 'ok', texto: `${novos.length} item(ns) criado(s) pela IA com base na sua base de dados.${data.aviso ? ' ' + data.aviso : ''} Revise os valores antes de salvar.` });
   }
 
   function desfazerUltima() {
