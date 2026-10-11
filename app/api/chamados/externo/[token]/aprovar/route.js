@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hashToken } from '@/lib/chamados';
+import { avisarImobiliariaChamado } from '@/lib/chamadosEmail';
 
 export const runtime = 'nodejs';
 
@@ -9,7 +10,7 @@ export async function POST(req, { params }) {
   const { decisao } = await req.json().catch(() => ({}));
   if (!['aprovado', 'rejeitado'].includes(decisao)) return NextResponse.json({ error: 'Decisão inválida.' }, { status: 400 });
   const admin = createAdminClient();
-  const { data: ch } = await admin.from('chamados').select('id, numero, orcamento_id, solicitante_nome, solicitante_tipo, aprovado_externo_em').eq('token_hash', hashToken(params.token)).maybeSingle();
+  const { data: ch } = await admin.from('chamados').select('*').eq('token_hash', hashToken(params.token)).maybeSingle();
   if (!ch || !ch.orcamento_id) return NextResponse.json({ error: 'Não há orçamento para responder.' }, { status: 404 });
   if (ch.aprovado_externo_em) return NextResponse.json({ error: 'Este orçamento já foi respondido.' }, { status: 409 });
 
@@ -26,5 +27,6 @@ export async function POST(req, { params }) {
   await admin.from('chamados').update({ status: decisao === 'aprovado' ? 'aprovado' : 'em_analise', aprovado_externo_nome: ch.solicitante_nome, aprovado_externo_em: agora, atualizado_em: agora }).eq('id', ch.id);
   await admin.from('chamado_mensagens').insert({ chamado_id: ch.id, autor_tipo: 'externo', autor_nome: ch.solicitante_nome, texto: decisao === 'aprovado' ? `✔ Aprovei o orçamento ${o.numero}.` : `✖ Recusei o orçamento ${o.numero}.` });
   try { await admin.from('auditoria').insert({ acao: decisao === 'aprovado' ? 'Orçamento aprovado pelo solicitante (chamado)' : 'Orçamento recusado pelo solicitante (chamado)', detalhe: `${o.numero} · ${quem}`, alvo_tipo: 'orcamento', alvo_id: o.id, autor_nome: ch.solicitante_nome, autor_role: 'externo' }); } catch (e) {}
+  await avisarImobiliariaChamado(admin, ch, decisao === 'aprovado' ? 'aprovado' : 'recusado');
   return NextResponse.json({ ok: true });
 }

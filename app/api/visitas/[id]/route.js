@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
+import { avisarImobiliariaVisita } from '@/lib/visitasEmail';
 
 export async function PATCH(req, { params }) {
   const { user, profile, supabase } = await getProfile();
@@ -25,6 +26,7 @@ export async function PATCH(req, { params }) {
         alvo_tipo: 'visita', alvo_id: id,
         autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
       });
+      await avisarImobiliariaVisita({ ...visita, data_hora: data_hora_sugerida }, 'sugerida');
       return NextResponse.json({ ok: true });
     }
     const patch = { atualizado_em: new Date().toISOString() };
@@ -32,6 +34,7 @@ export async function PATCH(req, { params }) {
     if (prestador_id !== undefined) patch.prestador_id = prestador_id || null;
     const { error } = await supabase.from('visitas').update(patch).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (status && status !== visita.status && ['confirmada', 'cancelada'].includes(status)) await avisarImobiliariaVisita(visita, status);
     return NextResponse.json({ ok: true });
   }
 

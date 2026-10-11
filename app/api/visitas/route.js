@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
+import { avisarImobiliariaVisita } from '@/lib/visitasEmail';
 
 export async function POST(req) {
   const { user, profile, supabase } = await getProfile();
@@ -15,6 +16,7 @@ export async function POST(req) {
       observacoes, status: 'confirmada', criado_por_role: 'master', criado_por: user.id,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await avisarImobiliariaVisita({ cliente_id, endereco, data_hora, criado_por: null }, 'agendada');
     return NextResponse.json({ ok: true });
   }
 

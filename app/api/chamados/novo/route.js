@@ -1,4 +1,4 @@
-import { avisarSolicitante } from '@/lib/chamadosEmail';
+import { avisarSolicitante, avisarImobiliariaChamado } from '@/lib/chamadosEmail';
 import { criarCodigoAcesso } from '@/lib/chamados';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
@@ -27,14 +27,18 @@ export async function POST(req) {
 
   const admin = createAdminClient();
   const token = novoToken();
-  const { data: ch, error } = await admin.from('chamados').insert({
+  const dados = {
     cliente_id: clienteId, solicitante_tipo: tipo, solicitante_nome: nome, solicitante_email: email || null, solicitante_telefone: telefone || null,
     endereco, titulo, descricao, ...camposToken(token), telefone_digitos: digitosTelefone(telefone) || null,
-  }).select('*').single();
+  };
+  // guarda quem abriu (para o aviso por e-mail chegar também a essa pessoa); se a coluna ainda não existir, grava sem ela
+  let { data: ch, error } = await admin.from('chamados').insert({ ...dados, criado_por: user.id }).select('*').single();
+  if (error && /criado_por/i.test(error.message || '')) ({ data: ch, error } = await admin.from('chamados').insert(dados).select('*').single());
   if (error || !ch) return NextResponse.json({ error: 'Não foi possível abrir o chamado.' }, { status: 500 });
   if (files.length) await salvarAnexos(admin, ch.id, files, { tipo: profile.role === 'master' ? 'fixin' : 'imobiliaria', nome: profile.nome_completo || 'Equipe' });
   const codigo = await criarCodigoAcesso(admin, ch.id);
   await avisarSolicitante(admin, ch, 'aberto', { codigo });
+  if (profile.role === 'master') await avisarImobiliariaChamado(admin, ch, 'novo');
   try { await admin.from('auditoria').insert({ acao: 'Chamado aberto internamente', detalhe: `${ch.numero} · ${tipo}`, alvo_tipo: 'chamado', alvo_id: ch.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {}
   return NextResponse.json({ ok: true, id: ch.id, numero: ch.numero, token, codigo });
 }

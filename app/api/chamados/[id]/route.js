@@ -1,4 +1,4 @@
-import { avisarSolicitante } from '@/lib/chamadosEmail';
+import { avisarSolicitante, avisarImobiliariaChamado } from '@/lib/chamadosEmail';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -23,6 +23,7 @@ export async function PATCH(req, { params }) {
   if (campos.status && campos.status !== a.chamado.status) {
     await admin.from('chamado_mensagens').insert({ chamado_id: a.chamado.id, autor_tipo: 'sistema', autor_nome: 'Sistema', texto: `Status alterado para "${STATUS_CHAMADO[campos.status]}".` });
     await avisarSolicitante(admin, a.chamado, 'status', { status: campos.status });
+    if (a.profile.role === 'master') await avisarImobiliariaChamado(admin, a.chamado, 'status', { status: campos.status });
   }
   return NextResponse.json({ ok: true });
 }

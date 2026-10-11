@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { avisarImobiliariaChamado } from '@/lib/chamadosEmail';
 import { hashToken, limpar, validarArquivos, salvarAnexos } from '@/lib/chamados';
 
 export const runtime = 'nodejs';
@@ -7,7 +8,7 @@ export const maxDuration = 60;
 
 export async function POST(req, { params }) {
   const admin = createAdminClient();
-  const { data: ch } = await admin.from('chamados').select('id, status, solicitante_nome').eq('token_hash', hashToken(params.token)).maybeSingle();
+  const { data: ch } = await admin.from('chamados').select('*').eq('token_hash', hashToken(params.token)).maybeSingle();
   if (!ch) return NextResponse.json({ error: 'Link inválido.' }, { status: 404 });
   if (ch.status === 'cancelado') return NextResponse.json({ error: 'Este chamado foi cancelado.' }, { status: 409 });
 
@@ -26,5 +27,8 @@ export async function POST(req, { params }) {
   if (texto) await admin.from('chamado_mensagens').insert({ chamado_id: ch.id, autor_tipo: 'externo', autor_nome: ch.solicitante_nome, texto });
   if (files.length) await salvarAnexos(admin, ch.id, files, { tipo: 'externo', nome: ch.solicitante_nome });
   await admin.from('chamados').update({ atualizado_em: new Date().toISOString() }).eq('id', ch.id);
+  // um e-mail por rajada: só avisa se esta é a primeira mensagem do solicitante nos últimos 10 minutos
+  const { count: recentes } = await admin.from('chamado_mensagens').select('id', { count: 'exact', head: true }).eq('chamado_id', ch.id).eq('autor_tipo', 'externo').gte('criado_em', new Date(Date.now() - 600000).toISOString());
+  if ((recentes || 0) <= (files.length + (texto ? 1 : 0))) await avisarImobiliariaChamado(admin, ch, 'resposta');
   return NextResponse.json({ ok: true });
 }

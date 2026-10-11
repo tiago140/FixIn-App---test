@@ -1,4 +1,4 @@
-import { avisarSolicitante } from '@/lib/chamadosEmail';
+import { avisarSolicitante, avisarImobiliariaChamado } from '@/lib/chamadosEmail';
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -25,5 +25,6 @@ export async function POST(req, { params }) {
   if (files.length) await salvarAnexos(admin, a.chamado.id, files, { tipo, nome });
   await admin.from('chamados').update({ atualizado_em: new Date().toISOString() }).eq('id', a.chamado.id);
   await avisarSolicitante(admin, a.chamado, 'resposta');
+  if (tipo === 'fixin') await avisarImobiliariaChamado(admin, a.chamado, 'equipe');
   return NextResponse.json({ ok: true });
 }

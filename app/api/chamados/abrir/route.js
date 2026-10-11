@@ -1,4 +1,4 @@
-import { avisarSolicitante } from '@/lib/chamadosEmail';
+import { avisarSolicitante, avisarImobiliariaChamado } from '@/lib/chamadosEmail';
 import { criarCodigoAcesso } from '@/lib/chamados';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -46,6 +46,7 @@ export async function POST(req) {
   if (files.length) await salvarAnexos(admin, ch.id, files, { tipo: 'externo', nome });
   const codigo = await criarCodigoAcesso(admin, ch.id);
   await avisarSolicitante(admin, ch, 'aberto', { codigo });
+  await avisarImobiliariaChamado(admin, ch, 'novo');
   try {
     await admin.from('auditoria').insert({ acao: 'Chamado aberto pelo link externo', detalhe: `${ch.numero} · ${cli.nome_empresa} · ${tipo}`, alvo_tipo: 'chamado', alvo_id: ch.id, autor_nome: nome, autor_role: 'externo' });
   } catch (e) {}
