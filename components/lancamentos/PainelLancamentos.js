@@ -11,7 +11,7 @@ const FILTROS = [
 ];
 const campo = 'border border-linha rounded px-3 py-2 bg-papel text-sm w-full';
 
-export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], hoje }) {
+export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], cobrancas = [], asaasPronto = false, ambiente = 'sandbox', hoje }) {
   const router = useRouter();
   const [aba, setAba] = useState('receber');
   const [filtro, setFiltro] = useState('aberto');
@@ -20,7 +20,8 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState('');
   const [atribuindo, setAtribuindo] = useState(null); // { id, prestador_id, valor }
-  const [pagando, setPagando] = useState(null); // { id, valor, data }
+  const [pagando, setPagando] = useState(null);
+  const [copiado, setCopiado] = useState(''); // { id, valor, data }
 
   const pagarDoOrcamento = useMemo(() => {
     const m = {};
@@ -57,6 +58,37 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       }
     } catch (e) { setMsg('Falha de conexão. Tente de novo.'); }
     setOcupado('');
+  }
+
+  const cobrDoLanc = useMemo(() => {
+    const m = {};
+    cobrancas.forEach((c) => { (m[c.lancamento_id] = m[c.lancamento_id] || []).push(c); });
+    return m;
+  }, [cobrancas]);
+
+  async function gerarCobranca(id, parcela) {
+    setOcupado(id); setMsg('');
+    try {
+      const r = await fetch(`/api/lancamentos/${id}/cobranca`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parcela }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) setMsg(j.error || 'Não foi possível gerar a cobrança.');
+      else router.refresh();
+    } catch (e) { setMsg('Falha de conexão. Tente de novo.'); }
+    setOcupado('');
+  }
+  async function cancelarCobranca(id) {
+    if (!confirm('Cancelar a cobrança em aberto?')) return;
+    setOcupado(id); setMsg('');
+    try {
+      const r = await fetch(`/api/lancamentos/${id}/cobranca`, { method: 'DELETE' });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) setMsg(j.error || 'Não foi possível cancelar.');
+      else router.refresh();
+    } catch (e) { setMsg('Falha de conexão.'); }
+    setOcupado('');
+  }
+  async function copiar(url) {
+    try { await navigator.clipboard.writeText(url); setCopiado(url); setTimeout(() => setCopiado(''), 2000); } catch (e) { window.prompt('Copie o link:', url); }
   }
 
   const soma = (tipo, fn) => lancamentos.filter((l) => l.tipo === tipo && fn(l)).reduce((a, l) => a + saldoAberto(l), 0);
@@ -189,6 +221,34 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                           : <><span className="text-amber-700 font-semibold">Aguardando conferência</span><Btn onClick={() => conferir(c)} off={ocupado === c.id}>Conferir e confirmar</Btn></>}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {l.tipo === 'receber' && asaasPronto && l.orcamento_id && (
+                  <div className="mt-2 space-y-1">
+                    {(cobrDoLanc[l.id] || []).map((c) => (
+                      <div key={c.id} className="flex flex-wrap items-center gap-2 text-xs border border-linha rounded px-2 py-1.5">
+                        <span className="font-semibold">Cobrança {c.parcela === 'entrada' ? 'entrada 50%' : c.parcela === 'saldo' ? 'saldo' : 'integral'}</span>
+                        <span className="text-marinho/60">{fmtBRL(c.valor)} · vence {fmtDate(c.vencimento)}</span>
+                        <span className="flex-1" />
+                        {c.status === 'no_caixa' && <span className="text-verde font-semibold">✓ No caixa</span>}
+                        {c.status === 'aprovado' && <span className="text-verde font-semibold">Aprovado (aguardando repasse)</span>}
+                        {c.status === 'pendente' && (<>
+                          <span className="text-amber-700 font-semibold">Cobrança enviada</span>
+                          {c.url && <><Btn onClick={() => copiar(c.url)}>{copiado === c.url ? 'Copiado!' : 'Copiar link'}</Btn><a href={c.url} target="_blank" rel="noreferrer" className="underline text-marinho">Abrir</a></>}
+                          <Btn suave onClick={() => cancelarCobranca(l.id)} off={ocupado === l.id}>Cancelar</Btn>
+                        </>)}
+                        {['vencida', 'cancelada', 'estornada'].includes(c.status) && <span className="text-marinho/50">{c.status}</span>}
+                      </div>
+                    ))}
+                    {emAberto(l) && !(cobrDoLanc[l.id] || []).some((c) => c.status === 'pendente') && (
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <span className="text-[11px] text-marinho/60">Gerar cobrança{ambiente === 'sandbox' ? ' (teste)' : ''}:</span>
+                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => gerarCobranca(l.id, 'entrada')} off={ocupado === l.id}>Entrada 50%</Btn>}
+                        {Number(l.valor_pago || 0) > 0 && <Btn onClick={() => gerarCobranca(l.id, 'saldo')} off={ocupado === l.id}>Saldo</Btn>}
+                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => gerarCobranca(l.id, 'total')} off={ocupado === l.id}>100%</Btn>}
+                      </div>
+                    )}
                   </div>
                 )}
 

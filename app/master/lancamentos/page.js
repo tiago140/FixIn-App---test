@@ -30,6 +30,14 @@ export default async function LancamentosPage() {
     comprovantes = (data || []).map((c) => ({ ...c, url: urlArquivo('comprovantes-pagamento', c.arquivo_path) }));
   }
 
+  // Cobranças do Asaas (se a tabela ainda não existir, a tela continua funcionando sem elas).
+  let cobrancas = [];
+  try {
+    const { data } = await supabase.from('cobrancas').select('id, lancamento_id, parcela, valor, url, status, vencimento, pago_em').order('criado_em', { ascending: true });
+    cobrancas = data || [];
+  } catch (e) {}
+  const asaasPronto = !!process.env.ASAAS_API_KEY;
+
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader icone="financeiro" titulo="Contas" subtitulo="A receber e a pagar — controle interno, visível somente para você" />
@@ -38,6 +46,9 @@ export default async function LancamentosPage() {
         clientes={clientes || []}
         prestadores={prestadores || []}
         comprovantes={comprovantes}
+        cobrancas={cobrancas}
+        asaasPronto={asaasPronto}
+        ambiente={process.env.ASAAS_AMBIENTE === 'producao' ? 'producao' : 'sandbox'}
         hoje={hojeSP()}
       />
     </AppShell>
