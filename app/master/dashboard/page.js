@@ -8,7 +8,7 @@ import { MASTER_TABS } from '@/lib/navTabs';
 import { calcularTotalComMargem, estaAtrasado } from '@/lib/format';
 import { contagensFunil } from '@/lib/painel';
 import FiltroImobiliaria from '@/components/FiltroImobiliaria';
-import { resolverFiltro, opcoesFiltro } from '@/lib/filtroPainel';
+import { resolverFiltro, opcoesFiltro, resolverPeriodo, mesesComOrcamento } from '@/lib/filtroPainel';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +19,10 @@ export default async function MasterDashboard({ searchParams }) {
 
   // Filtro por imobiliária (?cliente=<id>): só vale se for o id de uma imobiliária que existe.
   const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa, ativo');
-  const { data: contagem } = await supabase.from('orcamentos').select('cliente_id').limit(5000);
+  const { data: contagem } = await supabase.from('orcamentos').select('cliente_id, criado_em').limit(5000);
   const filtro = resolverFiltro(searchParams?.cliente, clientes);
   const opcoes = opcoesFiltro(clientes, contagem);
+  const periodo = resolverPeriodo(searchParams?.de, searchParams?.ate);
 
   let consulta = supabase
     .from('orcamentos')
@@ -29,6 +30,8 @@ export default async function MasterDashboard({ searchParams }) {
     .order('criado_em', { ascending: false })
     .limit(1000);
   if (filtro) consulta = consulta.eq('cliente_id', filtro.id);
+  if (periodo.inicio) consulta = consulta.gte('criado_em', periodo.inicio);
+  if (periodo.fim) consulta = consulta.lt('criado_em', periodo.fim);
   const { data: orcamentos } = await consulta;
 
   const lista = (orcamentos || []).map((o) => {
@@ -50,7 +53,7 @@ export default async function MasterDashboard({ searchParams }) {
           </>
         }
       />
-      <FiltroImobiliaria opcoes={opcoes} selecionado={filtro?.id || null} totalGeral={(contagem || []).length} />
+      <FiltroImobiliaria opcoes={opcoes} selecionado={filtro?.id || null} totalGeral={(contagem || []).length} meses={mesesComOrcamento(contagem)} de={periodo.de} ate={periodo.ate} qtdNoPeriodo={lista.length} />
       <PainelConteudo orcamentos={lista} papel="master" veValores escopo={filtro?.nome_empresa || null} />
     </AppShell>
   );
