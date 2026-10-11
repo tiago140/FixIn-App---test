@@ -39,11 +39,26 @@ export async function POST(req, { params }) {
   if (!(valor > 0)) return NextResponse.json({ error: 'Valor inválido.' }, { status: 400 });
 
   const { data: cliente } = await admin.from('clientes').select('id, nome, nome_empresa, email, cnpj, asaas_customer_id').eq('id', l.cliente_id).single();
+  // Quem paga: a imobiliária (padrão) ou uma pessoa/empresa informada na hora (CPF ou CNPJ).
+  let pagador = null;
+  if (b.pagador && (b.pagador.documento || b.pagador.nome)) {
+    const doc = String(b.pagador.documento || '').replace(/\D/g, '');
+    const nome = String(b.pagador.nome || '').trim().slice(0, 120);
+    if (!nome) return NextResponse.json({ error: 'Informe o nome de quem vai pagar.' }, { status: 400 });
+    if (doc.length !== 11 && doc.length !== 14) return NextResponse.json({ error: 'CPF ou CNPJ de quem vai pagar inválido (11 ou 14 números).' }, { status: 400 });
+    pagador = { nome, doc, email: String(b.pagador.email || '').trim().slice(0, 120) || undefined };
+  }
   const vencimento = somarDias(hojeSP(), 3);
   let cob;
   try {
-    const customer = await garantirClienteAsaas(admin, cliente);
-    cob = await asaas('/payments', { method: 'POST', body: { customer, billingType: 'UNDEFINED', value: valor, dueDate: vencimento, description: `${l.descricao} (${parcela === 'entrada' ? 'entrada 50%' : parcela === 'saldo' ? 'saldo' : 'pagamento integral'})`.slice(0, 500), externalReference: l.id } });
+    let customer;
+    if (pagador) {
+      const c = await asaas('/customers', { method: 'POST', body: { name: pagador.nome, cpfCnpj: pagador.doc, email: pagador.email, notificationDisabled: true, externalReference: `${cliente.id}:avulso` } });
+      customer = c.id;
+    } else {
+      customer = await garantirClienteAsaas(admin, cliente);
+    }
+    cob = await asaas('/payments', { method: 'POST', body: { customer, billingType: 'UNDEFINED', value: valor, dueDate: vencimento, description: `${pagador ? `[Pagador: ${pagador.nome}] ` : ''}${l.descricao} (${parcela === 'entrada' ? 'entrada 50%' : parcela === 'saldo' ? 'saldo' : 'pagamento integral'})`.slice(0, 500), externalReference: l.id } });
   } catch (e) {
     return NextResponse.json({ error: e.message || 'Não foi possível gerar a cobrança.' }, { status: 400 });
   }

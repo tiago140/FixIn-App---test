@@ -21,7 +21,8 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
   const [ocupado, setOcupado] = useState('');
   const [atribuindo, setAtribuindo] = useState(null); // { id, prestador_id, valor }
   const [pagando, setPagando] = useState(null);
-  const [copiado, setCopiado] = useState(''); // { id, valor, data }
+  const [copiado, setCopiado] = useState('');
+  const [gerando, setGerando] = useState(null); // { id, parcela, avulso, nome, documento, email } // { id, valor, data }
 
   const pagarDoOrcamento = useMemo(() => {
     const m = {};
@@ -66,13 +67,13 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
     return m;
   }, [cobrancas]);
 
-  async function gerarCobranca(id, parcela) {
+  async function gerarCobranca(id, parcela, pagador) {
     setOcupado(id); setMsg('');
     try {
-      const r = await fetch(`/api/lancamentos/${id}/cobranca`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parcela }) });
+      const r = await fetch(`/api/lancamentos/${id}/cobranca`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parcela, pagador }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) setMsg(j.error || 'Não foi possível gerar a cobrança.');
-      else router.refresh();
+      else { setGerando(null); router.refresh(); }
     } catch (e) { setMsg('Falha de conexão. Tente de novo.'); }
     setOcupado('');
   }
@@ -260,11 +261,30 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                     {emAberto(l) && !(cobrDoLanc[l.id] || []).some((c) => c.status === 'pendente') && (
                       <div className="flex flex-wrap gap-2 items-center">
                         <span className="text-[11px] text-marinho/60">Gerar cobrança{ambiente === 'sandbox' ? ' (teste)' : ''}:</span>
-                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => gerarCobranca(l.id, 'entrada')} off={ocupado === l.id}>Entrada 50%</Btn>}
-                        {Number(l.valor_pago || 0) > 0 && <Btn onClick={() => gerarCobranca(l.id, 'saldo')} off={ocupado === l.id}>Saldo</Btn>}
-                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => gerarCobranca(l.id, 'total')} off={ocupado === l.id}>100%</Btn>}
+                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'entrada', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Entrada 50%</Btn>}
+                        {Number(l.valor_pago || 0) > 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'saldo', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Saldo</Btn>}
+                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'total', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>100%</Btn>}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {gerando?.id === l.id && (
+                  <div className="mt-2 bg-papel rounded p-3 space-y-2 text-xs">
+                    <div className="font-semibold">Gerar cobrança — {gerando.parcela === 'entrada' ? 'entrada 50%' : gerando.parcela === 'saldo' ? 'saldo' : '100%'}</div>
+                    <label className="flex items-center gap-2"><input type="radio" checked={!gerando.avulso} onChange={() => setGerando({ ...gerando, avulso: false })} /> Quem paga é a imobiliária{l.clientes?.nome_empresa ? ` (${l.clientes.nome_empresa})` : ''}</label>
+                    <label className="flex items-center gap-2"><input type="radio" checked={gerando.avulso} onChange={() => setGerando({ ...gerando, avulso: true })} /> Quem paga é outra pessoa ou empresa</label>
+                    {gerando.avulso && (
+                      <div className="grid sm:grid-cols-3 gap-2">
+                        <label>Nome<input className={campo + ' mt-1'} value={gerando.nome} onChange={(e) => setGerando({ ...gerando, nome: e.target.value })} /></label>
+                        <label>CPF ou CNPJ<input className={campo + ' mt-1'} value={gerando.documento} onChange={(e) => setGerando({ ...gerando, documento: e.target.value })} inputMode="numeric" /></label>
+                        <label>E-mail (opcional)<input className={campo + ' mt-1'} value={gerando.email} onChange={(e) => setGerando({ ...gerando, email: e.target.value })} /></label>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Btn onClick={() => gerarCobranca(l.id, gerando.parcela, gerando.avulso ? { nome: gerando.nome, documento: gerando.documento, email: gerando.email } : undefined)} off={ocupado === l.id}>Gerar link</Btn>
+                      <Btn suave onClick={() => setGerando(null)}>Fechar</Btn>
+                    </div>
                   </div>
                 )}
 
