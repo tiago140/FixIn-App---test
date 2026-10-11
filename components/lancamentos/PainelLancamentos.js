@@ -87,6 +87,15 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
     } catch (e) { setMsg('Falha de conexão.'); }
     setOcupado('');
   }
+  async function ligarAvisos() {
+    setOcupado('aviso'); setMsg('');
+    try {
+      const r = await fetch('/api/asaas/webhook', { method: 'POST' });
+      const j = await r.json().catch(() => ({}));
+      setMsg(r.ok ? 'Avisos do Asaas ligados. Pode gerar uma cobrança de teste.' : (j.error || 'Não foi possível ligar.'));
+    } catch (e) { setMsg('Falha de conexão.'); }
+    setOcupado('');
+  }
   async function copiar(url) {
     try { await navigator.clipboard.writeText(url); setCopiado(url); setTimeout(() => setCopiado(''), 2000); } catch (e) { window.prompt('Copie o link:', url); }
   }
@@ -144,6 +153,13 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       </div>
 
 
+      {asaasPronto && (
+        <div className="card p-3 mb-4 flex flex-wrap items-center gap-3 text-xs">
+          <span className="font-semibold">Asaas ({ambiente === 'producao' ? 'produção' : 'teste'})</span>
+          <span className="text-marinho/60">Para o "No caixa" automático, o Asaas precisa avisar o sistema quando alguém pagar.</span>
+          <Btn onClick={ligarAvisos} off={ocupado === 'aviso'}>Ligar avisos do Asaas</Btn>
+        </div>
+      )}
       <PainelHoje
         pendentes={pendentesConferir}
         nomeDoOrc={nomeDoOrc}
