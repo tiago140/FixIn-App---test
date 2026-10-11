@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { hojeSP } from '@/lib/lancamentos';
+import { tikpagConfigurado } from '@/lib/tikpag';
 import { urlArquivo } from '@/lib/arquivos';
 import PainelLancamentos from '@/components/lancamentos/PainelLancamentos';
 
@@ -48,6 +49,7 @@ export default async function LancamentosPage() {
         comprovantes={comprovantes}
         cobrancas={cobrancas}
         asaasPronto={asaasPronto}
+        tikpagPronto={tikpagConfigurado()}
         ambiente={process.env.ASAAS_AMBIENTE === 'producao' ? 'producao' : 'sandbox'}
         hoje={hojeSP()}
       />

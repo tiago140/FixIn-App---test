@@ -11,7 +11,7 @@ const FILTROS = [
 ];
 const campo = 'border border-linha rounded px-3 py-2 bg-papel text-sm w-full';
 
-export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], cobrancas = [], asaasPronto = false, ambiente = 'sandbox', hoje }) {
+export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], cobrancas = [], asaasPronto = false, tikpagPronto = false, ambiente = 'sandbox', hoje }) {
   const router = useRouter();
   const [aba, setAba] = useState('receber');
   const [filtro, setFiltro] = useState('aberto');
@@ -67,10 +67,10 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
     return m;
   }, [cobrancas]);
 
-  async function gerarCobranca(id, parcela, pagador) {
+  async function gerarCobranca(id, parcela, pagador, provedor = 'asaas') {
     setOcupado(id); setMsg('');
     try {
-      const r = await fetch(`/api/lancamentos/${id}/cobranca`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parcela, pagador }) });
+      const r = await fetch(`/api/lancamentos/${id}/${provedor === 'tikpag' ? 'tikpag' : 'cobranca'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parcela, pagador }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) setMsg(j.error || 'Não foi possível gerar a cobrança.');
       else { setGerando(null); router.refresh(); }
@@ -282,7 +282,8 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                       </div>
                     )}
                     <div className="flex gap-2">
-                      <Btn onClick={() => gerarCobranca(l.id, gerando.parcela, gerando.avulso ? { nome: gerando.nome, documento: gerando.documento, email: gerando.email } : undefined)} off={ocupado === l.id}>Gerar link</Btn>
+                      <Btn onClick={() => gerarCobranca(l.id, gerando.parcela, gerando.avulso ? { nome: gerando.nome, documento: gerando.documento, email: gerando.email } : undefined)} off={ocupado === l.id}>Gerar link (Pix, boleto ou cartão)</Btn>
+                      <BotaoTikpag pronto={tikpagPronto} off={ocupado === l.id} onClick={() => gerarCobranca(l.id, gerando.parcela, gerando.avulso ? { nome: gerando.nome, documento: gerando.documento, email: gerando.email } : undefined, 'tikpag')} />
                       <Btn suave onClick={() => setGerando(null)}>Fechar</Btn>
                     </div>
                   </div>
@@ -464,5 +465,22 @@ function Proximos30({ lancamentos, hoje }) {
         ))}
       </div>
     </div>
+  );
+}
+
+
+// "Pague com o TikPag". O logo é o arquivo public/tikpag-logo.png (se faltar, aparece o nome em texto).
+function BotaoTikpag({ pronto, off, onClick }) {
+  const [semLogo, setSemLogo] = useState(false);
+  return (
+    <button type="button" onClick={pronto ? onClick : undefined} disabled={!pronto || off}
+      title={pronto ? 'Pagar com cartão pelo TikPag' : 'TikPag: aguardando a documentação do checkout'}
+      className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded border border-linha bg-white text-marinho disabled:opacity-60">
+      <span>Pague com o</span>
+      {semLogo
+        ? <span className="font-bold tracking-tight">TikPag</span>
+        : <img src="/tikpag-logo.png" alt="TikPag" height="16" style={{ height: 16, width: 'auto' }} onError={() => setSemLogo(true)} />}
+      {!pronto && <span className="text-[10px] font-normal text-marinho/50">(em breve)</span>}
+    </button>
   );
 }
