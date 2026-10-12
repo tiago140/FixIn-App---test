@@ -155,6 +155,21 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
                       {o.numero} {o.tipo === 'manutencao' ? '· MANUT.' : ''}
                     </span>
                     {o.seguro_fianca && <span className="inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wide bg-marinho text-white rounded px-1.5 py-0.5">Seguro fiança</span>}
+                    {o.clientes?.nome_empresa && (
+                      basePath.startsWith('/master') && o.cliente_id ? (
+                        <button
+                          type="button"
+                          title="Abrir a imobiliária"
+                          onClick={(e) => { e.stopPropagation(); router.push(`/master/clientes/${o.cliente_id}`); }}
+                          draggable={false}
+                          className="mt-1 mb-0.5 inline-block max-w-full truncate rounded bg-marinho/10 px-1.5 py-0.5 text-left text-[11px] font-bold text-marinho underline decoration-marinho/30 underline-offset-2 hover:bg-marinho hover:text-white"
+                        >
+                          {o.clientes.nome_empresa}
+                        </button>
+                      ) : (
+                        <span className="mt-1 mb-0.5 inline-block max-w-full truncate rounded bg-marinho/10 px-1.5 py-0.5 text-[11px] font-bold text-marinho">{o.clientes.nome_empresa}</span>
+                      )
+                    )}
                     <div className="font-semibold mt-0.5">{o.endereco}</div>
                     {veValores && total != null && <div className="font-mono mt-0.5">{fmtBRL(total)}</div>}
                     {['aprovado', 'em_execucao', 'finalizado'].includes(status) && o.aprovado_em && (
