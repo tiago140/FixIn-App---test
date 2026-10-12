@@ -4,6 +4,7 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
+import ContasSecao from '@/components/lancamentos/ContasSecao';
 import ToggleAtraso from '@/components/ToggleAtraso';
 import { GraficoPizzaStatus, GraficoBarrasClientes, GraficoBarrasAprovadoReprovado } from '@/components/DashboardCharts';
 import { STATUS_LABEL, PAGAMENTO_CLIENTE_LABEL, fmtBRL, calcularTotalComMargem, calcularTotalItens, estaAtrasado } from '@/lib/format';
@@ -58,7 +59,7 @@ export default async function FinanceiroPage() {
       <PageHeader
         icone="financeiro"
         titulo="Financeiro"
-        subtitulo="Visão completa — pagamentos, aprovação e margem interna"
+        subtitulo="Pagamentos, aprovação, margem interna e contas a receber e a pagar"
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-linha border border-linha mb-6">
@@ -72,6 +73,8 @@ export default async function FinanceiroPage() {
         <div className="text-xs text-marinho/50 mb-1">Margem / lucro interno da FixIn — visível somente aqui</div>
         <div className="text-2xl font-bold">{fmtBRL(margemGeral)}</div>
       </div>
+
+      {profile.dono && <ContasSecao supabase={supabase} />}
 
       <div className="grid xl:grid-cols-2 gap-5 mb-10">
         <div className="card p-6">

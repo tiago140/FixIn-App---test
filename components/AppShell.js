@@ -124,7 +124,7 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="app-topbar h-16 flex items-center justify-between px-3 sm:px-6 bg-marinho text-white sticky top-0 z-30 gap-3 shadow-md border-b border-black/20">
+      <div className="app-topbar h-16 flex items-center justify-between px-3 sm:px-6 bg-marinho text-white sticky top-0 z-30 gap-3">
         <div className="flex items-center gap-3">
           <button className="md:hidden bg-white/10 hover:bg-white/20 border border-white/25 rounded-lg px-2.5 py-2" onClick={() => setOpen((v) => !v)} aria-label="Abrir menu">
             <Menu size={18} />
@@ -170,7 +170,7 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
 
       <div className="flex flex-1 items-stretch">
         <aside
-          className={`app-aside fixed md:sticky top-16 md:self-start md:h-[calc(100vh-4rem)] bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-52'} flex-shrink-0 bg-marinho text-white border-r border-white/10 py-3 px-2 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
+          className={`app-aside fixed md:sticky top-16 md:self-start md:h-[calc(100vh-4rem)] bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-52'} flex-shrink-0 bg-marinho text-white py-3 px-2 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
             open ? 'translate-x-0 w-52' : '-translate-x-full md:translate-x-0'
           }`}
         >
