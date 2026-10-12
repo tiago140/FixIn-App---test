@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Bell, BookOpen, Building2, CalendarDays, FileSpreadsheet, HardHat, KeyRound, LayoutDashboard, LogOut, Menu, MessageCircle, MessageSquare, ClipboardCheck, Receipt, ShieldCheck, Table2, Users, Volume2, VolumeX, Wallet } from 'lucide-react';
+import { Bell, BookOpen, Building2, CalendarDays, ChevronsLeft, ChevronsRight, ClipboardCheck, FileSpreadsheet, HardHat, KeyRound, LayoutDashboard, LogOut, Menu, MessageCircle, MessageSquare, Receipt, ShieldCheck, Table2, Users, Volume2, VolumeX, Wallet } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { rotuloPerfil } from '@/lib/permissoes';
 import { destravarSom, somLigado, definirSom, tocarSomAviso } from '@/lib/somAviso';
@@ -30,8 +30,15 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [chavesAvisos, setChavesAvisos] = useState([]);
   const [vistos, setVistos] = useState({});
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem('fixin_sidebar_collapsed') === '1');
+    } catch (e) {}
+  }, []);
 
   // bolinha vermelha do menu "Avisos": avisos atuais que ainda não foram dispensados.
   // Consulta de novo a cada 30 s (e ao voltar para a aba); aviso NOVO toca o sinal sonoro.
@@ -97,6 +104,16 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
 
   const contagemAvisos = chavesAvisos.filter((k) => !vistos[k]).length;
 
+  function alternarColapso() {
+    setCollapsed((v) => {
+      const novo = !v;
+      try {
+        localStorage.setItem('fixin_sidebar_collapsed', novo ? '1' : '0');
+      } catch (e) {}
+      return novo;
+    });
+  }
+
   async function sair() {
     await supabase.auth.signOut();
     router.push('/login');
@@ -104,12 +121,10 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
   }
 
   const perfilRotulo = rotuloPerfil(profile);
-  const itens = tabs.filter((t) => !t.dono || profile?.dono);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 shadow-md">
-      <div className="app-topbar h-16 flex items-center justify-between px-3 sm:px-6 bg-marinho text-white gap-3 border-b border-white/10">
+      <div className="app-topbar h-16 flex items-center justify-between px-3 sm:px-6 bg-marinho text-white sticky top-0 z-30 gap-3 shadow-md border-b border-black/20">
         <div className="flex items-center gap-3">
           <button className="md:hidden bg-white/10 hover:bg-white/20 border border-white/25 rounded-lg px-2.5 py-2" onClick={() => setOpen((v) => !v)} aria-label="Abrir menu">
             <Menu size={18} />
@@ -153,57 +168,44 @@ export default function AppShell({ profile, tabs, children, homeHref, fullWidth 
         </div>
       </div>
 
-      <nav className="app-nav hidden md:block bg-marinho-escuro text-white border-b border-black/30" aria-label="Menu principal">
-        <div className="flex items-center gap-1 px-3 sm:px-6 py-1.5 overflow-x-auto">
-          {itens.map((t) => {
-            const active = pathname === t.href || pathname.startsWith(t.href + '/');
-            const Icone = ICONE_MENU[t.label];
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                title={t.label}
-                className={`relative flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-[15px] transition-colors ${
-                  active ? 'bg-white text-marinho font-bold shadow-sm' : 'text-white/85 hover:bg-white/10 hover:text-white font-medium'
-                }`}
-              >
-                {Icone && <Icone size={17} strokeWidth={active ? 2.4 : 2} />}
-                <span>{t.label}</span>
-                {t.href.endsWith('/avisos') && contagemAvisos > 0 && (
-                  <span className="inline-flex items-center justify-center bg-erro text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1">{contagemAvisos}</span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-      </header>
-
       <div className="flex flex-1 items-stretch">
-        {/* Celular: o menu abre como gaveta pelo botão de 3 linhas */}
         <aside
-          className={`app-aside md:hidden fixed top-16 bottom-0 left-0 w-64 bg-white border-r border-linha py-3 z-20 overflow-y-auto transition-transform ${
-            open ? 'translate-x-0' : '-translate-x-full'
+          className={`app-aside fixed md:static top-16 md:top-0 bottom-0 left-0 ${collapsed ? 'md:w-14' : 'w-52'} flex-shrink-0 bg-marinho-escuro text-white border-r border-black/30 py-3 px-2 z-20 overflow-y-auto transition-all md:transition-[width] flex flex-col ${
+            open ? 'translate-x-0 w-52' : '-translate-x-full md:translate-x-0'
           }`}
         >
-          {itens.map((t) => {
-            const active = pathname === t.href || pathname.startsWith(t.href + '/');
-            const Icone = ICONE_MENU[t.label];
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-5 py-3 text-base border-l-2 ${active ? 'border-marinho text-marinho font-semibold bg-papel' : 'border-transparent text-marinho/70 hover:bg-papel'}`}
-              >
-                {Icone && <Icone size={18} />}
-                <span>{t.label}</span>
-                {t.href.endsWith('/avisos') && contagemAvisos > 0 && (
-                  <span className="inline-flex items-center justify-center bg-erro text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] px-1">{contagemAvisos}</span>
-                )}
-              </Link>
-            );
-          })}
+          <div className="flex-1 flex flex-col gap-1">
+            {tabs.filter((t) => !t.dono || profile?.dono).map((t) => {
+              const active = pathname === t.href || pathname.startsWith(t.href + '/');
+              const ehAvisos = t.href.endsWith('/avisos');
+              const Icone = ICONE_MENU[t.label];
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  onClick={() => setOpen(false)}
+                  title={t.label}
+                  className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] whitespace-nowrap transition-colors ${
+                    collapsed ? 'md:justify-center md:px-0' : ''
+                  } ${active ? 'bg-white text-marinho font-bold shadow-sm' : 'text-white/85 hover:bg-white/10 hover:text-white font-medium'}`}
+                >
+                  {Icone && <Icone size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />}
+                  <span className={collapsed ? 'md:hidden' : ''}>{t.label}</span>
+                  {ehAvisos && contagemAvisos > 0 && (
+                    <span className={`inline-flex items-center justify-center bg-erro text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 ${collapsed ? 'md:absolute md:top-0.5 md:right-1' : 'ml-auto'}`}>
+                      {contagemAvisos}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+          <button
+            onClick={alternarColapso}
+            className="hidden md:flex items-center justify-center gap-1 text-xs text-white/60 hover:text-white border-t border-white/15 pt-3 mt-2 px-3"
+          >
+            {collapsed ? <ChevronsRight size={16} /> : <><ChevronsLeft size={16} /> Minimizar</>}
+          </button>
         </aside>
 
         {open && <div className="fixed inset-0 top-16 bg-black/30 z-10 md:hidden" onClick={() => setOpen(false)} />}
