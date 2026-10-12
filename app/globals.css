@@ -4,8 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --paper: #F3F4F0; --linha: #DADCD3; }
-:root[data-bg="claro"] { --paper: #FFFFFF; --linha: #E4E6DF; }
+:root { --paper: #FFFFFF; --linha: #E4E6DF; }
 
 html, body {
   background: var(--paper);
@@ -18,10 +17,10 @@ html, body {
   border: 1px solid var(--linha);
 }
 
-/* Tema Claro: fundo branco; cartões e barras ganham uma sombra leve para não "sumirem" */
-[data-bg="claro"] .card { box-shadow: 0 1px 3px rgba(24, 47, 80, .07); }
-[data-bg="claro"] .app-topbar,
-[data-bg="claro"] .app-aside { box-shadow: 0 1px 2px rgba(24, 47, 80, .05); }
+/* Fundo branco: cartões e barras ganham uma sombra leve para não "sumirem" */
+.card { box-shadow: 0 1px 3px rgba(24, 47, 80, .07); }
+.app-topbar,
+.app-aside { box-shadow: 0 1px 2px rgba(24, 47, 80, .05); }
 
 .tag {
   font-size: 0.68rem;
