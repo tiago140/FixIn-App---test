@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-// Contas agora fica dentro da página Financeiro (uma página só).
+// Contas a pagar e receber agora é a página Financeiro.
 export default function LancamentosPage() {
-  redirect('/master/financeiro#contas');
+  redirect('/master/financeiro');
 }
