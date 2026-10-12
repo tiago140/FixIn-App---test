@@ -4,6 +4,54 @@ import { useEffect, useState } from 'react';
 import SenhaInput from '@/components/SenhaInput';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { ClipboardList, ShieldCheck, Wallet } from 'lucide-react';
+
+const CAMPO = 'w-full border border-linha rounded-lg px-3.5 py-3 bg-papel text-base outline-none transition focus:border-marinho focus:ring-2 focus:ring-marinho/15';
+
+// Moldura da tela de entrada: painel azul com a marca à esquerda (some no celular) e o formulário à direita.
+function Moldura({ children }) {
+  const pontos = [
+    { Icone: ClipboardList, titulo: 'Do laudo ao orçamento', texto: 'Chamados, laudos e orçamentos acompanhados em um só lugar.' },
+    { Icone: Wallet, titulo: 'Pagamento sob controle', texto: 'Cobrança, comprovantes e prazos sempre à vista do time.' },
+    { Icone: ShieldCheck, titulo: 'Acesso seguro', texto: 'Cada pessoa vê apenas o que precisa, com verificação em duas etapas.' },
+  ];
+  return (
+    <div className="min-h-screen grid lg:grid-cols-[1.05fr_1fr]">
+      <aside className="hidden lg:flex flex-col justify-between bg-marinho text-white px-14 py-12">
+        <div>
+          <div className="font-slab text-4xl font-bold tracking-tight">FixIn</div>
+          <div className="text-xs font-mono font-semibold tracking-[0.3em] text-white/70 mt-1">REFORMAS</div>
+        </div>
+        <div className="max-w-md">
+          <h1 className="font-slab text-4xl font-bold leading-tight">Reformas de imóveis sem complicação.</h1>
+          <p className="text-white/75 mt-4 text-lg">O painel que organiza toda a operação, da vistoria ao pagamento.</p>
+          <ul className="mt-10 space-y-6">
+            {pontos.map(({ Icone, titulo, texto }) => (
+              <li key={titulo} className="flex gap-4">
+                <span className="w-11 h-11 shrink-0 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center"><Icone size={22} /></span>
+                <span>
+                  <span className="block font-semibold">{titulo}</span>
+                  <span className="block text-sm text-white/70 mt-0.5">{texto}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="text-xs text-white/50">app.fixinreformas.com</div>
+      </aside>
+
+      <main className="flex flex-col">
+        <div className="lg:hidden bg-marinho text-white px-6 py-6 text-center">
+          <div className="font-slab text-3xl font-bold tracking-tight">FixIn</div>
+          <div className="text-[11px] font-mono font-semibold tracking-[0.3em] text-white/70">REFORMAS</div>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-5 py-10">
+          <div className="w-full max-w-md">{children}</div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,61 +106,64 @@ export default function LoginPage() {
 
   if (etapaMfa) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <form onSubmit={verificarCodigo} className="card p-6 space-y-4 w-full max-w-sm">
-          <div className="font-slab text-xl font-bold text-marinho">Verificação em duas etapas</div>
-          <p className="text-sm text-marinho/70">Digite o código de 6 números do seu aplicativo autenticador (Google Authenticator, Microsoft Authenticator, Authy…).</p>
-          {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded">{erro}</div>}
-          <input inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={codigo} onChange={(e) => setCodigo(e.target.value)} required className="w-full border border-linha rounded px-3 py-2 bg-papel text-center text-2xl tracking-widest font-mono" />
-          <button disabled={carregando} className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50">{carregando ? 'Verificando…' : 'Confirmar'}</button>
+      <Moldura>
+        <form onSubmit={verificarCodigo} className="space-y-5">
+          <div>
+            <h2 className="font-slab text-2xl font-bold text-marinho">Verificação em duas etapas</h2>
+            <p className="text-sm text-marinho/70 mt-2">Digite o código de 6 números do seu aplicativo autenticador (Google Authenticator, Microsoft Authenticator, Authy…).</p>
+          </div>
+          {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded-lg">{erro}</div>}
+          <input inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={codigo} onChange={(e) => setCodigo(e.target.value)} required autoFocus className={`${CAMPO} text-center text-3xl tracking-[0.4em] font-mono`} />
+          <button disabled={carregando} className="w-full bg-marinho hover:brightness-110 text-white rounded-lg py-3 text-base font-semibold shadow-sm transition disabled:opacity-50">{carregando ? 'Verificando…' : 'Confirmar'}</button>
         </form>
-      </div>
+      </Moldura>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="font-slab text-2xl font-bold text-marinho">FixIn</div>
-          <div className="text-xs tracking-wide text-verde font-semibold">REFORMAS</div>
-          <div className="text-sm text-marinho/60 mt-3">Painel de orçamentos</div>
+    <Moldura>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <h2 className="font-slab text-3xl font-bold text-marinho">Bem-vindo de volta</h2>
+          <p className="text-sm text-marinho/60 mt-1.5">Entre com seu e-mail e senha para acessar o painel.</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-          {erro && (
-            <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded">
-              {erro}
-            </div>
-          )}
-          <div>
-            <label className="block text-xs text-marinho/60 mb-1">E-mail</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-linha rounded px-3 py-2 bg-papel"
-            />
+        {erro && (
+          <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded-lg">
+            {erro}
           </div>
-          <div>
-            <label className="block text-xs text-marinho/60 mb-1">Senha</label>
-            <SenhaInput
-              required
-              autoComplete="current-password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="w-full border border-linha rounded px-3 py-2 bg-papel"
-            />
-          </div>
-          <button
-            disabled={carregando}
-            className="w-full bg-marinho text-white rounded py-2.5 font-semibold disabled:opacity-50"
-          >
-            {carregando ? 'Entrando…' : 'Entrar'}
-          </button>
-        </form>
-      </div>
-    </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-marinho/80 mb-1.5">E-mail</label>
+          <input
+            type="email"
+            required
+            autoFocus
+            autoComplete="email"
+            placeholder="voce@empresa.com.br"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={CAMPO}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-marinho/80 mb-1.5">Senha</label>
+          <SenhaInput
+            required
+            autoComplete="current-password"
+            placeholder="Sua senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            className={CAMPO}
+          />
+        </div>
+        <button
+          disabled={carregando}
+          className="w-full bg-marinho hover:brightness-110 text-white rounded-lg py-3 text-base font-semibold shadow-sm transition disabled:opacity-50"
+        >
+          {carregando ? 'Entrando…' : 'Entrar'}
+        </button>
+        <p className="text-xs text-marinho/50 text-center">Problemas para entrar? Fale com o suporte da FixIn.</p>
+      </form>
+    </Moldura>
   );
 }
