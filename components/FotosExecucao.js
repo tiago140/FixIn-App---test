@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Camera, CheckCircle2, Copy, Smartphone, Trash2 } from 'lucide-react';
 import { enviarFotos } from '@/lib/reduzirImagem';
 import { urlArquivo } from '@/lib/arquivos';
+import { ETAPAS_FOTO, ROTULO_ETAPA } from '@/lib/etapasObra';
 
 const ent = 'w-full border border-linha rounded-lg px-3 py-2 bg-papel text-sm';
 
@@ -56,7 +57,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
     <div className="card p-5 rounded-xl space-y-4">
       <div>
         <h3 className="font-semibold">Fotos do serviço</h3>
-        <p className="text-xs text-marinho/50">Fotografe o antes e o depois. Para concluir é preciso ao menos uma foto do serviço pronto.</p>
+        <p className="text-xs text-marinho/50">Registre a obra em três momentos: Início, Execução (quantas quiser, durante o serviço) e Final. Para concluir é preciso ao menos uma foto do serviço pronto.</p>
       </div>
       {erro && <div className="text-sm bg-erro/10 border border-erro text-erro px-3 py-2 rounded-lg">{erro}</div>}
 
@@ -64,7 +65,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
         <>
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-lg border border-linha overflow-hidden text-sm">
-              {[['antes', 'Antes'], ['depois', 'Depois']].map(([v, r]) => (
+              {ETAPAS_FOTO.map(([v, r]) => (
                 <button key={v} type="button" onClick={() => setTipo(v)} className={`px-4 py-2 ${tipo === v ? 'bg-marinho text-white font-semibold' : 'bg-white'}`}>{r}</button>
               ))}
             </div>
@@ -89,7 +90,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={urlArquivo('ordens-arquivos', f.path)} alt={f.tipo} loading="lazy" className="w-full aspect-square object-cover rounded-lg border border-linha" />
               </a>
-              <span className="absolute left-1 top-1 text-[10px] font-bold uppercase bg-marinho/80 text-white rounded px-1.5 py-0.5">{f.tipo === 'antes' ? 'Antes' : 'Depois'}</span>
+              <span className="absolute left-1 top-1 text-[10px] font-bold uppercase bg-marinho/80 text-white rounded px-1.5 py-0.5">{ROTULO_ETAPA[f.tipo]}</span>
               {aberta && <button type="button" onClick={() => remover(f.id)} className="absolute right-1 top-1 bg-white/90 text-erro rounded p-1" aria-label="Remover foto"><Trash2 size={14} /></button>}
             </div>
           ))}
@@ -102,7 +103,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
           <button disabled={ocupado || qtdDepois === 0} onClick={concluir} className="bg-marinho text-white rounded-lg px-5 py-2.5 text-sm font-semibold flex items-center gap-2 disabled:opacity-40">
             <CheckCircle2 size={17} /> {ocupado ? 'Enviando…' : os.status === 'reprovada' ? 'Reenviar conclusão' : 'Concluir serviço'}
           </button>
-          {qtdDepois === 0 && <p className="text-xs text-marinho/50">Envie ao menos uma foto &quot;Depois&quot; para liberar o botão.</p>}
+          {qtdDepois === 0 && <p className="text-xs text-marinho/50">Envie ao menos uma foto &quot;Final&quot; para liberar o botão.</p>}
         </div>
       )}
     </div>

@@ -94,7 +94,7 @@ export default function FotoApp({ token }) {
       {dados.aberta && (
         <div className="bg-white border border-[#E4E6DF] rounded-xl p-4 space-y-3">
           <div className="flex gap-2">
-            {[['antes', 'Antes'], ['depois', 'Depois']].map(([v, r]) => (
+            {[['antes', 'Início'], ['durante', 'Execução'], ['depois', 'Final']].map(([v, r]) => (
               <button key={v} onClick={() => setTipo(v)} className={`flex-1 py-3 rounded-xl text-base font-semibold border ${tipo === v ? 'bg-[#182F50] text-white border-[#182F50]' : 'bg-white border-[#E4E6DF]'}`}>{r}</button>
             ))}
           </div>
@@ -110,7 +110,7 @@ export default function FotoApp({ token }) {
             <div key={f.id} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={f.url} alt={f.tipo} className="w-full aspect-square object-cover rounded-lg border border-[#E4E6DF]" />
-              <span className="absolute left-1 top-1 text-[10px] font-bold uppercase bg-[#182F50]/80 text-white rounded px-1.5 py-0.5">{f.tipo === 'antes' ? 'Antes' : 'Depois'}</span>
+              <span className="absolute left-1 top-1 text-[10px] font-bold uppercase bg-[#182F50]/80 text-white rounded px-1.5 py-0.5">{{ antes: 'Início', durante: 'Execução', depois: 'Final' }[f.tipo]}</span>
             </div>
           ))}
         </div>

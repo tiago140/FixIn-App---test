@@ -9,7 +9,7 @@ export default function GaleriaFotosOS({ fotos, vazio = 'Nenhuma foto ainda.' })
         <a key={f.id} href={urlArquivo('ordens-arquivos', f.path)} target="_blank" rel="noreferrer" className="block relative group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={urlArquivo('ordens-arquivos', f.path)} alt={f.legenda || f.tipo} loading="lazy" className="w-full aspect-square object-cover rounded-lg border border-linha" />
-          <span className="absolute left-1 top-1 text-[10px] font-bold uppercase bg-marinho/80 text-white rounded px-1.5 py-0.5">{f.tipo === 'antes' ? 'Antes' : f.tipo === 'depois' ? 'Depois' : 'Reprovado'}</span>
+          <span className="absolute left-1 top-1 text-[10px] font-bold uppercase bg-marinho/80 text-white rounded px-1.5 py-0.5">{{ antes: 'Início', durante: 'Execução', depois: 'Final' }[f.tipo] || 'Reprovado'}</span>
           {f.legenda && <span className="block text-[11px] text-marinho/60 mt-0.5 truncate">{f.legenda}</span>}
         </a>
       ))}

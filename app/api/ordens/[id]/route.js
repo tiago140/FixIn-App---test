@@ -42,6 +42,19 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, url: `${urlSite()}/foto/${token}` });
   }
 
+  if (acao === 'gerar_acompanhamento') {
+    if (['enviada', 'recusada', 'cancelada'].includes(os.status)) return NextResponse.json({ error: 'O acompanhamento só existe depois que o prestador aceita a ordem.' }, { status: 400 });
+    const token = os.token_acompanhamento || novoToken();
+    await admin.from('ordens_servico').update({ token_acompanhamento: token, acompanhamento_ativo: true, atualizado_em: agora }).eq('id', os.id);
+    await auditar('Ativou o link de acompanhamento da obra', 'ativo');
+    return NextResponse.json({ ok: true, url: `${urlSite()}/acompanhar/${token}` });
+  }
+  if (acao === 'desativar_acompanhamento') {
+    await admin.from('ordens_servico').update({ acompanhamento_ativo: false, atualizado_em: agora }).eq('id', os.id);
+    await auditar('Desativou o link de acompanhamento da obra', 'desativado');
+    return NextResponse.json({ ok: true });
+  }
+
   if (acao === 'aprovar_conclusao') {
     if (os.status !== 'conclusao_pendente') return NextResponse.json({ error: 'não há conclusão em análise' }, { status: 400 });
     await admin.from('ordens_servico').update({ status: 'aprovada', revisado_em: agora, revisado_por: user.id, reprovacao_motivo: null, atualizado_em: agora }).eq('id', os.id);

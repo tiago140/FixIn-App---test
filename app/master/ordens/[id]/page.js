@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import StatusOS from '@/components/StatusOS';
 import OrdemMasterAcoes from '@/components/OrdemMasterAcoes';
 import OrdemMasterExecucao from '@/components/OrdemMasterExecucao';
+import AcompanhamentoOS from '@/components/AcompanhamentoOS';
 import GaleriaFotosOS from '@/components/GaleriaFotosOS';
 import RegistrarPagamentoOS from '@/components/RegistrarPagamentoOS';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -127,6 +128,7 @@ export default async function OrdemPage({ params }) {
         </div>
         <div className="space-y-4">
           <OrdemMasterExecucao os={{ id: os.id, status: os.status, endereco: os.endereco }} linkAtual={linkAtual} telefone={os.prestadores?.telefone} />
+          <AcompanhamentoOS osId={os.id} status={os.status} ativo={!!os.acompanhamento_ativo} linkAtual={os.token_acompanhamento ? `${urlSite()}/acompanhar/${os.token_acompanhamento}` : null} />
           <OrdemMasterAcoes os={{ id: os.id, status: os.status, orcamento_id: os.orcamento_id, cliente_id: os.cliente_id }} clientes={clientes || []} />
         </div>
       </div>
