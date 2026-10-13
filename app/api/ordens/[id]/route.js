@@ -12,7 +12,8 @@ export async function PATCH(req, { params }) {
   const { user, profile } = await getProfile();
   if (!user || profile?.role !== 'master') return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 
-  const { acao, cliente_id, motivo } = await req.json();
+  const body = await req.json();
+  const { acao, cliente_id, motivo } = body;
   const admin = createAdminClient();
   const { data: os } = await admin.from('ordens_servico').select('*, os_itens(*)').eq('id', params.id).maybeSingle();
   if (!os) return NextResponse.json({ error: 'ordem não encontrada' }, { status: 404 });
@@ -42,6 +43,13 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, url: `${urlSite()}/foto/${token}` });
   }
 
+  if (acao === 'definir_prazo') {
+    const d = String(body.prazo || '');
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return NextResponse.json({ error: 'Data inválida.' }, { status: 400 });
+    await admin.from('ordens_servico').update({ prazo_em: d || null, atualizado_em: agora }).eq('id', os.id);
+    await auditar('Definiu o prazo da ordem', d || 'sem prazo');
+    return NextResponse.json({ ok: true });
+  }
   if (acao === 'gerar_acompanhamento') {
     if (['enviada', 'recusada', 'cancelada'].includes(os.status)) return NextResponse.json({ error: 'O acompanhamento só existe depois que o prestador aceita a ordem.' }, { status: 400 });
     const token = os.token_acompanhamento || novoToken();

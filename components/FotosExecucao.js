@@ -20,7 +20,8 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
   const [ocupado, setOcupado] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const aberta = ['em_execucao', 'reprovada'].includes(os.status);
-  const qtdDepois = fotos.filter((f) => f.tipo === 'depois').length;
+  const qtd = (t) => fotos.filter((f) => f.tipo === t).length;
+  const qtdDepois = qtd('depois');
 
   async function subir(e) {
     const arquivos = Array.from(e.target.files || []);
@@ -40,6 +41,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
   }
 
   async function concluir() {
+    if (qtd('antes') === 0 && !window.confirm('Você não enviou foto do Início da obra. O cliente acompanha a obra por essas fotos. Concluir mesmo assim?')) return;
     if (!window.confirm('Enviar a conclusão para a FixIn analisar? Depois disso você não altera as fotos.')) return;
     setErro(''); setOcupado(true);
     const res = await fetch(`/api/prestador/ordens/${os.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'concluir', obs }) });
@@ -54,7 +56,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
   }
 
   return (
-    <div className="card p-5 rounded-xl space-y-4">
+    <div id="fotos" className="card p-5 rounded-xl space-y-4 scroll-mt-20">
       <div>
         <h3 className="font-semibold">Fotos do serviço</h3>
         <p className="text-xs text-marinho/50">Registre a obra em três momentos: Início, Execução (quantas quiser, durante o serviço) e Final. Para concluir é preciso ao menos uma foto do serviço pronto.</p>
@@ -66,7 +68,7 @@ export default function FotosExecucao({ os, fotos, linkFotos = null }) {
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-lg border border-linha overflow-hidden text-sm">
               {ETAPAS_FOTO.map(([v, r]) => (
-                <button key={v} type="button" onClick={() => setTipo(v)} className={`px-4 py-2 ${tipo === v ? 'bg-marinho text-white font-semibold' : 'bg-white'}`}>{r}</button>
+                <button key={v} type="button" onClick={() => setTipo(v)} className={`px-4 py-2 ${tipo === v ? 'bg-marinho text-white font-semibold' : 'bg-white'}`}>{r} <span className={`ml-1 text-xs ${tipo === v ? 'text-white/70' : 'text-marinho/50'}`}>({qtd(v)})</span></button>
               ))}
             </div>
             <button type="button" disabled={!!prog} onClick={() => input.current?.click()} className="bg-verde text-white rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"><Camera size={17} /> {prog || 'Tirar ou escolher fotos'}</button>

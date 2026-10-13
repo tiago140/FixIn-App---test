@@ -9,6 +9,8 @@ import OrdemPrestadorAcoes from '@/components/OrdemPrestadorAcoes';
 import FotosExecucao from '@/components/FotosExecucao';
 import NotasFiscaisOS from '@/components/NotasFiscaisOS';
 import GaleriaFotosOS from '@/components/GaleriaFotosOS';
+import PassosOS from '@/components/PassosOS';
+import MensagensOS from '@/components/MensagensOS';
 import { PRESTADOR_TABS } from '@/lib/navTabs';
 import { ORIGEM_OS, totalItensOS } from '@/lib/ordensStatus';
 import { urlArquivo } from '@/lib/arquivos';
@@ -21,11 +23,15 @@ export default async function PrestadorOrdem({ params }) {
   const { profile, supabase } = await getProfile();
   const { data: os } = await supabase.from('ordens_servico').select('*, os_itens(*)').eq('id', params.id).maybeSingle();
   if (!os) notFound();
-  const [{ data: fotosTodas }, { data: notas }, { data: pagamentos }] = await Promise.all([
+  const [{ data: fotosTodas }, { data: notas }, { data: pagamentos }, { data: mensagens }, { data: mesmoEndereco }] = await Promise.all([
     supabase.from('os_fotos').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('os_notas').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('pagamentos_prestador').select('*').eq('os_id', os.id).order('data_pagamento', { ascending: true }),
+    supabase.from('os_mensagens').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
+    supabase.from('ordens_servico').select('id, numero, status, criado_em').eq('endereco', os.endereco).neq('id', os.id).order('criado_em', { ascending: false }).limit(10),
   ]);
+  const diasPag = Number(process.env.PRESTADOR_PRAZO_PAGAMENTO_DIAS) > 0 ? Number(process.env.PRESTADOR_PRAZO_PAGAMENTO_DIAS) : 0;
+  const emAndamento = ['em_execucao', 'reprovada'].includes(os.status);
   const itens = (os.os_itens || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   const editavel = ['aceita', 'orcada'].includes(os.status);
   const rodada = os.rodada || 0;
@@ -42,7 +48,8 @@ export default async function PrestadorOrdem({ params }) {
       <Link href="/prestador/ordens" className="inline-flex items-center gap-1 text-sm text-marinho/60 hover:text-marinho mb-2"><ArrowLeft size={15} /> Voltar às ordens</Link>
       <PageHeader icone="ordens" titulo={os.endereco} subtitulo={`${os.numero} · ${ORIGEM_OS[os.origem]} · recebida em ${fmtDataHoraSP(os.criado_em)}`} direita={<StatusOS status={os.status} />} />
 
-      <div className="max-w-3xl space-y-5">
+      <div className={`max-w-3xl space-y-5 ${emAndamento ? 'pb-24 md:pb-0' : ''}`}>
+        <PassosOS status={os.status} prazo={os.prazo_em} />
         {os.descricao && (
           <div className="card p-5 rounded-xl">
             <h3 className="font-semibold mb-1">Instruções da FixIn</h3>
@@ -55,7 +62,7 @@ export default async function PrestadorOrdem({ params }) {
         {os.status === 'aplicada' && <div className="rounded-xl border border-linha bg-white p-4 text-sm">Seus valores foram aplicados ao orçamento e estão com a imobiliária para aprovação. Você será avisado por e-mail quando for liberado.</div>}
         {os.status === 'em_execucao' && <div className="rounded-xl border border-sucesso/30 bg-sucesso/10 p-4 text-sm"><b className="text-sucesso">Orçamento aprovado.</b> A ordem está liberada para execução com os valores que você orçou.</div>}
         {os.status === 'conclusao_pendente' && <div className="rounded-xl border border-alerta/30 bg-alerta/10 p-4 text-sm"><b>Conclusão enviada.</b> A FixIn está analisando as fotos. Você pode anexar a nota fiscal enquanto isso.</div>}
-        {os.status === 'aprovada' && <div className="rounded-xl border border-sucesso/30 bg-sucesso/10 p-4 text-sm"><b className="text-sucesso">Serviço aprovado.</b> Anexe a nota fiscal para agilizar o pagamento.</div>}
+        {os.status === 'aprovada' && <div className="rounded-xl border border-sucesso/30 bg-sucesso/10 p-4 text-sm"><b className="text-sucesso">Serviço aprovado.</b> Anexe a nota fiscal para agilizar o pagamento.{diasPag ? ` Previsão de pagamento: até ${diasPag} dias úteis após a nota.` : ''}</div>}
 
         {os.status === 'reprovada' && (
           <div className="rounded-xl border border-erro/40 bg-erro/10 p-5 space-y-3">
@@ -116,7 +123,14 @@ export default async function PrestadorOrdem({ params }) {
             )}
           </div>
         )}
+        <MensagensOS osId={os.id} mensagens={mensagens || []} lado="prestador" api={`/api/prestador/ordens/${os.id}/mensagens`} />
+        {(mesmoEndereco || []).length > 0 && (
+          <details className="card p-4 rounded-xl"><summary className="text-sm font-semibold cursor-pointer">Outras ordens neste endereço ({mesmoEndereco.length})</summary>
+            <ul className="mt-3 space-y-1.5">{mesmoEndereco.map((o) => <li key={o.id}><Link href={`/prestador/ordens/${o.id}`} className="flex items-center justify-between text-sm border border-linha rounded-lg px-3 py-2"><span>{o.numero} · {new Date(o.criado_em).toLocaleDateString('pt-BR')}</span><StatusOS status={o.status} /></Link></li>)}</ul>
+          </details>
+        )}
       </div>
+      {emAndamento && <div className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-linha p-3"><a href="#fotos" className="block text-center bg-verde text-white rounded-xl py-3.5 text-base font-semibold shadow">Enviar fotos da obra</a></div>}
     </AppShell>
   );
 }

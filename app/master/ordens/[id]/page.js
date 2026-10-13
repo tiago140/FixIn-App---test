@@ -7,6 +7,8 @@ import StatusOS from '@/components/StatusOS';
 import OrdemMasterAcoes from '@/components/OrdemMasterAcoes';
 import OrdemMasterExecucao from '@/components/OrdemMasterExecucao';
 import AcompanhamentoOS from '@/components/AcompanhamentoOS';
+import PrazoOS from '@/components/PrazoOS';
+import MensagensOS from '@/components/MensagensOS';
 import GaleriaFotosOS from '@/components/GaleriaFotosOS';
 import RegistrarPagamentoOS from '@/components/RegistrarPagamentoOS';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -29,10 +31,11 @@ export default async function OrdemPage({ params }) {
   const { data: os } = await supabase.from('ordens_servico').select('*, prestadores(nome, telefone, email, pix_tipo, pix_chave), os_itens(*)').eq('id', params.id).maybeSingle();
   if (!os) notFound();
   if (profile.dono && os.status === 'aprovada') { try { await atualizarPixDaOrdem(createAdminClient(), os.id); } catch (e) {} }
-  const [{ data: fotos }, { data: notas }, { data: pagamentos }] = await Promise.all([
+  const [{ data: fotos }, { data: notas }, { data: pagamentos }, { data: mensagens }] = await Promise.all([
     supabase.from('os_fotos').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('os_notas').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('pagamentos_prestador').select('*').eq('os_id', os.id).order('data_pagamento', { ascending: true }),
+    supabase.from('os_mensagens').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
   ]);
   const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
   const itens = (os.os_itens || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
@@ -128,6 +131,8 @@ export default async function OrdemPage({ params }) {
         </div>
         <div className="space-y-4">
           <OrdemMasterExecucao os={{ id: os.id, status: os.status, endereco: os.endereco }} linkAtual={linkAtual} telefone={os.prestadores?.telefone} />
+          <PrazoOS osId={os.id} prazo={os.prazo_em || ''} />
+          <MensagensOS osId={os.id} mensagens={mensagens || []} lado="equipe" api={`/api/ordens/${os.id}/mensagens`} />
           <AcompanhamentoOS osId={os.id} status={os.status} ativo={!!os.acompanhamento_ativo} linkAtual={os.token_acompanhamento ? `${urlSite()}/acompanhar/${os.token_acompanhamento}` : null} />
           <OrdemMasterAcoes os={{ id: os.id, status: os.status, orcamento_id: os.orcamento_id, cliente_id: os.cliente_id }} clientes={clientes || []} />
         </div>
