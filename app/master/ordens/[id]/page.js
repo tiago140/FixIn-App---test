@@ -7,6 +7,8 @@ import StatusOS from '@/components/StatusOS';
 import OrdemMasterAcoes from '@/components/OrdemMasterAcoes';
 import OrdemMasterExecucao from '@/components/OrdemMasterExecucao';
 import AcompanhamentoOS from '@/components/AcompanhamentoOS';
+import InteressadosObra from '@/components/InteressadosObra';
+import { carregarObras } from '@/lib/obras';
 import PrazoOS from '@/components/PrazoOS';
 import MensagensOS from '@/components/MensagensOS';
 import GaleriaFotosOS from '@/components/GaleriaFotosOS';
@@ -134,6 +136,7 @@ export default async function OrdemPage({ params }) {
           <PrazoOS osId={os.id} prazo={os.prazo_em || ''} />
           <MensagensOS osId={os.id} mensagens={mensagens || []} lado="equipe" api={`/api/ordens/${os.id}/mensagens`} />
           <AcompanhamentoOS osId={os.id} status={os.status} ativo={!!os.acompanhamento_ativo} linkAtual={os.token_acompanhamento ? `${urlSite()}/acompanhar/${os.token_acompanhamento}` : null} />
+          <InteressadosObra obras={await carregarObras(os.orcamento_id, { osId: os.id })} />
           <OrdemMasterAcoes os={{ id: os.id, status: os.status, orcamento_id: os.orcamento_id, cliente_id: os.cliente_id }} clientes={clientes || []} />
         </div>
       </div>

@@ -11,6 +11,8 @@ import DocumentosFiscais from '@/components/DocumentosFiscais';
 import ComprovantesPagamento from '@/components/ComprovantesPagamento';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import ResponderOrcamentoButtons from '@/components/ResponderOrcamentoButtons';
+import InteressadosObra from '@/components/InteressadosObra';
+import { carregarObras } from '@/lib/obras';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { imobiliariaTabs } from '@/lib/navTabs';
 import { veValores } from '@/lib/permissoes';
@@ -59,6 +61,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
   if (!pdfUrlImpressao) {
     try { const { data: p } = await createAdminClient().from('orcamentos').select('pdf_url').eq('id', params.id).single(); pdfUrlImpressao = p?.pdf_url || null; } catch (e) {}
   }
+  const obras = await carregarObras(params.id);
   const total = num(orcamento.total);
   // Administrador: vê tudo. Operacional: só valor e PDF dos orçamentos que ELA mesma solicitou — o banco já devolve nulo nos outros.
   const verEste = ver || total != null;
@@ -142,6 +145,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
           />
         )}
 
+        <InteressadosObra obras={obras} />
         <DocumentosFiscais orcamentoId={orcamento.id} documentos={documentos} role="imobiliaria" />
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />
       </div>
