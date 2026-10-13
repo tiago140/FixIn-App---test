@@ -19,6 +19,22 @@ export async function GET(req, { params }) {
   const { user, profile, supabase } = await getProfile();
   if (!user) return NextResponse.redirect(new URL('/login', req.url));
 
+  // Arquivos das ordens de serviço (fotos, notas, comprovantes): equipe FixIn ou o prestador dono da ordem.
+  if (bucket === 'ordens-arquivos') {
+    const osId = caminho.split('/')[0];
+    if (!UUID.test(osId)) return NextResponse.json({ error: 'não encontrado' }, { status: 404 });
+    if (profile.role !== 'master') {
+      if (profile.role !== 'prestador') return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
+      const { data: minha } = await supabase.from('ordens_servico').select('id').eq('id', osId).maybeSingle();
+      if (!minha) return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
+    }
+    const { data: sig, error: eSig } = await createAdminClient().storage.from(bucket).createSignedUrl(caminho, 120);
+    if (eSig || !sig?.signedUrl) return NextResponse.json({ error: 'arquivo não encontrado' }, { status: 404 });
+    const rr = NextResponse.redirect(sig.signedUrl, 302);
+    rr.headers.set('Cache-Control', 'no-store');
+    return rr;
+  }
+
   const orcamentoId = caminho.split('/')[0];
   if (!UUID.test(orcamentoId)) return NextResponse.json({ error: 'não encontrado' }, { status: 404 });
 

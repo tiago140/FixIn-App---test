@@ -9,7 +9,7 @@ import { fmtBRL, fmtDataHoraSP } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
-const FILTROS = [['', 'Todas'], ['enviada', 'Para aceitar'], ['aceita', 'Para enviar valores'], ['orcada', 'Valores enviados'], ['aplicada', 'Em aprovação'], ['em_execucao', 'Em execução'], ['recusada', 'Recusadas']];
+const FILTROS = [['', 'Todas'], ['enviada', 'Para aceitar'], ['aceita', 'Para enviar valores'], ['orcada', 'Valores enviados'], ['aplicada', 'Em aprovação'], ['em_execucao', 'Em execução'], ['conclusao_pendente', 'Conclusão em análise'], ['reprovada', 'Reprovadas'], ['aprovada', 'Aprovadas'], ['paga', 'Pagas'], ['recusada', 'Recusadas']];
 
 export default async function PrestadorOrdens({ searchParams }) {
   const { profile, supabase } = await getProfile();

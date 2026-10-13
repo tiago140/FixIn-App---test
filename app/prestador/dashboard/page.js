@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import StatusOS from '@/components/StatusOS';
 import { PRESTADOR_TABS } from '@/lib/navTabs';
 import { ORIGEM_OS } from '@/lib/ordensStatus';
-import { ArrowRight, ClipboardCheck, Hammer, Hourglass, Inbox } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Camera, ClipboardCheck, Hammer, Hourglass, Inbox, Wallet } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,7 @@ export default async function PrestadorDashboard() {
   const { data: ordens } = await supabase.from('ordens_servico').select('id, numero, endereco, origem, status, criado_em').order('criado_em', { ascending: false }).limit(200);
   const todas = ordens || [];
   const conta = (...s) => todas.filter((o) => s.includes(o.status)).length;
-  const agir = todas.filter((o) => ['enviada', 'aceita', 'reprovada'].includes(o.status));
+  const agir = todas.filter((o) => ['enviada', 'aceita', 'reprovada', 'em_execucao'].includes(o.status));
   const primeiro = (profile.nome_completo || '').split(' ')[0];
 
   return (
@@ -37,6 +37,10 @@ export default async function PrestadorDashboard() {
         <Bloco Icone={ClipboardCheck} titulo="Para enviar valores" qtd={conta('aceita')} cor="bg-[#3B6B8C]/15 text-[#2c5570]" href="/prestador/ordens?status=aceita" />
         <Bloco Icone={Hourglass} titulo="Em aprovação" qtd={conta('orcada', 'aplicada')} cor="bg-marinho/10 text-marinho" href="/prestador/ordens?status=orcada" />
         <Bloco Icone={Hammer} titulo="Em execução" qtd={conta('em_execucao')} cor="bg-sucesso/15 text-sucesso" href="/prestador/ordens?status=em_execucao" />
+        <Bloco Icone={Camera} titulo="Pendentes de conclusão" qtd={conta('em_execucao', 'reprovada')} cor="bg-alerta/15 text-alerta" href="/prestador/ordens?status=em_execucao" />
+        <Bloco Icone={Hourglass} titulo="Conclusão em análise" qtd={conta('conclusao_pendente')} cor="bg-marinho/10 text-marinho" href="/prestador/ordens?status=conclusao_pendente" />
+        <Bloco Icone={BadgeCheck} titulo="Finalizadas" qtd={conta('aprovada', 'paga')} cor="bg-sucesso/15 text-sucesso" href="/prestador/ordens?status=aprovada" />
+        <Bloco Icone={Wallet} titulo="Pagas" qtd={conta('paga')} cor="bg-sucesso/20 text-sucesso" href="/prestador/ordens?status=paga" />
       </div>
 
       <h2 className="font-semibold text-lg mb-3">Precisa da sua ação</h2>

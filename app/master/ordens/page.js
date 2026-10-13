@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
 
 const FILTROS = [
   ['', 'Todas'], ['enviada', 'Aguardando aceite'], ['aceita', 'Aceitas'], ['orcada', 'Valores enviados'],
-  ['aplicada', 'Em aprovação'], ['em_execucao', 'Em execução'], ['recusada', 'Recusadas'],
+  ['aplicada', 'Em aprovação'], ['em_execucao', 'Aprovadas · em execução'], ['conclusao_pendente', 'Conclusão em análise'], ['reprovada', 'Reprovadas'],
+  ['aprovada', 'Finalizadas'], ['paga', 'Pagas'], ['recusada', 'Recusadas'],
 ];
 
 export default async function OrdensPage({ searchParams }) {
@@ -29,7 +30,8 @@ export default async function OrdensPage({ searchParams }) {
   const filtro = STATUS_OS[searchParams?.status] ? searchParams.status : '';
   const lista = filtro ? todas.filter((o) => o.status === filtro) : todas;
   const conta = (s) => todas.filter((o) => o.status === s).length;
-  const precisaAcao = conta('orcada') + conta('recusada');
+  const precisaAcao = conta('orcada') + conta('recusada') + conta('conclusao_pendente');
+  const soma = (...st) => todas.filter((o) => st.includes(o.status)).reduce((s, o) => s + totalItensOS(o.os_itens), 0);
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
@@ -41,10 +43,25 @@ export default async function OrdensPage({ searchParams }) {
       />
       {precisaAcao > 0 && (
         <div className="mb-4 rounded-xl border border-alerta/40 bg-alerta/10 px-4 py-3 text-sm">
+          {conta('conclusao_pendente') > 0 && <span><b>{conta('conclusao_pendente')}</b> conclusão(ões) esperando sua aprovação. </span>}
           {conta('orcada') > 0 && <span><b>{conta('orcada')}</b> com valores para você aplicar ao orçamento. </span>}
           {conta('recusada') > 0 && <span><b>{conta('recusada')}</b> recusada(s): escolha outro prestador.</span>}
         </div>
       )}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        {[
+          ['Aprovadas · em execução', ['em_execucao'], 'em_execucao'],
+          ['Pendentes de conclusão', ['em_execucao', 'reprovada', 'conclusao_pendente'], 'conclusao_pendente'],
+          ['Finalizadas', ['aprovada', 'paga'], 'aprovada'],
+          ['Pagas', ['paga'], 'paga'],
+        ].map(([r, st, f]) => (
+          <Link key={r} href={`/master/ordens?status=${f}`} className="card rounded-xl p-4 hover:shadow-md transition-shadow">
+            <span className="block text-xs text-marinho/55">{r}</span>
+            <span className="block text-2xl font-bold mt-1">{todas.filter((o) => st.includes(o.status)).length}</span>
+            <span className="block text-xs text-marinho/50 font-mono">{fmtBRL(soma(...st))}</span>
+          </Link>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {FILTROS.map(([v, r]) => (
           <Link key={v} href={v ? `/master/ordens?status=${v}` : '/master/ordens'}

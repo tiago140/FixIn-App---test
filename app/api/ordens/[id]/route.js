@@ -3,13 +3,16 @@ import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { avisarPrestadorOS } from '@/lib/ordens';
 import { totalItensOS } from '@/lib/ordensStatus';
+import { novoToken } from '@/lib/ordensArquivos';
+import { recalcularPagamentoOS } from '@/lib/ordensExec';
+import { urlSite } from '@/lib/chamados';
 
 // Ações da equipe FixIn sobre uma ordem: cancelar, devolver para o prestador corrigir, aplicar os valores ao orçamento.
 export async function PATCH(req, { params }) {
   const { user, profile } = await getProfile();
   if (!user || profile?.role !== 'master') return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 
-  const { acao, cliente_id } = await req.json();
+  const { acao, cliente_id, motivo } = await req.json();
   const admin = createAdminClient();
   const { data: os } = await admin.from('ordens_servico').select('*, os_itens(*)').eq('id', params.id).maybeSingle();
   if (!os) return NextResponse.json({ error: 'ordem não encontrada' }, { status: 404 });
@@ -28,6 +31,33 @@ export async function PATCH(req, { params }) {
     if (os.status !== 'orcada') return NextResponse.json({ error: 'só dá para devolver ordens com valores enviados' }, { status: 400 });
     await admin.from('ordens_servico').update({ status: 'aceita', atualizado_em: agora }).eq('id', os.id);
     await auditar('Devolveu valores ao prestador', 'para ajuste');
+    return NextResponse.json({ ok: true });
+  }
+
+  if (acao === 'gerar_link') {
+    if (['enviada', 'recusada', 'cancelada'].includes(os.status)) return NextResponse.json({ error: 'O link de fotos só existe depois que o prestador aceita a ordem.' }, { status: 400 });
+    const token = novoToken();
+    await admin.from('ordens_servico').update({ token_fotos: token, token_expira: new Date(Date.now() + 90 * 86400000).toISOString(), atualizado_em: agora }).eq('id', os.id);
+    await auditar('Gerou link de fotos', 'link novo (o anterior deixa de valer)');
+    return NextResponse.json({ ok: true, url: `${urlSite()}/foto/${token}` });
+  }
+
+  if (acao === 'aprovar_conclusao') {
+    if (os.status !== 'conclusao_pendente') return NextResponse.json({ error: 'não há conclusão em análise' }, { status: 400 });
+    await admin.from('ordens_servico').update({ status: 'aprovada', revisado_em: agora, revisado_por: user.id, reprovacao_motivo: null, atualizado_em: agora }).eq('id', os.id);
+    await auditar('Aprovou a conclusão do serviço', 'aprovada');
+    const r = await recalcularPagamentoOS(admin, os.id);
+    await avisarPrestadorOS({ ...os, status: r?.status || 'aprovada' }, 'aprovada');
+    return NextResponse.json({ ok: true });
+  }
+
+  if (acao === 'reprovar_conclusao') {
+    if (os.status !== 'conclusao_pendente') return NextResponse.json({ error: 'não há conclusão em análise' }, { status: 400 });
+    const m = String(motivo || '').trim().slice(0, 1000);
+    if (!m) return NextResponse.json({ error: 'descreva o que precisa ser ajustado' }, { status: 400 });
+    await admin.from('ordens_servico').update({ status: 'reprovada', rodada: (os.rodada || 0) + 1, reprovacao_motivo: m, revisado_em: agora, revisado_por: user.id, atualizado_em: agora }).eq('id', os.id);
+    await auditar('Reprovou a conclusão do serviço', m.slice(0, 120));
+    await avisarPrestadorOS({ ...os, reprovacao_motivo: m }, 'reprovada');
     return NextResponse.json({ ok: true });
   }
 

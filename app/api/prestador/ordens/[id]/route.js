@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { avisarEquipeOS } from '@/lib/ordens';
+import { concluirOS } from '@/lib/ordensExec';
 
 const num = (v) => { const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null; };
 
@@ -10,7 +11,7 @@ export async function POST(req, { params }) {
   const { user, profile } = await getProfile();
   if (!user || profile?.role !== 'prestador' || !profile.prestador_id) return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 
-  const { acao, motivo, itens } = await req.json();
+  const { acao, motivo, itens, obs } = await req.json();
   const admin = createAdminClient();
   const { data: os } = await admin.from('ordens_servico').select('*').eq('id', params.id).eq('prestador_id', profile.prestador_id).maybeSingle();
   if (!os) return NextResponse.json({ error: 'ordem não encontrada' }, { status: 404 });
@@ -53,6 +54,12 @@ export async function POST(req, { params }) {
     await admin.from('ordens_servico').update({ status: 'orcada', orcado_em: agora, atualizado_em: agora }).eq('id', os.id);
     await auditar('Prestador enviou valores da ordem');
     await avisarEquipeOS(os, 'orcada');
+    return NextResponse.json({ ok: true });
+  }
+
+  if (acao === 'concluir') {
+    const r = await concluirOS(admin, os, obs, profile.nome_completo);
+    if (r.erro) return NextResponse.json({ error: r.erro }, { status: r.status || 400 });
     return NextResponse.json({ ok: true });
   }
 

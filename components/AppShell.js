@@ -13,7 +13,7 @@ const COR_PERFIL = { Dono: '#B8862E', 'Equipe FixIn': '#3B6B8C', Administrador: 
 
 // Ícone de cada item do menu (pelo rótulo)
 const ICONE_MENU = {
-  Painel: LayoutDashboard, Avisos: Bell, Orçamentos: FileSpreadsheet, Chamados: MessageSquare, Laudos: ClipboardCheck,
+  Painel: LayoutDashboard, Garantias: ShieldCheck, Avisos: Bell, Orçamentos: FileSpreadsheet, Chamados: MessageSquare, Laudos: ClipboardCheck,
   Controle: Table2, Visitas: CalendarDays, Prestadores: HardHat, Financeiro: Wallet, Resultados: BarChart3, 'Ordens de serviço': Wrench, 'Meus dados': UserRound,
   Auditoria: ShieldCheck, Clientes: Building2, Acessos: KeyRound, Catálogo: BookOpen, Equipe: Users,
 };
