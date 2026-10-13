@@ -30,7 +30,7 @@ export async function middleware(request) {
 
   // Áreas internas: senha provisória precisa ser trocada, e quem ativou verificação em duas etapas precisa concluí-la.
   const caminho = request.nextUrl.pathname;
-  const interna = caminho === '/' || caminho.startsWith('/master') || caminho.startsWith('/imobiliaria') || caminho.startsWith('/conta');
+  const interna = caminho === '/' || caminho.startsWith('/master') || caminho.startsWith('/imobiliaria') || caminho.startsWith('/prestador') || caminho.startsWith('/conta');
   if (user && interna) {
     if (user.app_metadata?.trocar_senha === true) return NextResponse.redirect(new URL('/trocar-senha', request.url));
     try {

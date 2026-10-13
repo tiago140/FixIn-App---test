@@ -3,7 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { validarSenha } from '@/lib/senha';
 
-const ROLES_PERMITIDOS = ['master', 'imobiliaria'];
+const ROLES_PERMITIDOS = ['master', 'imobiliaria', 'prestador'];
 
 export async function POST(req) {
   const { user, profile, supabase } = await getProfile();
@@ -12,7 +12,7 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-  const { senha, nome_completo, cpf, role, cliente_id, subrole } = body;
+  const { senha, nome_completo, cpf, role, cliente_id, subrole, prestador_id } = body;
   const email = String(body.email || '').trim().toLowerCase();
 
   if (!email || !senha || !nome_completo || !role) {
@@ -34,7 +34,19 @@ export async function POST(req) {
     return NextResponse.json({ error: 'selecione a imobiliária vinculada' }, { status: 400 });
   }
 
+  if (role === 'prestador' && !prestador_id) {
+    return NextResponse.json({ error: 'selecione o prestador' }, { status: 400 });
+  }
+
   const admin = createAdminClient();
+
+  if (role === 'prestador') {
+    const { data: pr } = await admin.from('prestadores').select('ativo').eq('id', prestador_id).maybeSingle();
+    if (!pr) return NextResponse.json({ error: 'prestador não encontrado' }, { status: 400 });
+    if (pr.ativo === false) return NextResponse.json({ error: 'Este prestador está inativo. Reative-o antes de criar o acesso.' }, { status: 409 });
+    const { data: jaTem } = await admin.from('profiles').select('id').eq('prestador_id', prestador_id).limit(1);
+    if (jaTem && jaTem.length) return NextResponse.json({ error: 'Este prestador já tem um acesso criado.' }, { status: 409 });
+  }
 
   if (role === 'imobiliaria') {
     const { data: cli } = await admin.from('clientes').select('ativo').eq('id', cliente_id).maybeSingle();
@@ -62,6 +74,7 @@ export async function POST(req) {
     cpf: cpf || null,
     email,
     cliente_id: role === 'imobiliaria' ? cliente_id : null,
+    prestador_id: role === 'prestador' ? prestador_id : null,
     ativo: true,
     dono: false,
   });
@@ -74,7 +87,7 @@ export async function POST(req) {
 
   try {
     await supabase.from('auditoria').insert({
-      acao: role === 'master' ? 'Criou usuário master (funcionário)' : 'Criou acesso de imobiliária',
+      acao: role === 'master' ? 'Criou usuário master (funcionário)' : role === 'prestador' ? 'Criou acesso de prestador' : 'Criou acesso de imobiliária',
       detalhe: `${nome_completo} (${email})`,
       alvo_tipo: 'usuario',
       alvo_id: created.user.id,

@@ -3,6 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import { enviarEmailStatusOrcamento } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
+import { liberarOrdensDoOrcamento } from '@/lib/ordens';
 
 export async function POST(req, { params }) {
   const { user, profile, supabase } = await getProfile();
@@ -30,6 +31,8 @@ export async function POST(req, { params }) {
     alvo_tipo: 'orcamento', alvo_id: id,
     autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role,
   });
+
+  if (status === 'aprovado') await liberarOrdensDoOrcamento(id);
 
   if (status === 'aprovado' && orc) {
     // o operacional não consegue ler quem criou o pedido, então a consulta dos destinatários usa o acesso do servidor

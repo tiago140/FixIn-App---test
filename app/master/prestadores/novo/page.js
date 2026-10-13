@@ -3,7 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
-import NovoPrestadorForm from '@/components/NovoPrestadorForm';
+import PrestadorForm from '@/components/PrestadorForm';
 
 export default async function NovoPrestadorPage() {
   const { user, profile } = await getProfile();
@@ -12,11 +12,8 @@ export default async function NovoPrestadorPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <PageHeader
-        icone="prestadores"
-        titulo="Novo prestador"
-      />
-      <NovoPrestadorForm />
+      <PageHeader icone="prestadores" titulo="Novo prestador" subtitulo="Depois de cadastrar, você cria o acesso dele ao portal" />
+      <PrestadorForm modo="novo" />
     </AppShell>
   );
 }

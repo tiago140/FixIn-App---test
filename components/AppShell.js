@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { BarChart3, Bell, BookOpen, Building2, CalendarDays, ChevronsLeft, ChevronsRight, ClipboardCheck, FileSpreadsheet, HardHat, KeyRound, LayoutDashboard, LogOut, Menu, MessageCircle, MessageSquare, ShieldCheck, Table2, Users, Volume2, VolumeX, Wallet } from 'lucide-react';
+import { BarChart3, Wrench, UserRound, Bell, BookOpen, Building2, CalendarDays, ChevronsLeft, ChevronsRight, ClipboardCheck, FileSpreadsheet, HardHat, KeyRound, LayoutDashboard, LogOut, Menu, MessageCircle, MessageSquare, ShieldCheck, Table2, Users, Volume2, VolumeX, Wallet } from 'lucide-react';
 import { rotuloPerfil } from '@/lib/permissoes';
 import { destravarSom, somLigado, definirSom, tocarSomAviso } from '@/lib/somAviso';
 
@@ -14,7 +14,7 @@ const COR_PERFIL = { Dono: '#B8862E', 'Equipe FixIn': '#3B6B8C', Administrador: 
 // Ícone de cada item do menu (pelo rótulo)
 const ICONE_MENU = {
   Painel: LayoutDashboard, Avisos: Bell, Orçamentos: FileSpreadsheet, Chamados: MessageSquare, Laudos: ClipboardCheck,
-  Controle: Table2, Visitas: CalendarDays, Prestadores: HardHat, Financeiro: Wallet, Resultados: BarChart3,
+  Controle: Table2, Visitas: CalendarDays, Prestadores: HardHat, Financeiro: Wallet, Resultados: BarChart3, 'Ordens de serviço': Wrench, 'Meus dados': UserRound,
   Auditoria: ShieldCheck, Clientes: Building2, Acessos: KeyRound, Catálogo: BookOpen, Equipe: Users,
 };
 

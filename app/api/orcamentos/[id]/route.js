@@ -4,6 +4,7 @@ import { calcularProximoStatusAutomatico, calcularTotalComMargem, fmtBRL, STATUS
 import { enviarEmailStatusOrcamento } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
+import { liberarOrdensDoOrcamento } from '@/lib/ordens';
 
 // Pastas de arquivos de um orçamento: todos os buckets guardam tudo sob "<id do orçamento>/".
 const BUCKETS_DO_ORCAMENTO = ['orcamentos-pdfs', 'documentos-fiscais', 'comprovantes-pagamento', 'chat-anexos'];
@@ -97,6 +98,7 @@ export async function PATCH(req, { params }) {
       if (camposOrcamento.status && camposOrcamento.status !== antes.status) {
         await registrarAuditoria(supabase, user, profile, 'Mudou status', `${antes.numero}: ${STATUS_LABEL[antes.status]} → ${STATUS_LABEL[camposOrcamento.status]}`, 'orcamento', id);
         await enviarEmailPorMudancaDeStatus(supabase, id, camposOrcamento.status);
+        if (['aprovado', 'em_execucao'].includes(camposOrcamento.status)) await liberarOrdensDoOrcamento(id);
       }
       const camposControle = ['numero_contrato', 'data_deposito', 'data_inicio', 'comissao_percentual'].filter((c) => c in camposOrcamento);
       if (camposControle.length) {
