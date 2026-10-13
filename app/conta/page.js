@@ -9,7 +9,7 @@ import { fmtDataHoraSP } from '@/lib/format';
 import MfaConta from '@/components/MfaConta';
 import TesteEmail from '@/components/TesteEmail';
 import { statusEnvioEmail } from '@/lib/email';
-import { MASTER_TABS, imobiliariaTabs } from '@/lib/navTabs';
+import { MASTER_TABS, PRESTADOR_TABS, imobiliariaTabs } from '@/lib/navTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,8 @@ export default async function MinhaConta() {
   if (!user || !profile) redirect('/login');
 
   const master = profile.role === 'master';
-  const tipo = master ? (profile.dono ? 'Dono' : 'Funcionário FixIn (master)') : profile.subrole === 'operacional' ? 'Imobiliária · operacional' : 'Imobiliária · administrador';
+  const prestador = profile.role === 'prestador';
+  const tipo = prestador ? 'Prestador' : master ? (profile.dono ? 'Dono' : 'Funcionário FixIn (master)') : profile.subrole === 'operacional' ? 'Imobiliária · operacional' : 'Imobiliária · administrador';
 
   let ultimoBackup = null;
   if (profile.dono) {
@@ -31,7 +32,7 @@ export default async function MinhaConta() {
   const drivePronto = !!(process.env.BACKUP_DRIVE_URL && process.env.BACKUP_DRIVE_SEGREDO);
 
   return (
-    <AppShell profile={profile} tabs={master ? MASTER_TABS : imobiliariaTabs(profile)} homeHref={master ? '/master/dashboard' : '/imobiliaria/dashboard'}>
+    <AppShell profile={profile} tabs={prestador ? PRESTADOR_TABS : master ? MASTER_TABS : imobiliariaTabs(profile)} homeHref={prestador ? '/prestador/dashboard' : master ? '/master/dashboard' : '/imobiliaria/dashboard'}>
       <PageHeader
         icone="conta"
         titulo="Minha conta"
