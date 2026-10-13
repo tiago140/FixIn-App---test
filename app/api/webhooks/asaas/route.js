@@ -44,8 +44,10 @@ export async function POST(req) {
     const noCaixa = real.status === 'RECEIVED' || real.status === 'RECEIVED_IN_CASH';
     const novo = noCaixa ? 'no_caixa' : 'aprovado';
     // dinheiro conta uma única vez: só na primeira vez que a cobrança vira aprovada/no caixa
-    const primeira = cob.status === 'pendente' || cob.status === 'vencida';
-    await admin.from('cobrancas').update({ status: novo, pago_em: cob.pago_em || agora, atualizado_em: agora }).eq('id', cob.id);
+    // "reivindica" a cobrança de forma atômica: se dois avisos chegarem juntos, só um deles dá baixa no valor
+    const { data: reivindicada } = await admin.from('cobrancas').update({ status: novo, pago_em: cob.pago_em || agora, atualizado_em: agora }).eq('id', cob.id).in('status', ['pendente', 'vencida']).select('id');
+    const primeira = (reivindicada || []).length > 0;
+    if (!primeira) await admin.from('cobrancas').update({ status: novo, pago_em: cob.pago_em || agora, atualizado_em: agora }).eq('id', cob.id).in('status', ['aprovado']);
     if (primeira) {
       const { data: l } = await admin.from('lancamentos').select('*').eq('id', cob.lancamento_id).single();
       const pago = Math.min(Number(l.valor), Math.round((Number(l.valor_pago || 0) + Number(cob.valor)) * 100) / 100);

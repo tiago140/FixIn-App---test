@@ -5,5 +5,6 @@ import { getProfile } from '@/lib/getProfile';
 export default async function MasterLayout({ children }) {
   const { profile } = await getProfile();
   if (profile?.role === 'prestador') redirect('/prestador/dashboard');
+  if (profile && profile.role !== 'master') redirect('/imobiliaria/dashboard');
   return children;
 }

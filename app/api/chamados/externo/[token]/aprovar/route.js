@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hashToken } from '@/lib/chamados';
 import { avisarImobiliariaChamado } from '@/lib/chamadosEmail';
+import { liberarOrdensDoOrcamento } from '@/lib/ordens';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +28,8 @@ export async function POST(req, { params }) {
   await admin.from('chamados').update({ status: decisao === 'aprovado' ? 'aprovado' : 'em_analise', aprovado_externo_nome: ch.solicitante_nome, aprovado_externo_em: agora, atualizado_em: agora }).eq('id', ch.id);
   await admin.from('chamado_mensagens').insert({ chamado_id: ch.id, autor_tipo: 'externo', autor_nome: ch.solicitante_nome, texto: decisao === 'aprovado' ? `✔ Aprovei o orçamento ${o.numero}.` : `✖ Recusei o orçamento ${o.numero}.` });
   try { await admin.from('auditoria').insert({ acao: decisao === 'aprovado' ? 'Orçamento aprovado pelo solicitante (chamado)' : 'Orçamento recusado pelo solicitante (chamado)', detalhe: `${o.numero} · ${quem}`, alvo_tipo: 'orcamento', alvo_id: o.id, autor_nome: ch.solicitante_nome, autor_role: 'externo' }); } catch (e) {}
+  // aprovado pelo link: libera a ordem para o prestador, igual à aprovação dentro do sistema
+  if (decisao === 'aprovado') await liberarOrdensDoOrcamento(o.id);
   await avisarImobiliariaChamado(admin, ch, decisao === 'aprovado' ? 'aprovado' : 'recusado');
   return NextResponse.json({ ok: true });
 }
