@@ -9,7 +9,7 @@ import { rotuloPerfil } from '@/lib/permissoes';
 import { destravarSom, somLigado, definirSom, tocarSomAviso } from '@/lib/somAviso';
 
 // Cor da etiqueta de perfil (sobre o fundo azul-marinho da barra)
-const COR_PERFIL = { Dono: '#B8862E', 'Equipe FixIn': '#3B6B8C', Administrador: '#3F7A5E', Operacional: '#6B7280' };
+const COR_PERFIL = { Dono: '#B8862E', 'Equipe FixIn': '#3B6B8C', Administrador: '#3F7A5E', Operacional: '#6B7280', Prestador: '#B8862E' };
 
 // Ícone de cada item do menu (pelo rótulo)
 const ICONE_MENU = {
