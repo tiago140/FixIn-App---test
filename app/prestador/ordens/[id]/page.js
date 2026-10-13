@@ -34,7 +34,7 @@ export default async function PrestadorOrdem({ params }) {
   const fotosAnteriores = (fotosTodas || []).filter((f) => f.tipo !== 'reprovacao' && f.rodada < rodada);
   const linkFotos = os.token_fotos && (!os.token_expira || new Date(os.token_expira) > new Date()) ? `${urlSite()}/foto/${os.token_fotos}` : null;
   const total = totalItensOS(itens);
-  const pago = (pagamentos || []).reduce((s, p) => s + Number(p.valor), 0);
+  const pago = (pagamentos || []).filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
   const fase = ['em_execucao', 'reprovada', 'conclusao_pendente', 'aprovada', 'paga'].includes(os.status);
 
   return (
@@ -107,7 +107,8 @@ export default async function PrestadorOrdem({ params }) {
               <ul className="space-y-2">
                 {pagamentos.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-2 text-sm border border-linha rounded-lg px-3 py-2">
-                    <span><b className="font-mono">{fmtBRL(p.valor)}</b> <span className="text-marinho/60">· {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}{p.forma ? ` · ${p.forma}` : ''}</span></span>
+                    <span><b className="font-mono">{fmtBRL(p.valor)}</b> <span className="text-marinho/60">· {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}{p.forma ? ` · ${p.forma}` : ''}</span>{p.status === 'processando' && <span className="ml-2 text-xs font-semibold">Processando</span>}</span>
+                    {p.comprovante_url && <a href={p.comprovante_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-marinho underline"><FileText size={14} /> Comprovante</a>}
                     {p.comprovante_path && <a href={urlArquivo('ordens-arquivos', p.comprovante_path)} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-marinho underline"><FileText size={14} /> Comprovante</a>}
                   </li>
                 ))}

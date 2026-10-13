@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asaas } from '@/lib/asaas';
+import { aplicarTransferencia } from '@/lib/pixPrestador';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,13 @@ export async function POST(req) {
   const ev = await req.json().catch(() => ({}));
   const pid = ev?.payment?.id;
   const evento = ev?.event;
+  // Pix ao prestador (transferência): confere direto no Asaas
+  if (ev?.transfer?.id && String(evento || '').startsWith('TRANSFER_')) {
+    const admin0 = createAdminClient();
+    const { data: pag } = await admin0.from('pagamentos_prestador').select('*').eq('asaas_transfer_id', ev.transfer.id).maybeSingle();
+    if (pag) { try { const tr = await asaas(`/transfers/${ev.transfer.id}`); await aplicarTransferencia(admin0, pag, tr); } catch (e) { return NextResponse.json({ error: 'tente de novo' }, { status: 500 }); } }
+    return NextResponse.json({ ok: true });
+  }
   if (!pid || !evento) return NextResponse.json({ ok: true });
 
   const admin = createAdminClient();

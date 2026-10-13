@@ -17,6 +17,7 @@ export default async function PrestadorPage({ params }) {
 
   const { data: p } = await supabase.from('prestadores').select('*').eq('id', params.id).maybeSingle();
   if (!p) notFound();
+  const { data: termo } = await supabase.from('termos_aceites').select('versao, aceito_em').eq('prestador_id', p.id).order('aceito_em', { ascending: false }).limit(1).maybeSingle();
   const [{ data: acesso }, { data: ordens }] = await Promise.all([
     supabase.from('profiles').select('id, email, ativo').eq('prestador_id', p.id).maybeSingle(),
     supabase.from('ordens_servico').select('id, numero, endereco, status, criado_em').eq('prestador_id', p.id).order('criado_em', { ascending: false }).limit(20),
@@ -33,6 +34,9 @@ export default async function PrestadorPage({ params }) {
       <div className="grid xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
         <PrestadorForm modo="editar" inicial={p} />
         <div className="space-y-5">
+          <div className={`card p-4 rounded-xl text-sm ${termo ? 'border-l-4 border-l-sucesso' : 'border-l-4 border-l-erro'}`}>
+            <b>Termo de garantia e responsabilidade:</b> {termo ? `assinado em ${new Date(termo.aceito_em).toLocaleDateString('pt-BR')} (versão ${termo.versao})` : 'ainda não assinado — será pedido no primeiro login.'}
+          </div>
           {acesso ? (
             <div className="card p-5 rounded-xl border-l-4 border-l-sucesso">
               <h3 className="font-semibold">Acesso ao portal</h3>

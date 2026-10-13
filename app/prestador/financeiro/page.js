@@ -21,12 +21,12 @@ export default async function PrestadorFinanceiro() {
   const lista = (ordens || []).map((o) => {
     const total = totalItensOS(o.os_itens);
     const meus = (pags || []).filter((p) => p.os_id === o.id);
-    const pago = meus.reduce((s, p) => s + Number(p.valor), 0);
+    const pago = meus.filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
     return { ...o, total, pago, saldo: Math.max(0, total - pago), pags: meus, temNota: (notas || []).some((n) => n.os_id === o.id) };
   });
   const aReceber = lista.filter((o) => ['aprovada', 'paga'].includes(o.status)).reduce((s, o) => s + o.saldo, 0);
   const emExecucao = lista.filter((o) => ['em_execucao', 'reprovada', 'conclusao_pendente'].includes(o.status)).reduce((s, o) => s + o.total, 0);
-  const recebido = (pags || []).reduce((s, p) => s + Number(p.valor), 0);
+  const recebido = (pags || []).filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
   const semNota = lista.filter((o) => ['conclusao_pendente', 'aprovada', 'paga'].includes(o.status) && !o.temNota);
 
   const K = ({ r, v, c = '' }) => <div className="card rounded-xl p-5"><span className="block text-xs text-marinho/55">{r}</span><span className={`block text-2xl font-bold font-mono mt-1 ${c}`}>{fmtBRL(v)}</span></div>;
@@ -55,7 +55,7 @@ export default async function PrestadorFinanceiro() {
                   <td className="px-4 py-3 text-right font-mono text-sucesso">{fmtBRL(o.pago)}</td>
                   <td className="px-4 py-3 text-right font-mono">{fmtBRL(o.saldo)}</td>
                   <td className="px-4 py-3">{o.temNota ? '✓' : <span className="text-marinho/40">—</span>}</td>
-                  <td className="px-4 py-3">{o.pags.filter((p) => p.comprovante_path).map((p) => <a key={p.id} href={urlArquivo('ordens-arquivos', p.comprovante_path)} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline"><FileText size={13} /> {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}</a>)}</td>
+                  <td className="px-4 py-3">{o.pags.filter((p) => p.comprovante_url).map((p) => <a key={p.id} href={p.comprovante_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline"><FileText size={13} /> {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}</a>)}{o.pags.filter((p) => p.comprovante_path).map((p) => <a key={p.id} href={urlArquivo('ordens-arquivos', p.comprovante_path)} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline"><FileText size={13} /> {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}</a>)}</td>
                 </tr>
               ))}
             </tbody>

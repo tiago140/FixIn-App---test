@@ -8,6 +8,9 @@ import OrdemMasterAcoes from '@/components/OrdemMasterAcoes';
 import OrdemMasterExecucao from '@/components/OrdemMasterExecucao';
 import GaleriaFotosOS from '@/components/GaleriaFotosOS';
 import RegistrarPagamentoOS from '@/components/RegistrarPagamentoOS';
+import { createAdminClient } from '@/lib/supabase/admin';
+import PagarPixOS from '@/components/PagarPixOS';
+import { pixPrestadorAtivo, chaveMascarada, atualizarPixDaOrdem } from '@/lib/pixPrestador';
 import { urlArquivo } from '@/lib/arquivos';
 import { urlSite } from '@/lib/chamados';
 import { FileText } from 'lucide-react';
@@ -22,8 +25,9 @@ export default async function OrdemPage({ params }) {
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
-  const { data: os } = await supabase.from('ordens_servico').select('*, prestadores(nome, telefone, email), os_itens(*)').eq('id', params.id).maybeSingle();
+  const { data: os } = await supabase.from('ordens_servico').select('*, prestadores(nome, telefone, email, pix_tipo, pix_chave), os_itens(*)').eq('id', params.id).maybeSingle();
   if (!os) notFound();
+  if (profile.dono && os.status === 'aprovada') { try { await atualizarPixDaOrdem(createAdminClient(), os.id); } catch (e) {} }
   const [{ data: fotos }, { data: notas }, { data: pagamentos }] = await Promise.all([
     supabase.from('os_fotos').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('os_notas').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
@@ -32,7 +36,8 @@ export default async function OrdemPage({ params }) {
   const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
   const itens = (os.os_itens || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   const total = totalItensOS(itens);
-  const pago = (pagamentos || []).reduce((s, p) => s + Number(p.valor), 0);
+  const pago = (pagamentos || []).filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
+  const emProcesso = (pagamentos || []).filter((p) => p.status === 'processando').reduce((s, p) => s + Number(p.valor), 0);
   const rodada = os.rodada || 0;
   const fotosAtuais = (fotos || []).filter((f) => f.rodada === rodada && f.tipo !== 'reprovacao');
   const fotosReprov = (fotos || []).filter((f) => f.tipo === 'reprovacao' && f.rodada <= rodada);
@@ -108,13 +113,15 @@ export default async function OrdemPage({ params }) {
                 <ul className="space-y-1.5">
                   {pagamentos.map((p) => (
                     <li key={p.id} className="flex items-center justify-between text-sm border border-linha rounded-lg px-3 py-2">
-                      <span><b className="font-mono">{fmtBRL(p.valor)}</b> <span className="text-marinho/60">· {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}{p.forma ? ` · ${p.forma}` : ''}</span></span>
+                      <span><b className="font-mono">{fmtBRL(p.valor)}</b> <span className="text-marinho/60">· {new Date(p.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}{p.forma ? ` · ${p.forma}` : ''}</span>{p.status && p.status !== 'confirmado' && <span className="ml-2 text-xs font-semibold">{{ processando: 'Processando', falhou: 'Falhou', cancelado: 'Cancelado' }[p.status]}{p.erro ? ` — ${p.erro}` : ''}</span>}</span>
+                      {p.comprovante_url && <a href={p.comprovante_url} target="_blank" rel="noreferrer" className="underline flex items-center gap-1"><FileText size={14} /> Comprovante</a>}
                       {p.comprovante_path && <a href={urlArquivo('ordens-arquivos', p.comprovante_path)} target="_blank" rel="noreferrer" className="underline flex items-center gap-1"><FileText size={14} /> Comprovante</a>}
                     </li>
                   ))}
                 </ul>
               )}
-              {profile.dono ? <RegistrarPagamentoOS osId={os.id} saldo={Math.max(0, total - pago)} /> : <p className="text-xs text-marinho/50">O registro de pagamentos é feito pelo perfil de gestão.</p>}
+              {profile.dono && os.status === 'aprovada' && <PagarPixOS osId={os.id} saldo={Math.max(0, total - pago - emProcesso)} chaveMasc={os.prestadores?.pix_chave ? chaveMascarada(os.prestadores.pix_tipo, os.prestadores.pix_chave) : ''} ativo={pixPrestadorAtivo()} motivo="O Pix automático ainda não foi ligado no sistema. Use o registro abaixo, com comprovante." temProcessando={emProcesso > 0} />}
+              {profile.dono ? <RegistrarPagamentoOS osId={os.id} saldo={Math.max(0, total - pago - emProcesso)} /> : <p className="text-xs text-marinho/50">O registro de pagamentos é feito pelo perfil de gestão.</p>}
             </div>
           )}
         </div>
