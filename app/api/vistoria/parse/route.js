@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { classificarPendencias, contarPorAcao } from '@/lib/classificarPendencia';
 import { ehLaudoMov, parseVistoriaTexto, extrairEnderecoVistoria, itensParaConferir, resumoLeituraVistoria } from '@/lib/parseVistoria';
 
 export const runtime = 'nodejs';
@@ -82,12 +84,46 @@ export async function POST(req) {
     return NextResponse.json({ error: 'não foi possível ler este PDF: ' + e.message }, { status: 400 });
   }
 
-  const lidos = parseVistoriaTexto(texto);
+  let lidos = parseVistoriaTexto(texto);
   const endereco = extrairEnderecoVistoria(texto);
+
+  // Laudo de divergências (MOV/LAG): cada pendência é classificada (limpeza, reparo, pintura, reposição, verificar)
+  // com as regras do banco. Se a tabela ainda não existe, vale o conjunto padrão do código.
+  let porAcao = null;
+  const eLaudoMov = ehLaudoMov(texto);
+  const admin = createAdminClient();
+  const clienteId = String(formData.get('cliente_id') || profile.cliente_id || '') || null;
+  if (eLaudoMov) {
+    let regras = null;
+    try {
+      const { data, error } = await admin.from('vistoria_regras').select('prioridade, padrao, acao, cliente_id, ativo').eq('ativo', true);
+      if (!error && data && data.length) regras = data;
+    } catch (e) { /* tabela ainda não criada: usa as regras padrão */ }
+    const diag = lidos.diagnostico;
+    lidos = classificarPendencias(lidos, regras, clienteId);
+    lidos.diagnostico = diag;
+    porAcao = contarPorAcao(lidos);
+    lidos.diagnostico.porAcao = porAcao;
+  }
   // o que o leitor não conseguiu encaixar NÃO some: volta como item "A CONFERIR"
   const itens = [...lidos, ...itensParaConferir(lidos)];
 
+  // histórico da importação (não impede a leitura se a tabela ainda não existir)
+  let importacao_id = null;
+  if (eLaudoMov) {
+    try {
+      const d = lidos.diagnostico;
+      const { data: imp } = await admin.from('vistoria_importacoes').insert({
+        cliente_id: clienteId, arquivo_nome: String(file.name || '').slice(0, 200), formato: d.formato,
+        total_itens: lidos.length, total_a_conferir: (d.naoLidas || []).length, total_alteracoes: (d.alteracoes || []).length,
+        por_acao: porAcao || {}, alteracoes_aprovacao: d.alteracoes || [], a_conferir: d.naoLidas || [], criado_por: user.id,
+      }).select('id').single();
+      importacao_id = imp?.id || null;
+    } catch (e) { /* sem histórico, segue */ }
+  }
+
   return NextResponse.json({
+    importacao_id,
     itens,
     endereco,
     resumo: resumoLeituraVistoria(lidos),
