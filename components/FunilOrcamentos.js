@@ -54,25 +54,6 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
             <Cartao alvo="st-rejeitado" n={v.recusados.qtd} cor="#A63A2D" icone={XCircle} titulo={rotulosCartao.recusado} valor={fmtBRL(v.recusados.valor)}
               linhas={[`${v.recusados.qtd} orçamento(s)`, v.taxaAprovacao !== null ? `Taxa de aprovação ${v.taxaAprovacao}% (${v.aprovados.qtd} de ${v.decididos} decididos)` : null]} />
           </div>
-
-          {totalValor > 0 && (
-            <div className="bg-white border border-linha rounded-lg p-4 mb-4">
-              <div className="text-xs font-semibold text-marinho/60 uppercase tracking-wide mb-2">Como o valor total está dividido</div>
-              <div className="flex h-5 rounded overflow-hidden bg-papel" role="img" aria-label="Divisão do valor total por situação">
-                {segmentos.filter((s) => s.valor > 0).map((s) => (
-                  <div key={s.chave} data-segmento={s.chave} title={`${s.rotulo}: ${fmtBRL(s.valor)} (${pct(s.valor, totalValor)}%)`} style={{ width: `${(s.valor / totalValor) * 100}%`, background: s.cor, minWidth: 3 }} />
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-xs text-marinho/70">
-                {segmentos.map((s) => (
-                  <span key={s.chave} className="inline-flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm" style={{ background: s.cor }} />
-                    {s.rotulo}: <b className="text-marinho">{fmtBRL(s.valor)}</b> ({pct(s.valor, totalValor)}%)
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
 
