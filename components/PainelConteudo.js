@@ -133,6 +133,7 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
           mostrarCliente={master}
           veValores={veValores}
           papel={papel}
+          limite={['Finalizado', 'Rejeitado'].includes(titulo) ? 3 : 5}
         />
       ))}
 

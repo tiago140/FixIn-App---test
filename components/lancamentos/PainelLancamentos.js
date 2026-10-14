@@ -418,32 +418,63 @@ function PainelHoje({ pendentes, nomeDoOrc, aprovar, vencidosReceber, vencidosPa
 }
 
 function PorOrcamento({ lancamentos, pagarDoOrcamento }) {
-  const linhas = lancamentos.filter((l) => l.tipo === 'receber' && l.orcamento_id && l.status !== 'cancelado' && l.status !== 'pago').slice(0, 6);
+  const todas = lancamentos
+    .filter((l) => l.tipo === 'receber' && l.orcamento_id && l.status !== 'cancelado' && l.status !== 'pago')
+    .map((l) => {
+      const valor = Number(l.valor) || 0;
+      const pago = Number(l.valor_pago) || 0;
+      const [num, ...resto] = String(l.descricao || '').replace(/^Orçamento\s*/, '').split(/\s+[—–]\s+/);
+      return { l, valor, pago, falta: Math.max(0, valor - pago), pct: valor > 0 ? Math.min(100, Math.round((pago / valor) * 100)) : 0, num: resto.length ? num : '', endereco: resto.length ? resto.join(' — ') : num };
+    })
+    .sort((x, y) => y.falta - x.falta);
+  const linhas = todas.slice(0, 6);
+  const totalFalta = todas.reduce((t, x) => t + x.falta, 0);
   return (
-    <div className="card p-4">
-      <h3 className="font-semibold text-sm mb-3">Por orçamento em andamento</h3>
+    <div className="card p-5">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-marinho">Obras em andamento</h3>
+        <p className="mt-0.5 text-xs text-marinho/60">
+          {todas.length === 0 ? 'Nada em aberto.' : <>Falta receber <b className="text-marinho">{fmtBRL(totalFalta)}</b> em {todas.length} orçamento{todas.length > 1 ? 's' : ''}</>}
+        </p>
+      </div>
       {linhas.length === 0 ? <p className="text-sm text-marinho/60">Nenhum orçamento com valor em aberto.</p> : (
-        <div className="space-y-3">
-          {linhas.map((l) => {
+        <ul className="divide-y divide-linha">
+          {linhas.map(({ l, valor, pago, falta, pct, num, endereco }) => {
             const p = pagarDoOrcamento[l.orcamento_id];
-            const pct = Math.min(100, (Number(l.valor_pago || 0) / Number(l.valor)) * 100);
             return (
-              <div key={l.id}>
-                <div className="flex justify-between gap-2 text-xs"><span className="truncate font-medium">{l.descricao.replace(/^Orçamento\s*/, '')}</span><span className="whitespace-nowrap">{fmtBRL(l.valor_pago || 0)} / {fmtBRL(l.valor)}</span></div>
-                <div className="h-2 rounded bg-marinho/10 overflow-hidden my-1"><div className="h-2 bg-verde" style={{ width: `${pct}%` }} /></div>
-                <div className="text-[11px] text-marinho/60">{p ? `Prestador ${p.prestadores?.nome || ''} ${fmtBRL(p.valor)} · sua margem ${fmtBRL(Number(l.valor) - Number(p.valor))}` : 'Sem prestador atribuído'}</div>
-              </div>
+              <li key={l.id} className="py-3 first:pt-0 last:pb-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    {num && <div className="text-[11px] font-semibold tracking-wide text-marinho/45">{num}</div>}
+                    <div className="truncate text-sm font-semibold text-marinho" title={endereco}>{endereco}</div>
+                  </div>
+                  <div className="whitespace-nowrap text-right">
+                    <div className="text-sm font-semibold text-marinho">{fmtBRL(falta)}</div>
+                    <div className="text-[11px] text-marinho/50">falta receber</div>
+                  </div>
+                </div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-marinho/10" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="h-full rounded-full bg-verde" style={{ width: `${pago > 0 ? Math.max(pct, 3) : 0}%` }} />
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-marinho/60">
+                  <span>Recebido {fmtBRL(pago)} de {fmtBRL(valor)} · {pct}%</span>
+                  {p
+                    ? <span>{p.prestadores?.nome || 'Prestador'} {fmtBRL(p.valor)} · margem {fmtBRL(valor - Number(p.valor))}</span>
+                    : <span className="rounded-full bg-alerta/15 px-2 py-0.5 font-semibold text-alerta">Sem prestador</span>}
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
+      {todas.length > linhas.length && <p className="mt-3 text-[11px] text-marinho/50">Mais {todas.length - linhas.length} em aberto. A lista completa está logo abaixo, em "A receber".</p>}
     </div>
   );
 }
 
 function Proximos30({ lancamentos, hoje }) {
   const fim = somarDias(hoje, 30);
-  const faixas = [0, 1, 2, 3].map((i) => ({ de: somarDias(hoje, i * 7 + (i ? 1 : 0)), ate: i === 3 ? fim : somarDias(hoje, i * 7 + 7), rot: i === 0 ? 'Esta semana' : i === 3 ? 'Dias 22-30' : `Dias ${i * 7 + 1}-${i * 7 + 7}`, ent: 0, sai: 0 }));
+  const faixas = [0, 1, 2, 3].map((i) => ({ de: somarDias(hoje, i * 7 + (i ? 1 : 0)), ate: i === 3 ? fim : somarDias(hoje, i * 7 + 7), rot: i === 0 ? 'Esta semana' : i === 3 ? 'Dias 22 a 30' : `Dias ${i * 7 + 1} a ${i * 7 + 7}`, ent: 0, sai: 0 }));
   lancamentos.filter(emAberto).forEach((l) => {
     const venc = l.vencimento < hoje ? hoje : l.vencimento;
     const f = faixas.find((x) => venc >= x.de && venc <= x.ate);
@@ -451,19 +482,40 @@ function Proximos30({ lancamentos, hoje }) {
     if (l.tipo === 'receber') f.ent += saldoAberto(l); else f.sai += saldoAberto(l);
   });
   const max = Math.max(1, ...faixas.map((f) => Math.max(f.ent, f.sai)));
+  const totEnt = faixas.reduce((t, f) => t + f.ent, 0);
+  const totSai = faixas.reduce((t, f) => t + f.sai, 0);
+  const saldo = totEnt - totSai;
   return (
-    <div className="card p-4">
-      <h3 className="font-semibold text-sm mb-1">Próximos 30 dias</h3>
-      <p className="text-[11px] text-marinho/50 mb-3">Atrasados entram em "Esta semana".</p>
-      <div className="space-y-3">
-        {faixas.map((f) => (
-          <div key={f.rot}>
-            <div className="text-xs font-medium mb-1">{f.rot}</div>
-            <div className="flex items-center gap-2 text-[11px]"><span className="w-14 text-verde">Entra</span><div className="flex-1 h-2 rounded bg-marinho/5"><div className="h-2 rounded bg-verde" style={{ width: `${(f.ent / max) * 100}%` }} /></div><span className="w-24 text-right">{fmtBRL(f.ent)}</span></div>
-            <div className="flex items-center gap-2 text-[11px] mt-0.5"><span className="w-14 text-marinho">Sai</span><div className="flex-1 h-2 rounded bg-marinho/5"><div className="h-2 rounded bg-marinho" style={{ width: `${(f.sai / max) * 100}%` }} /></div><span className="w-24 text-right">{fmtBRL(f.sai)}</span></div>
-          </div>
-        ))}
+    <div className="card p-5">
+      <h3 className="text-base font-semibold text-marinho">Próximos 30 dias</h3>
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        <div className="rounded-lg bg-verde/10 px-3 py-2"><div className="text-[11px] font-semibold text-verde">Entra</div><div className="text-sm font-semibold text-marinho">{fmtBRL(totEnt)}</div></div>
+        <div className="rounded-lg bg-marinho/10 px-3 py-2"><div className="text-[11px] font-semibold text-marinho/70">Sai</div><div className="text-sm font-semibold text-marinho">{fmtBRL(totSai)}</div></div>
+        <div className={`rounded-lg px-3 py-2 ${saldo < 0 ? 'bg-erro/10' : 'bg-sucesso/10'}`}><div className={`text-[11px] font-semibold ${saldo < 0 ? 'text-erro' : 'text-sucesso'}`}>Saldo</div><div className="text-sm font-semibold text-marinho">{fmtBRL(saldo)}</div></div>
       </div>
+      <ul className="mt-4 space-y-3">
+        {faixas.map((f) => {
+          const vazio = f.ent === 0 && f.sai === 0;
+          return (
+            <li key={f.rot} className="grid grid-cols-[88px_1fr] items-center gap-3">
+              <div className={`text-xs font-semibold ${vazio ? 'text-marinho/35' : 'text-marinho'}`}>{f.rot}</div>
+              {vazio ? <div className="text-[11px] text-marinho/35">Sem movimento</div> : (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 flex-1 rounded-full bg-marinho/5"><div className="h-full rounded-full bg-verde" style={{ width: `${f.ent > 0 ? Math.max((f.ent / max) * 100, 2) : 0}%` }} /></div>
+                    <span className="w-24 text-right text-[11px] font-medium text-verde">{f.ent > 0 ? `+ ${fmtBRL(f.ent)}` : '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 flex-1 rounded-full bg-marinho/5"><div className="h-full rounded-full bg-marinho" style={{ width: `${f.sai > 0 ? Math.max((f.sai / max) * 100, 2) : 0}%` }} /></div>
+                    <span className="w-24 text-right text-[11px] font-medium text-marinho">{f.sai > 0 ? `− ${fmtBRL(f.sai)}` : '—'}</span>
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-4 text-[11px] text-marinho/45">Atrasados entram em "Esta semana". Verde = entra, azul = sai.</p>
     </div>
   );
 }
