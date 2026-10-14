@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Plus, ArrowRight, Inbox } from 'lucide-react';
 import SecaoOrcamentos from '@/components/SecaoOrcamentos';
+import BuscaOrcamento from '@/components/BuscaOrcamento';
 import FunilOrcamentos from '@/components/FunilOrcamentos';
 import PorImobiliaria from '@/components/PorImobiliaria';
 import { agruparPorEtapa } from '@/lib/painel';
@@ -67,6 +68,8 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
           <Plus size={20} /> Nova solicitação
         </Link>
       )}
+
+      {lista.length > 5 && <BuscaOrcamento orcamentos={lista} basePath={basePath} mostrarCliente={master} />}
 
       <FunilOrcamentos orcamentos={lista} papel={papel} veValores={veValores} agora={agora || new Date()} escopo={escopo} />
 
