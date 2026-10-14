@@ -14,7 +14,7 @@ alter table public._migracoes enable row level security;  -- sem policy: só o s
 
 do $$
 declare
-  v_corte timestamptz := '__CORTE_UTC__';   -- momento do deploy da correção
+  v_corte timestamptz := '2026-10-14T23:25:00Z';   -- momento do deploy da correção
   v_n int; v_s int;
 begin
   if exists (select 1 from public._migracoes where nome = 'visitas_fuso_v1') then
