@@ -5,8 +5,8 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import ToggleAtraso from '@/components/ToggleAtraso';
-import { GraficoPizzaStatus, GraficoBarrasClientes, GraficoBarrasAprovadoReprovado } from '@/components/DashboardCharts';
-import { STATUS_LABEL, PAGAMENTO_CLIENTE_LABEL, fmtBRL, calcularTotalComMargem, calcularTotalItens, estaAtrasado } from '@/lib/format';
+import { GraficoBarrasClientes, GraficoBarrasAprovadoReprovado } from '@/components/DashboardCharts';
+import { PAGAMENTO_CLIENTE_LABEL, fmtBRL, calcularTotalComMargem, calcularTotalItens, estaAtrasado } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,12 +33,6 @@ export default async function ResultadosPage() {
   const margemGeral = aprovados.reduce((a, o) => a + (o.total - o.base), 0);
   const atrasadosGeral = comTotal.filter(estaAtrasado);
 
-  const dadosPizzaStatus = Object.keys(STATUS_LABEL).map((key) => ({
-    key,
-    name: STATUS_LABEL[key],
-    value: comTotal.filter((o) => o.status === key).length,
-  }));
-
   const dadosBarrasClientes = (clientes || [])
     .map((c) => ({
       nome: c.nome_empresa,
@@ -61,22 +55,18 @@ export default async function ResultadosPage() {
         subtitulo="Totais aprovados, margem interna e desempenho por serviço e por imobiliária"
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-linha border border-linha mb-6">
-        <Kpi num={fmtBRL(totalAprovadoGeral)} lbl="total aprovado" />
-        <Kpi num={fmtBRL(totalReprovadoGeral)} lbl="total reprovado" />
-        <Kpi num={fmtBRL(totalAprovadoGeral - totalPagoGeral)} lbl="total pendente" />
-        <Kpi num={String(atrasadosGeral.length)} lbl="em atraso" />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+        <Kpi num={fmtBRL(totalAprovadoGeral)} lbl="Aprovado" />
+        <Kpi num={fmtBRL(totalAprovadoGeral - totalPagoGeral)} lbl="A receber" />
+        <Kpi num={String(atrasadosGeral.length)} lbl="Em atraso" tom={atrasadosGeral.length ? 'erro' : ''} />
+        <Kpi num={fmtBRL(totalReprovadoGeral)} lbl="Reprovado" />
+        <Kpi num={fmtBRL(margemGeral)} lbl="Margem FixIn (só aqui)" destaque />
       </div>
 
-      <div className="card p-5 border-l-4 border-l-accent mb-6">
-        <div className="text-xs text-marinho/50 mb-1">Margem / lucro interno da FixIn — visível somente aqui</div>
-        <div className="text-2xl font-bold">{fmtBRL(margemGeral)}</div>
-      </div>
-
-      <div className="grid xl:grid-cols-2 gap-5 mb-10">
+      <div className="grid xl:grid-cols-2 gap-5 mb-8">
         <div className="card p-6">
-          <h3 className="font-semibold text-base mb-3">Orçamentos por etapa</h3>
-          <GraficoPizzaStatus dados={dadosPizzaStatus} />
+          <h3 className="font-semibold text-base mb-3">Valor aprovado por imobiliária</h3>
+          <GraficoBarrasClientes dados={dadosBarrasClientes} />
         </div>
         <div className="card p-6">
           <h3 className="font-semibold text-base mb-3">Aprovado x reprovado por tipo</h3>
@@ -84,31 +74,7 @@ export default async function ResultadosPage() {
         </div>
       </div>
 
-      <div className="card p-6 mb-10">
-        <h3 className="font-semibold text-base mb-3">Valor aprovado por imobiliária</h3>
-        <GraficoBarrasClientes dados={dadosBarrasClientes} />
-      </div>
-
-      <h2 className="font-semibold text-xl mb-3">Por tipo de serviço</h2>
-      {['rescisao', 'manutencao'].map((tipo) => {
-        const doTipo = comTotal.filter((o) => (o.tipo || 'rescisao') === tipo);
-        const aprovadosTipo = doTipo.filter((o) => ['aprovado', 'em_execucao', 'finalizado'].includes(o.status));
-        const reprovadosTipo = doTipo.filter((o) => o.status === 'rejeitado');
-        const totalTipo = aprovadosTipo.reduce((a, o) => a + o.total, 0);
-        return (
-          <div key={tipo} className="flex justify-between items-center py-3 border-b border-linha">
-            <div>
-              <div className="font-semibold">{tipo === 'manutencao' ? 'Manutenção (contrato ativo)' : 'Rescisão / desocupação'}</div>
-              <div className="text-xs text-marinho/50">
-                {doTipo.length} no total · {aprovadosTipo.length} aprovado(s) · {reprovadosTipo.length} reprovado(s)
-              </div>
-            </div>
-            <div className="text-sm">Aprovado: {fmtBRL(totalTipo)}</div>
-          </div>
-        );
-      })}
-
-      <h2 className="font-semibold text-xl mb-3 mt-8">Por imobiliária</h2>
+      <h2 className="font-semibold text-xl mb-3">Por imobiliária</h2>
       {(clientes || []).map((c) => {
         const os = aprovados.filter((o) => o.cliente_id === c.id);
         const reprovadosCliente = reprovados.filter((o) => o.cliente_id === c.id);
@@ -134,7 +100,7 @@ export default async function ResultadosPage() {
         );
       })}
 
-      <h2 className="font-semibold text-xl mb-3 mt-8">Orçamentos aprovados — detalhe e flags de atraso</h2>
+      <h2 className="font-semibold text-xl mb-3 mt-8">Aprovados: marcar atraso</h2>
       {aprovados.length === 0 && <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum orçamento aprovado ainda.</div>}
       {aprovados.map((o) => {
         const pend = Math.max(0, o.total - (o.valor_pago || 0));
@@ -180,11 +146,11 @@ export default async function ResultadosPage() {
   );
 }
 
-function Kpi({ num, lbl }) {
+function Kpi({ num, lbl, tom = '', destaque = false }) {
   return (
-    <div className="bg-white p-4">
-      <span className="block font-mono text-xl font-semibold">{num}</span>
-      <span className="text-xs text-marinho/50">{lbl}</span>
+    <div className={`card rounded-xl p-4 ${destaque ? 'border-l-4 border-l-accent' : ''}`}>
+      <span className="block text-xs text-marinho/55">{lbl}</span>
+      <span className={`block font-mono text-xl font-semibold mt-1 ${tom === 'erro' ? 'text-erro' : ''}`}>{num}</span>
     </div>
   );
 }

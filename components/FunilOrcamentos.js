@@ -4,7 +4,6 @@ import { fmtBRL } from '@/lib/format';
 import { SITUACOES, FAIXAS_ESPERA, resumoPorSituacao, visaoDoTodo } from '@/lib/painel';
 
 const TONS_ESPERA = ['#3B6B8C', '#B8862E', '#D9822B', '#C0392B'];
-const pct = (parte, todo) => (todo > 0 ? Math.round((parte / todo) * 100) : 0);
 
 // "O todo": quantos orçamentos E quanto dinheiro em cada situação — o que está esperando resposta, o que ainda vai ser orçado,
 // o que foi fechado e o que foi recusado. Cada linha clica e leva à lista abaixo, destacando os orçamentos que entram na conta.
@@ -16,8 +15,6 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
   const linhas = resumoPorSituacao(lista);
   const master = papel === 'master';
   const totalValor = v.total.valor;
-  const maiorQtd = Math.max(1, ...linhas.map((l) => l.qtd));
-  const maiorValor = Math.max(1, ...linhas.map((l) => l.valor));
 
   const tituloBase = master ? 'O todo: onde está o dinheiro' : veValores ? 'Seus orçamentos: situação e valores' : 'Seus orçamentos por situação';
   const titulo = escopo ? `${tituloBase} — ${escopo}` : tituloBase;
@@ -26,12 +23,6 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
     ? { espera: 'Esperando resposta da imobiliária', orcar: 'A orçar (FixIn)', fechado: 'Fechado (aprovado)', recusado: 'Recusado (perdido)' }
     : { espera: 'Esperando a sua resposta', orcar: 'A FixIn está orçando', fechado: 'Aprovado', recusado: 'Recusado' };
 
-  const segmentos = [
-    { chave: 'espera', rotulo: rotulosCartao.espera, cor: '#3B6B8C', valor: v.aguardando.valor },
-    { chave: 'orcar', rotulo: rotulosCartao.orcar, cor: '#B8862E', valor: v.aOrcar.valor },
-    { chave: 'fechado', rotulo: rotulosCartao.fechado, cor: '#3F7A5E', valor: v.aprovados.valor },
-    { chave: 'recusado', rotulo: rotulosCartao.recusado, cor: '#A63A2D', valor: v.recusados.valor },
-  ];
 
   return (
     <section className="mb-6" aria-label={titulo} data-funil>
@@ -58,22 +49,13 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
       )}
 
       <div className="bg-white border border-linha rounded-lg overflow-hidden mb-4">
-        <div className={`hidden md:grid ${veValores ? 'grid-cols-[minmax(0,2.2fr)_5rem_9rem_minmax(0,2fr)]' : 'grid-cols-[minmax(0,2.2fr)_5rem_minmax(0,2fr)]'} gap-3 px-4 py-2 bg-marinho text-white text-[11px] font-semibold uppercase tracking-wide`}>
-          <span>Situação</span><span className="text-right">Qtd</span>{veValores && <span className="text-right">Valor (R$)</span>}<span>{veValores ? 'Parte do valor total' : 'Parte do total'}</span>
-        </div>
-        {linhas.map((l) => {
+        {linhas.filter((l) => l.qtd > 0).map((l, i) => {
           const s = SITUACOES.find((x) => x.chave === l.chave);
-          const parte = veValores ? pct(l.valor, totalValor) : pct(l.qtd, v.total.qtd);
-          const largura = veValores ? (l.valor / maiorValor) * 100 : (l.qtd / maiorQtd) * 100;
           const linha = (
-            <div data-situacao={l.chave} className={`grid ${veValores ? 'md:grid-cols-[minmax(0,2.2fr)_5rem_9rem_minmax(0,2fr)]' : 'md:grid-cols-[minmax(0,2.2fr)_5rem_minmax(0,2fr)]'} grid-cols-[1fr_auto] gap-x-3 gap-y-1 px-4 py-2.5 border-t border-linha items-center ${l.qtd === 0 ? 'opacity-50' : 'hover:bg-papel'}`}>
-              <span className="flex items-center gap-2 text-sm font-semibold text-marinho"><span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: s.cor }} />{s.rotulo[master ? 'master' : 'imobiliaria']}</span>
-              <span className="text-right font-mono font-bold text-marinho">{l.qtd}</span>
-              {veValores && <span className="text-right font-mono text-sm text-marinho col-span-2 md:col-span-1">{fmtBRL(l.valor)}{l.semPreco > 0 && l.qtd > 0 ? <>{' '}<span className="text-[11px] text-alerta">({l.semPreco} sem preço)</span></> : null}</span>}
-              <span className="flex items-center gap-2 col-span-2 md:col-span-1">
-                <span className="flex-1 h-2 rounded bg-papel overflow-hidden"><span className="block h-full rounded" style={{ width: `${Math.max(largura, l.qtd > 0 ? 2 : 0)}%`, background: s.cor }} /></span>
-                <span className="text-xs text-marinho/60 w-9 text-right">{parte}%</span>
-              </span>
+            <div data-situacao={l.chave} className={`grid ${veValores ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'} gap-x-5 px-4 py-3 ${i ? 'border-t border-linha' : ''} items-center hover:bg-papel`}>
+              <span className="flex items-center gap-2.5 text-sm font-semibold text-marinho"><span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.cor }} />{s.rotulo[master ? 'master' : 'imobiliaria']}</span>
+              <span className="text-right font-mono font-bold text-marinho w-8">{l.qtd}</span>
+              {veValores && <span className="text-right font-mono text-sm text-marinho/80 min-w-[5.5rem] whitespace-nowrap">{fmtBRL(l.valor)}{l.semPreco > 0 ? <>{' '}<span className="hidden sm:inline text-[11px] text-alerta">({l.semPreco} sem preço)</span></> : null}</span>}
             </div>
           );
           return (
@@ -93,7 +75,7 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
       {v.aguardando.qtd > 0 && (
         <div className="bg-white border border-linha rounded-lg p-4" data-espera>
           <div className="flex items-center gap-2 text-sm font-semibold text-marinho mb-0.5"><Clock size={16} /> {master ? 'Parados esperando resposta da imobiliária' : 'Esperando a sua resposta'}: há quanto tempo?</div>
-          <div className="text-xs text-marinho/50 mb-3">Contado desde a última atualização de cada orçamento. Quanto mais antigo, mais vale cobrar uma resposta.</div>
+          <div className="text-xs text-marinho/50 mb-3">Desde a última atualização de cada orçamento.</div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {v.espera.map((f, i) => (
               <AlvoRolagem key={f.chave} alvo={`espera-${f.chave}`} n={f.qtd} dica={false} rotulo={`Ver ${f.qtd} orçamento(s) parados ${f.rotulo}`} className="block h-full">

@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 const FILTROS = [
   ['', 'Todas'], ['enviada', 'Aguardando aceite'], ['aceita', 'Aceitas'], ['orcada', 'Valores enviados'],
   ['aplicada', 'Em aprovação'], ['em_execucao', 'Aprovadas · em execução'], ['conclusao_pendente', 'Conclusão em análise'], ['reprovada', 'Reprovadas'],
-  ['aprovada', 'Finalizadas'], ['paga', 'Pagas'], ['recusada', 'Recusadas'],
+  ['aprovada', 'Finalizadas a pagar'], ['paga', 'Pagas'], ['recusada', 'Recusadas'],
 ];
 
 export default async function OrdensPage({ searchParams }) {
@@ -50,9 +50,9 @@ export default async function OrdensPage({ searchParams }) {
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
-          ['Aprovadas · em execução', ['em_execucao'], 'em_execucao'],
-          ['Pendentes de conclusão', ['em_execucao', 'reprovada', 'conclusao_pendente'], 'conclusao_pendente'],
-          ['Finalizadas', ['aprovada', 'paga'], 'aprovada'],
+          ['Em execução', ['em_execucao', 'reprovada'], 'em_execucao'],
+          ['Conclusão em análise', ['conclusao_pendente'], 'conclusao_pendente'],
+          ['Finalizadas a pagar', ['aprovada'], 'aprovada'],
           ['Pagas', ['paga'], 'paga'],
         ].map(([r, st, f]) => (
           <Link key={r} href={`/master/ordens?status=${f}`} className="card rounded-xl p-4 hover:shadow-md transition-shadow">
