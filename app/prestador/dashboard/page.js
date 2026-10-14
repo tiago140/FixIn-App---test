@@ -6,18 +6,17 @@ import StatusOS from '@/components/StatusOS';
 import { PRESTADOR_TABS } from '@/lib/navTabs';
 import { ORIGEM_OS } from '@/lib/ordensStatus';
 import { situacaoPrazo, cadastroCompleto } from '@/lib/etapasObra';
-import { ArrowRight, BadgeCheck, Camera, ClipboardCheck, Hammer, Hourglass, Inbox, Wallet } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ClipboardCheck, Hammer, Hourglass, Inbox } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 function Bloco({ Icone, titulo, qtd, cor, href, desc }) {
   return (
-    <Link href={href} className="card rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-      <span className={`w-12 h-12 rounded-xl flex items-center justify-center ${cor}`}><Icone size={24} /></span>
-      <span>
-        <span className="block text-3xl font-bold leading-none">{qtd}</span>
-        <span className="block text-sm font-semibold mt-1">{titulo}</span>
-        <span className="block text-xs text-marinho/55 mt-0.5">{desc}</span>
+    <Link href={href} className={`card rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow ${qtd === 0 ? 'opacity-60' : ''}`}>
+      <span className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center ${cor}`}><Icone size={20} /></span>
+      <span className="min-w-0">
+        <span className="flex items-baseline gap-2"><span className="text-2xl font-bold leading-none">{qtd}</span><span className="text-sm font-semibold">{titulo}</span></span>
+        <span className="block text-xs text-marinho/55 mt-1">{desc}</span>
       </span>
     </Link>
   );
@@ -33,29 +32,12 @@ export function PainelPrestadorView({ profile, todas, fin, cadastro = { pct: 100
       <PageHeader icone="painel" titulo={`Olá, ${primeiro}`} subtitulo="Suas ordens de serviço com a FixIn" />
       {semPixComOrdemAprovada && <Link href="/prestador/dados" className="block rounded-xl border border-erro/40 bg-erro/10 p-4 mb-4 text-sm"><b className="text-erro">Você tem serviço aprovado, mas ainda não cadastrou a chave Pix.</b> Sem ela não conseguimos pagar. Toque para cadastrar.</Link>}
       {cadastro.pct < 100 && <Link href="/prestador/dados" className="block card rounded-xl p-4 mb-4"><div className="flex items-center justify-between text-sm"><b>Complete seu cadastro para receber</b><span className="font-mono">{cadastro.pct}%</span></div><div className="h-2 rounded-full bg-linha mt-2 overflow-hidden"><div className="h-full bg-sucesso" style={{ width: `${cadastro.pct}%` }} /></div><p className="text-xs text-marinho/55 mt-2">Falta: {cadastro.faltam.join(', ')}.</p></Link>}
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
-        <Link href="/prestador/financeiro" className="card rounded-xl p-5 border-l-4 border-l-alerta"><span className="block text-xs uppercase tracking-wide text-marinho/55">A receber</span><span className="block text-2xl font-bold font-mono mt-1">{brl(fin.aReceber)}</span><span className="block text-xs text-marinho/50 mt-1">serviços aprovados ainda não pagos</span></Link>
-        <Link href="/prestador/financeiro" className="card rounded-xl p-5 border-l-4 border-l-sucesso"><span className="block text-xs uppercase tracking-wide text-marinho/55">Já recebido</span><span className="block text-2xl font-bold font-mono mt-1">{brl(fin.recebido)}</span><span className="block text-xs text-marinho/50 mt-1">{fin.processando > 0 ? `${brl(fin.processando)} em processamento` : 'com comprovante'}</span></Link>
-        <Link href="/prestador/financeiro" className="card rounded-xl p-5 border-l-4 border-l-marinho"><span className="block text-xs uppercase tracking-wide text-marinho/55">Em execução</span><span className="block text-2xl font-bold font-mono mt-1">{brl(fin.emExecucao)}</span><span className="block text-xs text-marinho/50 mt-1">valor dos serviços em andamento</span></Link>
-        <Link href="/prestador/financeiro" className={`card rounded-xl p-5 border-l-4 ${fin.semNota ? 'border-l-erro' : 'border-l-sucesso'}`}><span className="block text-xs uppercase tracking-wide text-marinho/55">Notas fiscais</span><span className="block text-2xl font-bold mt-1">{fin.semNota ? `${fin.semNota} pendente${fin.semNota > 1 ? 's' : ''}` : 'Em dia'}</span><span className="block text-xs text-marinho/50 mt-1">{fin.semNota ? 'anexe para agilizar o pagamento' : 'nada pendente'}</span></Link>
-      </div>
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <Bloco Icone={Inbox} titulo="Para aceitar" desc="Nova ordem: aceite ou recuse" qtd={conta('enviada')} cor="bg-alerta/15 text-alerta" href="/prestador/ordens?status=enviada" />
-        <Bloco Icone={ClipboardCheck} titulo="Para enviar valores" desc="Informe mão de obra e material" qtd={conta('aceita')} cor="bg-[#3B6B8C]/15 text-[#2c5570]" href="/prestador/ordens?status=aceita" />
-        <Bloco Icone={Hourglass} titulo="Em aprovação" desc="A FixIn está aprovando seus valores" qtd={conta('orcada', 'aplicada')} cor="bg-marinho/10 text-marinho" href="/prestador/ordens?status=orcada" />
-        <Bloco Icone={Hammer} titulo="Em execução" desc="Faça o serviço e envie as fotos" qtd={conta('em_execucao')} cor="bg-sucesso/15 text-sucesso" href="/prestador/ordens?status=em_execucao" />
-        <Bloco Icone={Camera} titulo="Pendentes de conclusão" desc="Falta enviar as fotos ou refazer" qtd={conta('em_execucao', 'reprovada')} cor="bg-alerta/15 text-alerta" href="/prestador/ordens?status=em_execucao" />
-        <Bloco Icone={Hourglass} titulo="Conclusão em análise" desc="A FixIn está conferindo suas fotos" qtd={conta('conclusao_pendente')} cor="bg-marinho/10 text-marinho" href="/prestador/ordens?status=conclusao_pendente" />
-        <Bloco Icone={BadgeCheck} titulo="Finalizadas" desc="Aprovadas, prontas para pagamento" qtd={conta('aprovada', 'paga')} cor="bg-sucesso/15 text-sucesso" href="/prestador/ordens?status=aprovada" />
-        <Bloco Icone={Wallet} titulo="Pagas" desc="Pagamento feito, com comprovante" qtd={conta('paga')} cor="bg-sucesso/20 text-sucesso" href="/prestador/ordens?status=paga" />
-      </div>
-
       <h2 className="font-semibold text-lg mb-1">Precisa da sua ação</h2>
       <p className="text-sm text-marinho/60 mb-3">O que está esperando por você agora. Toque para abrir.</p>
       {!agir.length ? (
-        <div className="border border-dashed border-linha rounded-xl p-8 text-center text-marinho/50">Tudo em dia. Quando a FixIn enviar uma nova ordem, ela aparece aqui e chega no seu e-mail.</div>
+        <div className="border border-dashed border-linha rounded-xl p-8 text-center text-marinho/50 mb-8">Tudo em dia. Quando a FixIn enviar uma nova ordem, ela aparece aqui e chega no seu e-mail.</div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 mb-8">
           {agir.map((o) => (
             <Link key={o.id} href={`/prestador/ordens/${o.id}`} className="card rounded-xl px-4 py-3 flex items-center justify-between gap-3 hover:shadow-md transition-shadow">
               <span className="min-w-0">
@@ -69,6 +51,23 @@ export function PainelPrestadorView({ profile, todas, fin, cadastro = { pct: 100
           ))}
         </div>
       )}
+
+      <h2 className="font-semibold text-lg mb-3">Seu dinheiro</h2>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-8">
+        <Link href="/prestador/financeiro" className="card rounded-xl p-4 border-l-4 border-l-alerta"><span className="block text-xs text-marinho/55">A receber</span><span className="block text-xl font-bold font-mono mt-1">{brl(fin.aReceber)}</span><span className="block text-[11px] text-marinho/50 mt-1">aprovado, ainda não pago</span></Link>
+        <Link href="/prestador/financeiro" className="card rounded-xl p-4 border-l-4 border-l-sucesso"><span className="block text-xs text-marinho/55">Já recebido</span><span className="block text-xl font-bold font-mono mt-1">{brl(fin.recebido)}</span><span className="block text-[11px] text-marinho/50 mt-1">{fin.processando > 0 ? `${brl(fin.processando)} em processamento` : 'com comprovante'}</span></Link>
+        <Link href="/prestador/financeiro" className="card rounded-xl p-4 border-l-4 border-l-marinho"><span className="block text-xs text-marinho/55">Em execução</span><span className="block text-xl font-bold font-mono mt-1">{brl(fin.emExecucao)}</span><span className="block text-[11px] text-marinho/50 mt-1">serviços em andamento</span></Link>
+        <Link href="/prestador/financeiro" className={`card rounded-xl p-4 border-l-4 ${fin.semNota ? 'border-l-erro' : 'border-l-sucesso'}`}><span className="block text-xs text-marinho/55">Notas fiscais</span><span className="block text-xl font-bold mt-1">{fin.semNota ? `${fin.semNota} pendente${fin.semNota > 1 ? 's' : ''}` : 'Em dia'}</span><span className="block text-[11px] text-marinho/50 mt-1">{fin.semNota ? 'anexe para receber' : 'nada pendente'}</span></Link>
+      </div>
+
+      <h2 className="font-semibold text-lg mb-3">Suas ordens</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+        <Bloco Icone={Inbox} titulo="Para aceitar" desc="Aceite ou recuse" qtd={conta('enviada')} cor="bg-alerta/15 text-alerta" href="/prestador/ordens?status=enviada" />
+        <Bloco Icone={ClipboardCheck} titulo="Enviar valores" desc="Mão de obra e material" qtd={conta('aceita')} cor="bg-[#3B6B8C]/15 text-[#2c5570]" href="/prestador/ordens?status=aceita" />
+        <Bloco Icone={Hammer} titulo="Em execução" desc="Faça e envie as fotos (inclui refazer)" qtd={conta('em_execucao', 'reprovada')} cor="bg-sucesso/15 text-sucesso" href="/prestador/ordens?status=em_execucao" />
+        <Bloco Icone={Hourglass} titulo="Com a FixIn" desc="Valores ou fotos em conferência" qtd={conta('orcada', 'aplicada', 'conclusao_pendente')} cor="bg-marinho/10 text-marinho" href="/prestador/ordens" />
+        <Bloco Icone={BadgeCheck} titulo="Concluídas" desc="Aprovadas e pagas" qtd={conta('aprovada', 'paga')} cor="bg-sucesso/20 text-sucesso" href="/prestador/ordens?status=aprovada" />
+      </div>
     </AppShell>
   );
 }
