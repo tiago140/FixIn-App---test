@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { avisarImobiliariaVisita } from '@/lib/visitasEmail';
+import { paraInstanteBrasilia } from '@/lib/fuso';
 
 export async function PATCH(req, { params }) {
   const { user, profile, supabase } = await getProfile();
   if (!user) return NextResponse.json({ error: 'não autenticado' }, { status: 401 });
-  const { status, prestador_id, data_hora_sugerida } = await req.json();
+  const { status, prestador_id, data_hora_sugerida: sugeridaBruta } = await req.json();
+  const data_hora_sugerida = paraInstanteBrasilia(sugeridaBruta);
+  if (sugeridaBruta && !data_hora_sugerida) return NextResponse.json({ error: 'data e hora inválidas' }, { status: 400 });
   const id = params.id;
 
   const { data: visita } = await supabase.from('visitas').select('*').eq('id', id).single();

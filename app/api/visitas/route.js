@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { avisarImobiliariaVisita } from '@/lib/visitasEmail';
+import { paraInstanteBrasilia } from '@/lib/fuso';
 
 export async function POST(req) {
   const { user, profile, supabase } = await getProfile();
   if (!user) return NextResponse.json({ error: 'não autenticado' }, { status: 401 });
 
-  const { cliente_id, endereco, data_hora, responsavel, prestador_id, observacoes } = await req.json();
+  const { cliente_id, endereco, data_hora: dataHoraBruta, responsavel, prestador_id, observacoes } = await req.json();
   if (!endereco) return NextResponse.json({ error: 'informe o endereço' }, { status: 400 });
+  // o horário digitado é de Brasília (o navegador manda sem fuso e o servidor lê como UTC)
+  const data_hora = paraInstanteBrasilia(dataHoraBruta);
+  if (dataHoraBruta && !data_hora) return NextResponse.json({ error: 'data e hora inválidas' }, { status: 400 });
 
   if (profile.role === 'master') {
     if (!cliente_id) return NextResponse.json({ error: 'selecione a imobiliária' }, { status: 400 });
