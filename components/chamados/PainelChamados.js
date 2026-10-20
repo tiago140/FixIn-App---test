@@ -21,7 +21,10 @@ const ORDEM_PRIO = { urgente: 0, alta: 1, normal: 2, baixa: 3 };
 // Lista (já filtrada pelas regras do banco: dono vê tudo, imobiliária só os dela).
 export async function ListaChamadosPainel({ supabase, base, master, profile, filtro }) {
   let q = supabase.from('chamados').select('*, clientes(nome_empresa, slug_chamados)').order('atualizado_em', { ascending: false }).limit(300);
-  if (filtro && STATUS_CHAMADO[filtro]) q = q.eq('status', filtro);
+  // Por padrão só o que está em andamento; encerrados e "todos" a um clique. Um status exato (?s=aberto) continua funcionando.
+  const GRUPOS = { andamento: ['aberto', 'em_analise', 'orcamento', 'aprovado', 'em_execucao'], encerrados: ['concluido', 'cancelado'] };
+  const ativo = filtro === 'todos' ? 'todos' : GRUPOS[filtro] ? filtro : STATUS_CHAMADO[filtro] ? filtro : 'andamento';
+  if (ativo === 'todos') { /* sem filtro */ } else if (GRUPOS[ativo]) q = q.in('status', GRUPOS[ativo]); else q = q.eq('status', ativo);
   const { data } = await q;
   const lista = (data || []).slice().sort((a, b) => {
     const fa = ['concluido', 'cancelado'].includes(a.status) ? 1 : 0, fb = ['concluido', 'cancelado'].includes(b.status) ? 1 : 0;
@@ -39,13 +42,13 @@ export async function ListaChamadosPainel({ supabase, base, master, profile, fil
       {master && <MasterLinks supabase={supabase} />}
       {slug && <LinkQr slug={slug} nome={nome} />}
       <div className="flex gap-2 flex-wrap mb-4">
-        <Link href={base} className={`text-sm rounded-full px-3 py-1 border ${!filtro ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho'}`}>Todos</Link>
-        {Object.entries(STATUS_CHAMADO).map(([k, v]) => (
-          <Link key={k} href={`${base}?s=${k}`} className={`text-sm rounded-full px-3 py-1 border ${filtro === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho'}`}>{v}</Link>
+        {[['andamento', 'Em andamento'], ['encerrados', 'Encerrados'], ['todos', 'Todos']].map(([k, r]) => (
+          <Link key={k} href={k === 'andamento' ? base : `${base}?s=${k}`} className={`text-sm rounded-full px-4 py-1.5 border font-semibold ${ativo === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{r}</Link>
         ))}
+        {!GRUPOS[ativo] && ativo !== 'todos' && <span className="text-sm rounded-full px-4 py-1.5 border bg-marinho text-white border-marinho font-semibold">{STATUS_CHAMADO[ativo]}</span>}
       </div>
       {lista.length === 0 ? (
-        <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum chamado por aqui.</div>
+        <div className="border border-dashed border-linha p-8 text-center text-marinho/50">{ativo === 'andamento' ? 'Nenhum chamado em andamento. Tudo resolvido!' : 'Nenhum chamado por aqui.'}</div>
       ) : (
         <div className="bg-white border border-linha rounded-lg divide-y divide-linha">
           {lista.map((c) => (

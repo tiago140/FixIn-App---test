@@ -21,7 +21,7 @@ export default async function ImobiliariaAvisos() {
         icone="avisos"
         titulo="Avisos"
         etiqueta={profile.empresa}
-        subtitulo="Clique num aviso para dispensá-lo"
+        subtitulo="O que está esperando por você. Use Abrir para resolver e Já vi para tirar da lista."
       />
       <AvisosList visitas={visitas} atrasos={atrasos} mensagens={mensagens} chamados={chamados} />
     </AppShell>

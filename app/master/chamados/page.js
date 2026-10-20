@@ -13,7 +13,7 @@ export default async function Page({ searchParams }) {
   if (profile.role !== 'master') redirect('/imobiliaria/chamados');
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <PageHeader icone="chamados" titulo="Chamados" etiqueta={'Dono'} subtitulo="Pedidos abertos por locatários e locadores" />
+      <PageHeader icone="chamados" titulo="Chamados" subtitulo="Pedidos abertos por locatários e locadores" />
       <ListaChamadosPainel supabase={supabase} base="/master/chamados" master={true} profile={profile} filtro={searchParams?.s} />
     </AppShell>
   );

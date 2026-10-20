@@ -54,121 +54,57 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
   ].filter(([k, , n]) => k === 'todos' || n > 0 || aba === k);
   const ver = (k) => aba === 'todos' || aba === k;
 
+  // Uma lista só: cada aviso diz o que é, tem um botão claro para resolver ("Abrir") e outro para tirar da lista ("Já vi").
+  const TIPOS = {
+    solicitacoes: { tag: () => 'Novo orçamento', cor: 'bg-marinho text-white', borda: 'border-l-marinho', abrir: 'Abrir e orçar', lista: solicitacoesVisiveis },
+    chamados: { tag: (x) => (x.novo ? 'Novo chamado' : 'Nova resposta'), cor: 'bg-verde text-white', borda: 'border-l-verde', abrir: 'Abrir chamado', lista: chamadosVisiveis },
+    mensagens: { tag: () => 'Mensagem', cor: 'bg-info text-white', borda: 'border-l-info', abrir: 'Abrir conversa', lista: mensagensVisiveis },
+    visitas: { tag: () => 'Visita', cor: 'bg-alerta text-white', borda: 'border-l-alerta', abrir: 'Abrir visitas', lista: visitasVisiveis },
+    atrasos: { tag: () => 'Pagamento em atraso', cor: 'bg-erro text-white', borda: 'border-l-erro', abrir: 'Abrir orçamento', lista: atrasosVisiveis },
+  };
+  const avisos = Object.entries(TIPOS)
+    .filter(([k]) => ver(k))
+    .flatMap(([k, t]) => t.lista.map((x) => ({ x, k, t })))
+    .sort((a, b) => String(b.x.criado_em || '').localeCompare(String(a.x.criado_em || '')));
+
+  function dispensarTodos() {
+    if (!window.confirm(`Tirar ${avisos.length} aviso(s) da lista? Eles não somem do sistema, só deixam de aparecer aqui.`)) return;
+    setVistos((v) => {
+      const novo = { ...v };
+      avisos.forEach(({ x }) => { novo[x.key] = true; });
+      try { localStorage.setItem('fixin_avisos_vistos', JSON.stringify(novo)); window.dispatchEvent(new Event('fixin-avisos')); } catch (e) {}
+      return novo;
+    });
+  }
+
   return (
     <div>
-      <div className="flex gap-2 flex-wrap mb-4">
-        {ABAS.map(([k, rotulo, n]) => (
-          <button key={k} type="button" onClick={() => escolherAba(k)} className={`text-xs rounded-full px-3 py-1 border ${aba === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo} ({n})</button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {ABAS.map(([k, rotulo, n]) => (
+            <button key={k} type="button" onClick={() => escolherAba(k)} className={`text-sm rounded-full px-4 py-1.5 border font-semibold ${aba === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo} <span className={aba === k ? 'text-white/70' : 'text-marinho/40'}>{n}</span></button>
+          ))}
+        </div>
+        {avisos.length > 3 && <button type="button" onClick={dispensarTodos} className="text-sm font-semibold text-marinho/60 underline">Já vi todos</button>}
+      </div>
+      <div className="space-y-3">
+        {avisos.map(({ x, k, t }) => (
+          <div key={x.key} className={`card border-l-4 ${t.borda} p-4`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${t.cor}`}>{t.tag(x)}</span>
+              {x.subtitulo && <span className="text-xs font-mono text-marinho/50">{x.subtitulo}</span>}
+              {x.criado_em && <span className="ml-auto text-xs text-marinho/50">{fmtDataHoraSP(x.criado_em)}</span>}
+            </div>
+            <div className="mt-1.5 text-base font-semibold text-marinho">{x.titulo}</div>
+            {x.detalhe && <div className="mt-0.5 text-sm text-marinho/60">{x.detalhe}</div>}
+            {k === 'atrasos' && x.valor != null && <div className="mt-1 font-mono text-sm font-semibold text-erro">{fmtBRL(x.valor)} pendente</div>}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Link href={x.link} className="inline-flex min-h-[40px] items-center rounded-lg bg-marinho px-4 py-2 text-sm font-semibold text-white">{t.abrir}</Link>
+              <button type="button" onClick={() => dispensar(x.key)} className="inline-flex min-h-[40px] items-center rounded-lg border border-linha bg-white px-4 py-2 text-sm font-semibold text-marinho/70 hover:border-marinho/40">Já vi</button>
+            </div>
+          </div>
         ))}
       </div>
-      {solicitacoesVisiveis.length > 0 && ver('solicitacoes') && (
-        <>
-          <h2 className="font-semibold text-xl mb-2">Novos orçamentos solicitados</h2>
-          {solicitacoesVisiveis.map((s) => (
-            <div key={s.key} className="card p-4 mb-3 border-l-4 border-l-marinho">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 bg-marinho text-white">Novo</span>
-                    <span className="text-[11px] font-mono text-marinho/50">{s.subtitulo}</span>
-                    {s.criado_em && <span className="text-[11px] text-marinho/50">· {fmtDataHoraSP(s.criado_em)}</span>}
-                  </div>
-                  <div className="font-semibold text-lg mt-1">{s.titulo}</div>
-                  <div className="text-xs text-marinho/60 mt-0.5">{s.detalhe}</div>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <Link href={s.link} className="bg-marinho text-white text-sm font-semibold rounded-lg px-4 py-2">Abrir e orçar</Link>
-                  <button type="button" onClick={() => dispensar(s.key)} className="text-xs text-marinho/50 underline">dispensar aviso</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {chamadosVisiveis.length > 0 && ver('chamados') && (
-        <>
-          <h2 className="font-semibold text-xl mb-2 mt-5">Chamados</h2>
-          {chamadosVisiveis.map((c) => (
-            <div key={c.key} onClick={() => dispensar(c.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-verde">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 text-white ${c.novo ? 'bg-marinho' : 'bg-info'}`}>{c.novo ? 'Novo chamado' : 'Nova resposta'}</span>
-                  <span className="text-[11px] font-mono text-marinho/50">{c.subtitulo}</span>
-                </div>
-                {c.criado_em && <div className="text-[11px] font-semibold text-marinho/60">{fmtDataHoraSP(c.criado_em)}</div>}
-              </div>
-              <div className="font-semibold mt-1">{c.titulo}</div>
-              <div className="text-xs text-marinho/60 mt-1">{c.detalhe}</div>
-              <div className="text-xs text-marinho/50 mt-1.5">
-                <Link href={c.link} className="underline" onClick={(e) => e.stopPropagation()}>Abrir chamado</Link> · clique aqui para dispensar
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {mensagensVisiveis.length > 0 && ver('mensagens') && (
-        <>
-          <h2 className="font-semibold text-xl mb-2 mt-5">Novas mensagens no chat</h2>
-          {mensagensVisiveis.map((m) => (
-            <div key={m.key} onClick={() => dispensar(m.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-info">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[11px] font-mono text-marinho/50">{m.subtitulo}</div>
-                {m.criado_em && <div className="text-[11px] font-semibold text-marinho/60">{fmtDataHoraSP(m.criado_em)}</div>}
-              </div>
-              <div className="font-semibold">{m.titulo}</div>
-              <div className="text-xs text-marinho/60 mt-1">{m.detalhe}</div>
-              <div className="text-xs text-marinho/50 mt-1.5">
-                <Link href={m.link} className="underline" onClick={(e) => e.stopPropagation()}>
-                  Abrir conversa
-                </Link>{' '}
-                · clique aqui para dispensar
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {visitasVisiveis.length > 0 && ver('visitas') && (
-        <>
-          <h2 className="font-semibold text-xl mb-2 mt-5">Visitas aguardando aprovação</h2>
-          {visitasVisiveis.map((v) => (
-            <div key={v.key} onClick={() => dispensar(v.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-alerta">
-              <div className="font-semibold">{v.titulo}</div>
-              <div className="text-xs text-marinho/50">
-                {v.subtitulo} {v.detalhe ? `· ${v.detalhe}` : ''}
-              </div>
-              <div className="text-xs text-marinho/50 mt-1.5">
-                <Link href={v.link} className="underline" onClick={(e) => e.stopPropagation()}>
-                  Abrir
-                </Link>{' '}
-                · clique aqui para dispensar
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {atrasosVisiveis.length > 0 && ver('atrasos') && (
-        <>
-          <h2 className="font-semibold text-xl mb-2 mt-5">Pagamentos em atraso</h2>
-          {atrasosVisiveis.map((a) => (
-            <div key={a.key} onClick={() => dispensar(a.key)} className="card p-4 mb-3 cursor-pointer border-l-4 border-l-erro">
-              <div className="flex justify-between">
-                <div>
-                  <div className="text-[11px] font-mono text-marinho/50">{a.subtitulo}</div>
-                  <div className="font-semibold">{a.titulo}</div>
-                  <div className="text-xs text-marinho/50">{a.detalhe}</div>
-                </div>
-                {a.valor != null && <div className="text-erro font-mono text-sm font-semibold">{fmtBRL(a.valor)} pendente</div>}
-              </div>
-              <div className="text-xs text-marinho/50 mt-1.5">
-                <Link href={a.link} className="underline" onClick={(e) => e.stopPropagation()}>
-                  Abrir orçamento
-                </Link>{' '}
-                · clique aqui para dispensar
-              </div>
-            </div>
-          ))}
-        </>
-      )}
     </div>
   );
 }

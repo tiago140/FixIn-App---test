@@ -20,7 +20,7 @@ export default async function AvisosPage() {
       <PageHeader
         icone="avisos"
         titulo="Avisos"
-        subtitulo="Clique num aviso para dispensá-lo"
+        subtitulo="O que está esperando por você. Use Abrir para resolver e Já vi para tirar da lista."
       />
       <AvisosList solicitacoes={solicitacoes} visitas={visitas} atrasos={atrasos} mensagens={mensagens} chamados={chamados} />
     </AppShell>
