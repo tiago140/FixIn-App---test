@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
-import CalendarioVisitas from '@/components/CalendarioVisitas';
-import VisitaRow from '@/components/VisitaRow';
+import VisitasPainel from '@/components/VisitasPainel';
 import { imobiliariaTabs } from '@/lib/navTabs';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +26,7 @@ export default async function ImobiliariaVisitas() {
         icone="visitas"
         titulo="Visitas"
         etiqueta={profile.empresa}
-        subtitulo="Agende uma visita — passa por aprovação da FixIn"
+        subtitulo="Peça uma visita e acompanhe se a FixIn confirmou"
         direita={
           <>
         <Link href="/imobiliaria/visitas/nova" className="bg-verde text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm">
@@ -37,13 +36,7 @@ export default async function ImobiliariaVisitas() {
         }
       />
 
-      <CalendarioVisitas visitas={lista} />
-
-      {lista.length === 0 ? (
-        <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhuma visita ainda.</div>
-      ) : (
-        lista.map((v) => <VisitaRow key={v.id} visita={v} role="imobiliaria" />)
-      )}
+      <VisitasPainel visitas={lista} role="imobiliaria" />
     </AppShell>
   );
 }
