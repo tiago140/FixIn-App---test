@@ -14,7 +14,6 @@ export default async function ControleImobiliariaPage() {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role === 'master') redirect('/master/dashboard');
-  redirect('/imobiliaria/dashboard'); // a aba Controle saiu do menu da imobiliária (pouco uso)
 
   const { data: orcamentos } = await supabase
     .from('orcamentos_cliente')
