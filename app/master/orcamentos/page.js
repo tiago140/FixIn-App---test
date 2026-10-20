@@ -22,8 +22,8 @@ export default async function OrcamentosPage() {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader
         icone="kanban"
-        titulo="Kanban de orçamentos"
-        subtitulo="Arraste o cartão ou use as setinhas para mudar de etapa"
+        titulo="Orçamentos"
+        subtitulo="Toque num cartão para abrir. Use as setinhas do cartão para mudar de etapa."
         direita={
           <>
         <div className="flex gap-2">

@@ -24,6 +24,8 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
   const [busca, setBusca] = useState('');
   const [ordem, setOrdem] = useState('padrao');
   const [filtro, setFiltro] = useState('todos');
+  const [verEncerrados, setVerEncerrados] = useState(false);
+  const ehMaster = String(basePath || '').startsWith('/master');
 
   // Lembra o filtro e a ordem escolhidos neste navegador
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
   const porBusca = termos.length ? itens.filter((o) => termos.every((t) => (indice.get(o.id) || '').includes(t))) : itens;
   const FILTROS = [
     ['todos', 'Todos', () => true],
+    ['acao', 'Precisa de ação', (o) => estaAtrasado(o) || (ehMaster ? ['pendente', 'em_preparacao'].includes(o.status || 'pendente') : o.status === 'enviado')],
     ['aprovados_semana', 'Aprovados esta semana', (o) => o.aprovado_em && diasDesde(o.aprovado_em) <= 7],
     ['aprovados_mes', 'Aprovados no mês', (o) => o.aprovado_em && diasDesde(o.aprovado_em) <= 30],
     ['atrasados', 'Em atraso', (o) => estaAtrasado(o)],
@@ -52,6 +55,9 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
   ];
   const regra = (FILTROS.find((f) => f[0] === filtro) || FILTROS[0])[2];
   const visiveis = filtro === 'todos' ? porBusca : porBusca.filter(regra);
+  // Finalizados e recusados saem da frente no dia a dia; aparecem ao clicar, ao buscar ou ao usar um filtro.
+  const nEncerrados = visiveis.filter((o) => ['finalizado', 'rejeitado'].includes(o.status)).length;
+  const mostrarEncerrados = verEncerrados || termos.length > 0 || filtro !== 'todos';
 
   const totalDe = (o) => (o.total != null ? Number(o.total) : o.orcamento_itens ? calcularTotalComMargem(o.orcamento_itens, o.margem_percentual) : Infinity);
   const qtdItensDe = (o) => (o.orcamento_itens ? o.orcamento_itens.length : Number(o.qtd_itens) || 0);
@@ -98,7 +104,19 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
           </button>
         )}
       </div>
-      <label className="flex items-center gap-2 text-xs text-marinho/70">
+      <div className="basis-full flex gap-2 flex-wrap items-center">
+        {FILTROS.filter(([k]) => ['todos', 'acao', 'atrasados'].includes(k)).map(([k, rotulo]) => (
+          <button key={k} type="button" onClick={() => setFiltro(k)} className={`text-sm rounded-full px-4 py-1.5 border font-semibold ${filtro === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo}</button>
+        ))}
+        <details className="relative">
+          <summary className="cursor-pointer select-none text-xs font-semibold text-marinho/60 px-2 py-2 list-none">Mais filtros e ordem ▾</summary>
+          <div className="absolute z-30 mt-1 w-[min(92vw,26rem)] rounded-lg border border-linha bg-white p-3 shadow-lg">
+            <div className="flex gap-2 flex-wrap mb-3">
+              {FILTROS.filter(([k]) => !['todos', 'acao', 'atrasados'].includes(k)).map(([k, rotulo]) => (
+                <button key={k} type="button" onClick={() => setFiltro(k)} className={`text-xs rounded-full px-3 py-1 border ${filtro === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo}</button>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 text-xs text-marinho/70">
         Ordenar cartões
         <select value={ordem} onChange={(e) => setOrdem(e.target.value)} className="border border-linha rounded-lg bg-white px-2 py-2 text-sm text-marinho">
           <option value="padrao">Padrão (aprovados: o mais antigo primeiro)</option>
@@ -107,11 +125,9 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
           <option value="facil">Mais fáceis primeiro (menos itens e sem item de atenção)</option>
           <option value="menor_valor">Menor valor primeiro</option>
         </select>
-      </label>
-      <div className="basis-full flex gap-2 flex-wrap">
-        {FILTROS.map(([k, rotulo]) => (
-          <button key={k} type="button" onClick={() => setFiltro(k)} className={`text-xs rounded-full px-3 py-1 border ${filtro === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho bg-white'}`}>{rotulo}</button>
-        ))}
+            </label>
+          </div>
+        </details>
       </div>
       {(termos.length > 0 || filtro !== 'todos') && (
         <span className="text-xs text-marinho/60">
@@ -120,7 +136,7 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
       )}
     </div>
     <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-proximity">
-      {KANBAN_COLS.map((status) => {
+      {KANBAN_COLS.filter((st) => mostrarEncerrados || !['finalizado', 'rejeitado'].includes(st)).map((status) => {
         const doStatus = ordenar(visiveis.filter((o) => (o.status || 'pendente') === status), status);
         return (
           <div
@@ -227,6 +243,15 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
           </div>
         );
       })}
+      {!mostrarEncerrados && (
+        <button type="button" onClick={() => setVerEncerrados(true)} className="flex-shrink-0 w-44 snap-start self-start rounded border border-dashed border-linha bg-white p-3 text-left text-sm text-marinho/60 hover:border-marinho/40">
+          <b className="block text-marinho">Finalizados e recusados</b>
+          {nEncerrados} orçamento(s) · mostrar
+        </button>
+      )}
+      {mostrarEncerrados && verEncerrados && filtro === 'todos' && termos.length === 0 && (
+        <button type="button" onClick={() => setVerEncerrados(false)} className="flex-shrink-0 w-32 snap-start self-start rounded border border-linha bg-white p-3 text-left text-xs text-marinho/60 hover:border-marinho/40">Esconder finalizados e recusados</button>
+      )}
     </div>
     </>
   );
