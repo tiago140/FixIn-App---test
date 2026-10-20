@@ -201,6 +201,27 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       <EditorItensOrcamento veCusto={veMargem} itens={itens} setItens={setItens} endereco={orcamento.endereco} seguroFianca={seguroFianca} margem={Number(margem) || 0} />
 
       <div className="card p-5 grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs text-marinho/60 mb-1">Status</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
+            {Object.entries(STATUS_LABEL).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        </div>
+        {veMargem && (
+          <div>
+            <label className="block text-xs text-marinho/60 mb-1">Margem (%)</label>
+            <input type="number" value={margem} onChange={(e) => setMargem(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+          </div>
+        )}
+        <div>
+          <label className="block text-xs text-marinho/60 mb-1">Valor já pago (R$)</label>
+          <input type="number" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+        </div>
+        <details className="sm:col-span-2 rounded-lg border border-linha bg-papel/60 px-4 py-3 group">
+          <summary className="cursor-pointer text-sm font-semibold text-marinho/70 select-none">Mais opções <span className="font-normal text-marinho/50">(imobiliária, aprovação, garantia, atraso)</span></summary>
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
         {clientes && (
           <div className="sm:col-span-2">
             <label className="block text-xs text-marinho/60 mb-1">Imobiliária</label>
@@ -240,14 +261,6 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             )}
           </div>
         )}
-        <div>
-          <label className="block text-xs text-marinho/60 mb-1">Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel">
-            {Object.entries(STATUS_LABEL).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
-            ))}
-          </select>
-        </div>
         <div className="sm:col-span-2 rounded-lg border border-linha bg-papel px-4 py-3 text-sm">
           <div className="text-xs text-marinho/60 mb-0.5">Aprovação do orçamento</div>
           {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) ? (
@@ -257,16 +270,6 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           ) : (
             <div className="text-marinho/70">Ainda não aprovado.</div>
           )}
-        </div>
-        {veMargem && (
-          <div>
-            <label className="block text-xs text-marinho/60 mb-1">Margem (%)</label>
-            <input type="number" value={margem} onChange={(e) => setMargem(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
-          </div>
-        )}
-        <div>
-          <label className="block text-xs text-marinho/60 mb-1">Valor já pago (R$)</label>
-          <input type="number" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
         </div>
         <div className="sm:col-span-2">
           <label className="block text-xs text-marinho/60 mb-1">Garantia</label>
@@ -282,6 +285,9 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             {atrasado ? 'Em atraso — clique para desmarcar' : 'Marcar como em atraso'}
           </button>
         </div>
+
+          </div>
+        </details>
 
         {veMargem && (
           <div className="sm:col-span-2 flex justify-between text-sm text-marinho/60 pt-2 border-t border-linha">
@@ -311,17 +317,17 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             <BotoesPdfOrcamento pdfUrl={pdfUrlAtual} nomeArquivo={`${orcamento.numero}.pdf`} />
           </div>
         )}
-        <div className="sm:col-span-2 rounded-lg border border-marinho/15 bg-marinho/[0.03] p-4">
-          <div className="font-semibold text-sm">Orçamento 2</div>
+        <details className="sm:col-span-2 rounded-lg border border-marinho/15 bg-marinho/[0.03] p-4">
+          <summary className="cursor-pointer text-sm font-semibold select-none">Orçamento 2 <span className="font-normal text-marinho/50">(segunda empresa)</span></summary>
           <p className="text-xs text-marinho/60 mt-1">Segunda versão do PDF, emitida pela sua outra empresa (Davi Moreira Construtor), com textos reescritos e valores 30% acima do valor final (MO e material, arredondados para cima). Só é gerada quando você clica, não muda a etapa e não vai para a imobiliária.</p>
           <button type="button" onClick={gerarOrcamento2} disabled={gerando2 || salvando} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-verde bg-white px-4 py-2.5 text-sm font-semibold text-verde hover:bg-verde/5 disabled:opacity-50">
             {gerando2 ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />} {gerando2 ? 'Gerando…' : pdf2Url ? 'Gerar o Orçamento 2 de novo' : 'Gerar segundo orçamento'}
           </button>
           {msg2 && <div className={`text-sm mt-2 ${msg2.startsWith('Erro') ? 'text-erro' : 'text-marinho/70'}`}>{msg2}</div>}
           {pdf2Url && <BotoesPdfOrcamento key={pdf2Url} pdfUrl={pdf2Url} nomeArquivo={`${orcamento.numero} - Orcamento 2.pdf`} />}
-        </div>
+        </details>
         <div className="sm:col-span-2 text-xs text-marinho/60 -mt-2 space-y-0.5">
-          <p><b className="text-marinho">Gerar PDF</b> aplica a margem, baixa o arquivo e libera o orçamento para a imobiliária aprovar. <b className="text-marinho">Enviar por e-mail</b> só avisa a imobiliária, com o PDF anexo.</p>
+          <p><b className="text-marinho">Gerar PDF</b> baixa o arquivo e libera para a imobiliária aprovar. <b className="text-marinho">Enviar por e-mail</b> só avisa a imobiliária, com o PDF anexo.</p>
           {emailsDestino.length > 0 ? (
             <p>E-mail vai para: <b className="text-marinho">{emailsDestino.join(', ')}</b></p>
           ) : (

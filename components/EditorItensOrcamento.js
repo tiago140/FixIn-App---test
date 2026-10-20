@@ -67,6 +67,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
   }, [ocupado]);
 
   const nSemPreco = itens.filter(semPreco).length;
+  const [iaAberta, setIaAberta] = useState(() => itens.some(semPreco)); // abre sozinha quando há item sem preço
   const alvos = soSemPreco ? nSemPreco : itens.length;
   const somaItens = itens.reduce((a, it) => a + totalItem(it), 0);
 
@@ -276,8 +277,8 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
         )}
       </div>
 
-      <div id="ferramentas-ia" className="card p-5 border-l-4 border-l-marinho scroll-mt-20">
-        <h3 className="font-slab text-xl font-bold text-marinho flex items-center gap-2"><Sparkles size={20} /> Ferramentas de IA</h3>
+      <details id="ferramentas-ia" open={iaAberta} onToggle={(e) => setIaAberta(e.currentTarget.open)} className="card p-5 border-l-4 border-l-marinho scroll-mt-20">
+        <summary className="cursor-pointer select-none font-slab text-xl font-bold text-marinho flex items-center gap-2 flex-wrap"><Sparkles size={20} /> Ferramentas de IA <span className="font-sans text-sm font-normal text-marinho/50">preencher preços, editar ou criar itens</span></summary>
         <p className="text-sm text-marinho/60 mt-1">
           Usam o seu catálogo e os orçamentos que você já fez. O que a IA mexer aparece marcado com <b>IA</b> e só vale depois que você salvar. Dá para desfazer.
         </p>
@@ -337,7 +338,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
           </div>
         </div>
         <p className="text-xs text-marinho/50 mt-4">Quer digitar os preços você mesmo? É só preencher “Mão de obra” e “Material” de cada item acima: o total e a soma se atualizam na hora.</p>
-      </div>
+      </details>
     </div>
   );
 }

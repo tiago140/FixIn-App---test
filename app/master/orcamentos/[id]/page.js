@@ -5,6 +5,7 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import StatusTag from '@/components/StatusTag';
+import Recolhivel from '@/components/Recolhivel';
 import GestaoOrcamentoForm from '@/components/GestaoOrcamentoForm';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 import DocumentosFiscais from '@/components/DocumentosFiscais';
@@ -109,6 +110,8 @@ export default async function OrcamentoDetalhePage({ params }) {
 
       <div className="space-y-6">
         <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} emailsDestino={destino.emails} veMargem={!!profile.dono} />
+        <Recolhivel titulo="Pagamentos e comprovantes" resumo={`${comprovantes.length} comprovante(s)`} aberto={comprovantes.length > 0 || documentos.length > 0 || ['aprovado','em_execucao','finalizado'].includes(orcamento.status)}>
+          <div className="space-y-6">
         <ComprovantesPagamento
           orcamentoId={orcamento.id}
           comprovantes={comprovantes}
@@ -118,7 +121,10 @@ export default async function OrcamentoDetalhePage({ params }) {
           pagamentoClienteStatus={orcamento.pagamento_cliente_status}
         />
         <DocumentosFiscais orcamentoId={orcamento.id} documentos={documentos} role="master" />
+          </div>
+        </Recolhivel>
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />
+        <Recolhivel titulo="Excluir orçamento" resumo="ação que não dá para desfazer">
         <ExcluirOrcamentoButton
           orcamentoId={orcamento.id}
           numero={orcamento.numero}
@@ -127,6 +133,7 @@ export default async function OrcamentoDetalhePage({ params }) {
           statusLabel={STATUS_LABEL[orcamento.status] || orcamento.status}
           valorPago={orcamento.valor_pago}
         />
+        </Recolhivel>
       </div>
     </AppShell>
   );
