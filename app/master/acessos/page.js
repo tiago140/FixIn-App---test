@@ -13,6 +13,7 @@ export default async function AcessosPage() {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
+  if (!profile.dono) redirect('/master/dashboard'); // só o dono
 
   // Duas consultas simples, juntadas aqui. Pedir "clientes(nome_empresa)" dentro de profiles NÃO funciona:
   // existem duas ligações entre essas tabelas (a pessoa pertence a uma imobiliária, e a imobiliária guarda quem a criou),

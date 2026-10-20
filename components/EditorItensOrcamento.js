@@ -47,7 +47,7 @@ const COLUNAS = 'md:grid-cols-[minmax(0,1.3fr)_minmax(0,2.4fr)_8.5rem_8.5rem_7.5
 const campo = 'w-full border border-linha rounded px-2 py-1.5 bg-papel text-sm';
 
 // Itens do orçamento (tabela agrupada por ambiente) + ferramentas de IA logo abaixo, para quem é o dono.
-export default function EditorItensOrcamento({ itens, setItens, endereco = '', catalogo = [], seguroFianca = false, margem = 0 }) {
+export default function EditorItensOrcamento({ itens, setItens, endereco = '', catalogo = [], seguroFianca = false, margem = 0, veCusto = true }) {
   const [marcas, setMarcas] = useState({});
   const [desfazer, setDesfazer] = useState(null);
   const [ocupado, setOcupado] = useState(null); // 'valores' | 'editar' | 'criar'
@@ -268,7 +268,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
                 </div>
               );
             })}
-            <div className="flex justify-between items-center px-5 py-3 border-t-2 border-marinho/20 bg-papel text-sm">
+            <div className={`${veCusto ? 'flex' : 'hidden'} justify-between items-center px-5 py-3 border-t-2 border-marinho/20 bg-papel text-sm`}>
               <span className="text-marinho/60">Soma dos itens (custo base)</span>
               <span className="font-mono font-bold text-marinho text-base" data-soma>{fmtBRL(somaItens)}</span>
             </div>

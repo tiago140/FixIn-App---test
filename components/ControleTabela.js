@@ -15,8 +15,8 @@ const CLASSE_STATUS = {
 const numeroCsv = (n) => Number(n || 0).toFixed(2).replace('.', ',');
 
 // Comissão e valor da imobiliária são internos da FixIn — só o dono vê.
-export default function ControleTabela({ linhas, role = 'master', podeEditar = true, veValores = true }) {
-  const veMargem = role === 'master';
+export default function ControleTabela({ linhas, role = 'master', podeEditar = true, veValores = true, veComissao = true }) {
+  const veMargem = role === 'master' && veComissao;
   const basePath = role === 'master' ? '/master/orcamentos' : '/imobiliaria/orcamentos';
   const router = useRouter();
   const [salvando, setSalvando] = useState(null);

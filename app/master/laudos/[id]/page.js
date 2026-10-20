@@ -12,6 +12,7 @@ export default async function EditarLaudoPage({ params }) {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
+  if (!profile.dono) redirect('/master/dashboard'); // só o dono
 
   const { data: laudo } = await supabase.from('laudos').select('*, clientes(nome_empresa)').eq('id', params.id).maybeSingle();
   if (!laudo) notFound();

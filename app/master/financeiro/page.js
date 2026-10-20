@@ -12,7 +12,7 @@ export default async function FinanceiroPage() {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
-  if (!profile.dono) redirect('/master/resultados');
+  if (!profile.dono) redirect('/master/dashboard');
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">

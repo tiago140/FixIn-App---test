@@ -12,6 +12,7 @@ export default async function CatalogoPage() {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
+  if (!profile.dono) redirect('/master/dashboard'); // só o dono
 
   const { data: itens } = await supabase.from('catalogo_itens').select('*').order('ambiente').order('servico');
 

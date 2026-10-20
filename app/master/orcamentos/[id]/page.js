@@ -108,7 +108,7 @@ export default async function OrcamentoDetalhePage({ params }) {
       )}
 
       <div className="space-y-6">
-        <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} emailsDestino={destino.emails} />
+        <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} emailsDestino={destino.emails} veMargem={!!profile.dono} />
         <ComprovantesPagamento
           orcamentoId={orcamento.id}
           comprovantes={comprovantes}

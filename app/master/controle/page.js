@@ -47,7 +47,7 @@ export default async function ControlePage() {
         titulo="Controle"
         subtitulo="Visão em planilha — mesmo formato do seu controle de manutenção"
       />
-      <ControleTabela linhas={linhas} role="master" podeEditar />
+      <ControleTabela linhas={linhas} role="master" podeEditar veComissao={!!profile.dono} />
     </AppShell>
   );
 }

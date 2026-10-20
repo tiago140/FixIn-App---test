@@ -8,7 +8,7 @@ import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import { Upload, Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
 
-export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [] }) {
+export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [], veMargem = true }) {
   const router = useRouter();
   const [status, setStatus] = useState(orcamento.status);
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
@@ -109,7 +109,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setAviso(`PDF gerado com margem de ${Number(margem) || 0}% e baixado como "${nome}". Nenhum e-mail foi enviado.${data.status_novo ? ' O orçamento passou para "Enviado" e já aparece para a imobiliária aprovar.' : ''}`);
+    setAviso(`PDF gerado${veMargem ? ` com margem de ${Number(margem) || 0}%` : ''} e baixado como "${nome}". Nenhum e-mail foi enviado.${data.status_novo ? ' O orçamento passou para "Enviado" e já aparece para a imobiliária aprovar.' : ''}`);
     router.refresh();
   }
 
@@ -198,7 +198,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
       <label className="card p-4 flex items-center gap-2 text-sm font-semibold text-marinho cursor-pointer">
         <input type="checkbox" checked={seguroFianca} onChange={(e) => setSeguroFianca(e.target.checked)} className="w-4 h-4" /> Seguro fiança {orcamento.solicitado_por ? '(marcado pela imobiliária quando "Sim")' : ''}
       </label>
-      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={orcamento.endereco} seguroFianca={seguroFianca} margem={Number(margem) || 0} />
+      <EditorItensOrcamento veCusto={veMargem} itens={itens} setItens={setItens} endereco={orcamento.endereco} seguroFianca={seguroFianca} margem={Number(margem) || 0} />
 
       <div className="card p-5 grid sm:grid-cols-2 gap-4">
         {clientes && (
@@ -258,10 +258,12 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             <div className="text-marinho/70">Ainda não aprovado.</div>
           )}
         </div>
-        <div>
-          <label className="block text-xs text-marinho/60 mb-1">Margem (%)</label>
-          <input type="number" value={margem} onChange={(e) => setMargem(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
-        </div>
+        {veMargem && (
+          <div>
+            <label className="block text-xs text-marinho/60 mb-1">Margem (%)</label>
+            <input type="number" value={margem} onChange={(e) => setMargem(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
+          </div>
+        )}
         <div>
           <label className="block text-xs text-marinho/60 mb-1">Valor já pago (R$)</label>
           <input type="number" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
@@ -281,10 +283,12 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           </button>
         </div>
 
-        <div className="sm:col-span-2 flex justify-between text-sm text-marinho/60 pt-2 border-t border-linha">
-          <span>Custo base (MO + MA)</span>
-          <span className="font-mono">{fmtBRL(totalBase)}</span>
-        </div>
+        {veMargem && (
+          <div className="sm:col-span-2 flex justify-between text-sm text-marinho/60 pt-2 border-t border-linha">
+            <span>Custo base (MO + MA)</span>
+            <span className="font-mono">{fmtBRL(totalBase)}</span>
+          </div>
+        )}
         <div className="sm:col-span-2 flex justify-between text-lg font-semibold">
           <span>Total do orçamento</span>
           <span className="font-mono">{fmtBRL(totalFinal)}</span>

@@ -14,6 +14,7 @@ export default async function ResultadosPage() {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
+  if (!profile.dono) redirect('/master/dashboard'); // só o dono
 
   const { data: orcamentos } = await supabase.from('orcamentos').select('*, clientes(nome_empresa), orcamento_itens(mo,ma)');
   const { data: clientes } = await supabase.from('clientes').select('*').order('nome_empresa');

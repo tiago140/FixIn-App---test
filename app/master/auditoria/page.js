@@ -11,6 +11,7 @@ export default async function AuditoriaPage() {
   const { user, profile, supabase } = await getProfile();
   if (!user) redirect('/login');
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
+  if (!profile.dono) redirect('/master/dashboard'); // só o dono
 
   const { data: registros } = await supabase
     .from('auditoria')

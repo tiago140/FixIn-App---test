@@ -8,7 +8,7 @@ import { agruparPorEtapa } from '@/lib/painel';
 
 // `orcamentos`: lista já normalizada pela página (campos total, valor_pago, em_atraso, prestador_nome...).
 // `veValores`: false para o operacional da imobiliária — nenhum valor em R$ é desenhado.
-export default function PainelConteudo({ orcamentos, papel = 'master', veValores = true, agora, escopo = null }) {
+export default function PainelConteudo({ orcamentos, papel = 'master', veValores = true, agora, escopo = null, enxuto = false }) {
   const lista = orcamentos || [];
   const g = agruparPorEtapa(lista);
 
@@ -71,9 +71,9 @@ export default function PainelConteudo({ orcamentos, papel = 'master', veValores
 
       {lista.length > 5 && <BuscaOrcamento orcamentos={lista} basePath={basePath} mostrarCliente={master} />}
 
-      <FunilOrcamentos orcamentos={lista} papel={papel} veValores={veValores} agora={agora || new Date()} escopo={escopo} />
+      <FunilOrcamentos orcamentos={lista} papel={papel} veValores={veValores && !enxuto} agora={agora || new Date()} escopo={escopo} />
 
-      {master && !escopo && <PorImobiliaria orcamentos={lista} agora={agora || new Date()} />}
+      {master && !escopo && !enxuto && <PorImobiliaria orcamentos={lista} agora={agora || new Date()} />}
 
       <div id="lista-orcamentos" className="scroll-mt-20">
       {secoes.map(([titulo, cor, itens]) => (

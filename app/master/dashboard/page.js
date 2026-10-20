@@ -54,7 +54,7 @@ export default async function MasterDashboard({ searchParams }) {
         }
       />
       <FiltroImobiliaria opcoes={opcoes} selecionado={filtro?.id || null} totalGeral={(contagem || []).length} meses={mesesComOrcamento(contagem)} de={periodo.de} ate={periodo.ate} qtdNoPeriodo={lista.length} />
-      <PainelConteudo orcamentos={lista} papel="master" veValores escopo={filtro?.nome_empresa || null} />
+      <PainelConteudo orcamentos={lista} papel="master" veValores enxuto={!profile.dono} escopo={filtro?.nome_empresa || null} />
     </AppShell>
   );
 }

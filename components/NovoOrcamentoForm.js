@@ -11,7 +11,7 @@ function novoId() {
   return 'novo-' + uidCounter + '-' + Date.now();
 }
 
-export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, enderecoInicial, clienteIdInicial }) {
+export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, enderecoInicial, clienteIdInicial, veMargem = true }) {
   const router = useRouter();
 
   const [tipo, setTipo] = useState(tipoInicial || 'rescisao');
@@ -207,11 +207,11 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
         {avisoVistoria && <div className="text-xs text-marinho/60 mt-2 whitespace-pre-line">{avisoVistoria}</div>}
       </div>
 
-      <EditorItensOrcamento itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} seguroFianca={seguroFianca} margem={margemEfetiva} />
+      <EditorItensOrcamento veCusto={veMargem} itens={itens} setItens={setItens} endereco={endereco} catalogo={catalogo} seguroFianca={seguroFianca} margem={margemEfetiva} />
 
       <div className="card p-5">
-        <h3 className="font-semibold text-sm mb-3">Margem da FixIn (embutida, invisível para a imobiliária)</h3>
-        <div className="flex gap-2 flex-wrap">
+        {veMargem && <h3 className="font-semibold text-sm mb-3">Margem da FixIn (embutida, invisível para a imobiliária)</h3>}
+        {veMargem && <div className="flex gap-2 flex-wrap">
           {[20, 30, 40].map((m) => (
             <button
               type="button"
@@ -238,12 +238,14 @@ export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, end
               className="w-20 border border-linha rounded px-2 py-1.5 bg-papel text-sm"
             />
           )}
-        </div>
+        </div>}
 
-        <div className="mt-4 flex justify-between text-sm text-marinho/60">
-          <span>Custo base (MO + MA)</span>
-          <span className="font-mono">{fmtBRL(totalBase)}</span>
-        </div>
+        {veMargem && (
+          <div className="mt-4 flex justify-between text-sm text-marinho/60">
+            <span>Custo base (MO + MA)</span>
+            <span className="font-mono">{fmtBRL(totalBase)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-lg font-semibold mt-1">
           <span>Total do orçamento</span>
           <span className="font-mono">{fmtBRL(totalFinal)}</span>

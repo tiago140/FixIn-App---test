@@ -28,6 +28,7 @@ export default async function NovoOrcamentoPage({ searchParams }) {
         tipoInicial={tipoInicial}
         enderecoInicial={enderecoInicial}
         clienteIdInicial={clienteIdInicial}
+        veMargem={!!profile.dono}
       />
     </AppShell>
   );
