@@ -16,7 +16,7 @@ export default async function Page({ params }) {
   if (!corpo) notFound();
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <PageHeader icone="chamados" titulo="Chamado" etiqueta={'Dono'} direita={<Link href="/master/chamados" className="text-sm underline text-marinho">← Voltar</Link>} />
+      <PageHeader icone="chamados" titulo="Chamado" direita={<Link href="/master/chamados" className="text-sm underline text-marinho">← Voltar</Link>} />
       {corpo}
     </AppShell>
   );

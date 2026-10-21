@@ -15,7 +15,7 @@ export default async function Page() {
   const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').order('nome_empresa');
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <PageHeader icone="chamados" titulo="Novo chamado" etiqueta={'Dono'} direita={<Link href="/master/chamados" className="text-sm underline text-marinho">← Voltar</Link>} />
+      <PageHeader icone="chamados" titulo="Novo chamado" direita={<Link href="/master/chamados" className="text-sm underline text-marinho">← Voltar</Link>} />
       <NovoChamadoForm clientes={clientes || []} base="/master/chamados" />
     </AppShell>
   );
