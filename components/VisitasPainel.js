@@ -162,7 +162,41 @@ export default function VisitasPainel({ visitas, role = 'master' }) {
   const [diaSel, setDiaSel] = useState(chaveHoje);
   const [verPassadas, setVerPassadas] = useState(false);
 
-  const todas = visitas || [];
+  const [busca, setBusca] = useState('');
+  const [imob, setImob] = useState('');
+  const [periodo, setPeriodo] = useState('');
+  const bruto = visitas || [];
+  const imobs = useMemo(() => {
+    const m = {};
+    bruto.forEach((v) => { if (v.cliente_id && v.clientes?.nome_empresa) m[v.cliente_id] = v.clientes.nome_empresa; });
+    return Object.entries(m).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [bruto]);
+  const chaveMais = (n) => { const d = new Date(Date.UTC(hoje.ano, hoje.mes - 1, hoje.dia + n)); return `${d.getUTCFullYear()}-${dois(d.getUTCMonth() + 1)}-${dois(d.getUTCDate())}`; };
+  const semNorm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const filtrosAtivos = !!(busca.trim() || imob || periodo);
+  const base = bruto.filter((v) => {
+    if (imob && v.cliente_id !== imob) return false;
+    if (busca.trim()) {
+      const alvo = semNorm(`${v.endereco} ${v.clientes?.nome_empresa || ''} ${v.responsavel || ''} ${v.observacoes || ''}`);
+      if (!semNorm(busca).split(/\s+/).filter(Boolean).every((t) => alvo.includes(t))) return false;
+    }
+    return true;
+  });
+  const dia = (v) => (v.data_hora ? chaveDia(v.data_hora) : '');
+  const naoRespondida = (v) => v.status === 'pendente' || v.status === 'sugerida';
+  const CHIPS = [
+    ['', 'Todas', () => true],
+    ['hoje', 'Hoje', (v) => v.status !== 'cancelada' && dia(v) === chaveHoje],
+    ['amanha', 'Amanhã', (v) => v.status !== 'cancelada' && dia(v) === chaveMais(1)],
+    ['ontem', 'Ontem', (v) => v.status !== 'cancelada' && dia(v) === chaveMais(-1)],
+    ['semana', 'Próximos 7 dias', (v) => v.status !== 'cancelada' && !!dia(v) && dia(v) >= chaveHoje && dia(v) <= chaveMais(7)],
+    ['atrasadas', 'Atrasadas', (v) => naoRespondida(v) && !!dia(v) && dia(v) < chaveHoje],
+    ['naoconf', 'Não confirmadas', naoRespondida],
+    ['prioridade', 'Prioridade', (v) => naoRespondida(v) && !!dia(v) && dia(v) <= chaveMais(1)],
+    ['orcar', 'Aguardando orçamento', (v) => v.status === 'confirmada' && !!dia(v) && dia(v) <= chaveHoje],
+  ];
+  const chipAtual = CHIPS.find((c) => c[0] === periodo) || CHIPS[0];
+  const todas = base.filter(chipAtual[2]);
   const ordenar = (arr) => [...arr].sort((a, b) => String(a.data_hora || '9').localeCompare(String(b.data_hora || '9')));
   const precisaDeVoce = ordenar(todas.filter((v) => situacao(v, role).vez));
   const ativas = todas.filter((v) => v.status !== 'cancelada');
@@ -215,6 +249,43 @@ export default function VisitasPainel({ visitas, role = 'master' }) {
         ))}
       </ol>
 
+      {/* Filtros */}
+      <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-linha bg-white p-3">
+        <label className="min-w-[200px] flex-1 text-xs font-semibold text-marinho/60">
+          Buscar
+          <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Endereço, imobiliária ou responsável…"
+            className="mt-1 block w-full rounded-lg border border-linha bg-white px-3 py-2 text-sm font-normal text-marinho" />
+        </label>
+        {master && (
+          <label className="text-xs font-semibold text-marinho/60">
+            Imobiliária
+            <select value={imob} onChange={(e) => setImob(e.target.value)} className="mt-1 block rounded-lg border border-linha bg-white px-3 py-2 text-sm font-normal text-marinho">
+              <option value="">Todas ({imobs.length})</option>
+              {imobs.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+          </label>
+        )}
+        <div className="w-full">
+          <div className="mb-1 text-xs font-semibold text-marinho/60">Filtrar por data e situação</div>
+          <div className="flex flex-wrap gap-2">
+            {CHIPS.map(([id, nome, fn]) => {
+              const n = base.filter(fn).length;
+              return (
+                <button key={id || 'todas'} type="button" onClick={() => setPeriodo(id)}
+                  title={id === 'orcar' ? 'Visitas confirmadas que já aconteceram: falta criar o orçamento' : id === 'prioridade' ? 'Visitas sem resposta com data para hoje, amanhã ou já passada' : id === 'atrasadas' ? 'Pedidos que ninguém respondeu e a data já passou' : undefined}
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${periodo === id ? 'border-marinho bg-marinho text-white' : 'border-linha bg-white text-marinho/70 hover:border-marinho/40'} ${id && n === 0 && periodo !== id ? 'opacity-50' : ''}`}>
+                  {nome} <span className={periodo === id ? 'text-white/70' : 'text-marinho/40'}>{n}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {filtrosAtivos && (
+          <button type="button" onClick={() => { setBusca(''); setImob(''); setPeriodo(''); }} className="rounded-lg border border-linha px-3 py-2 text-sm font-semibold text-marinho/70 hover:border-marinho/40">Limpar filtros</button>
+        )}
+        {filtrosAtivos && <div className="w-full text-xs text-marinho/60">Mostrando <b>{todas.length}</b> de {bruto.length} visita{bruto.length === 1 ? '' : 's'}.</div>}
+      </div>
+
       {/* Resumo + o que precisa de você */}
       <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-marinho/70">
         <span><b className="text-marinho">{nHoje}</b> visita{nHoje === 1 ? '' : 's'} hoje</span>
@@ -230,7 +301,7 @@ export default function VisitasPainel({ visitas, role = 'master' }) {
           <p className="mb-3 text-sm text-marinho/60">Resolva por aqui mesmo: use os botões de cada visita.</p>
           <div className="space-y-2.5">{precisaDeVoce.map((v) => <CartaoVisita key={v.id} v={v} role={role} hoje={hoje} mostrarData destaque />)}</div>
         </section>
-      ) : todas.length > 0 ? (
+      ) : bruto.length > 0 && !filtrosAtivos ? (
         <div className="mb-7 flex items-center gap-2 rounded-xl border border-sucesso/30 bg-sucesso/10 px-4 py-3 text-sm font-semibold text-sucesso"><Check size={18} /> Tudo respondido. Nada esperando por você.</div>
       ) : null}
 
@@ -259,7 +330,7 @@ export default function VisitasPainel({ visitas, role = 'master' }) {
           {diasFuturos.length === 0 && semData.length === 0 && (
             <div className="rounded-xl border border-dashed border-linha bg-white p-8 text-center text-marinho/60">
               <CalendarDays className="mx-auto mb-2 text-marinho/30" size={32} />
-              {todas.length === 0 ? (master ? 'Nenhuma visita ainda. Use “+ Agendar visita” para criar a primeira.' : 'Nenhuma visita ainda. Use “+ Solicitar visita” para pedir a primeira.') : 'Nenhuma visita nesta aba.'}
+              {bruto.length === 0 ? (master ? 'Nenhuma visita ainda. Use “+ Agendar visita” para criar a primeira.' : 'Nenhuma visita ainda. Use “+ Solicitar visita” para pedir a primeira.') : 'Nenhuma visita nesta aba.'}
             </div>
           )}
           {diasFuturos.map((d) => <Dia key={d} dia={d} />)}
@@ -270,9 +341,9 @@ export default function VisitasPainel({ visitas, role = 'master' }) {
           {diasPassados.length > 0 && (
             <div className="border-t border-linha pt-3">
               <button type="button" onClick={() => setVerPassadas((x) => !x)} className="text-sm font-semibold text-marinho/60 hover:text-marinho">
-                {verPassadas ? 'Esconder visitas que já passaram' : `Ver visitas que já passaram (${diasPassados.reduce((s, d) => s + porDia[d].length, 0)})`}
+                {verPassadas || filtrosAtivos ? 'Esconder visitas que já passaram' : `Ver visitas que já passaram (${diasPassados.reduce((s, d) => s + porDia[d].length, 0)})`}
               </button>
-              {verPassadas && <div className="mt-3">{diasPassados.map((d) => <Dia key={d} dia={d} passado />)}</div>}
+              {(verPassadas || filtrosAtivos) && <div className="mt-3">{diasPassados.map((d) => <Dia key={d} dia={d} passado />)}</div>}
             </div>
           )}
         </div>
