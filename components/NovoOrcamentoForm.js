@@ -11,7 +11,8 @@ function novoId() {
   return 'novo-' + uidCounter + '-' + Date.now();
 }
 
-export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, enderecoInicial, clienteIdInicial, veMargem = true }) {
+export default function NovoOrcamentoForm({ clientes, catalogo, tipoInicial, enderecoInicial, clienteIdInicial }) {
+  const veMargem = true; // a margem é sempre visível para a equipe e o dono
   const router = useRouter();
 
   const [tipo, setTipo] = useState(tipoInicial || 'rescisao');

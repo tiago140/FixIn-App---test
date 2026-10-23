@@ -8,7 +8,8 @@ import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 import BotoesPdfOrcamento from '@/components/BotoesPdfOrcamento';
 import { Upload, Save, FileDown, Mail, FileText, Lock, Loader2 } from 'lucide-react';
 
-export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [], veMargem = true }) {
+export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestadores, clientes, emailsDestino = [] }) {
+  const veMargem = true; // a margem é sempre visível para a equipe e o dono
   const router = useRouter();
   const [status, setStatus] = useState(orcamento.status);
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
@@ -32,6 +33,7 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
   const [clienteId, setClienteId] = useState(orcamento.cliente_id);
   const [confirmandoCliente, setConfirmandoCliente] = useState(null);
   const [margem, setMargem] = useState(orcamento.margem_percentual);
+  const [margemOutro, setMargemOutro] = useState(false);
   const [valorPago, setValorPago] = useState(orcamento.valor_pago || 0);
   const [garantia, setGarantia] = useState(orcamento.garantia || '');
   const [prestadorId, setPrestadorId] = useState(orcamento.prestador_id || '');
@@ -209,12 +211,6 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             ))}
           </select>
         </div>
-        {veMargem && (
-          <div>
-            <label className="block text-xs text-marinho/60 mb-1">Margem (%)</label>
-            <input type="number" value={margem} onChange={(e) => setMargem(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
-          </div>
-        )}
         <div>
           <label className="block text-xs text-marinho/60 mb-1">Valor já pago (R$)</label>
           <input type="number" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} className="w-full border border-linha rounded px-3 py-2 bg-papel" />
@@ -289,12 +285,24 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
           </div>
         </details>
 
-        {veMargem && (
-          <div className="sm:col-span-2 flex justify-between text-sm text-marinho/60 pt-2 border-t border-linha">
+        <div className="sm:col-span-2 rounded-xl border border-linha bg-white p-4">
+          <h3 className="font-semibold text-sm mb-3">Margem da FixIn (embutida, invisível para a imobiliária)</h3>
+          <div className="flex gap-2 flex-wrap items-center">
+            {[20, 30, 40].map((m) => (
+              <button type="button" key={m} onClick={() => { setMargem(m); setMargemOutro(false); }}
+                className={`px-4 py-1.5 rounded text-sm border ${!margemOutro && Number(margem) === m ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho/70'}`}>{m}%</button>
+            ))}
+            <button type="button" onClick={() => setMargemOutro(true)}
+              className={`px-4 py-1.5 rounded text-sm border ${margemOutro || ![20, 30, 40].includes(Number(margem)) ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho/70'}`}>Outro</button>
+            {(margemOutro || ![20, 30, 40].includes(Number(margem))) && (
+              <input type="number" value={margem} onChange={(e) => setMargem(e.target.value)} placeholder="%" className="w-20 border border-linha rounded px-2 py-1.5 bg-papel text-sm" />
+            )}
+          </div>
+          <div className="mt-4 flex justify-between text-sm text-marinho/60">
             <span>Custo base (MO + MA)</span>
             <span className="font-mono">{fmtBRL(totalBase)}</span>
           </div>
-        )}
+        </div>
         <div className="sm:col-span-2 flex justify-between text-lg font-semibold">
           <span>Total do orçamento</span>
           <span className="font-mono">{fmtBRL(totalFinal)}</span>
