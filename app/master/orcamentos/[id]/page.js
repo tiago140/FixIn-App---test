@@ -109,7 +109,7 @@ export default async function OrcamentoDetalhePage({ params }) {
       )}
 
       <div className="space-y-6">
-        <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} emailsDestino={destino.emails} veMargem={!!profile.dono} />
+        <GestaoOrcamentoForm orcamento={orcamento} itensIniciais={itens || []} prestadores={prestadores || []} clientes={clientes || []} emailsDestino={destino.emails} />
         <Recolhivel titulo="Pagamentos e comprovantes" resumo={`${comprovantes.length} comprovante(s)`} aberto={comprovantes.length > 0 || documentos.length > 0 || ['aprovado','em_execucao','finalizado'].includes(orcamento.status)}>
           <div className="space-y-6">
         <ComprovantesPagamento
