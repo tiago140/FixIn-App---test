@@ -11,6 +11,6 @@ export async function GET() {
   if (!user || !profile) return NextResponse.json({ chaves: [] }, { status: 401 });
   if (profile.role === 'prestador') return NextResponse.json({ chaves: [] });
   const a = await buscarAvisos(supabase, profile);
-  const chaves = [...(a.solicitacoes || []), ...a.visitas, ...a.atrasos, ...a.mensagens, ...(a.chamados || [])].map((x) => x.key);
+  const chaves = [...(a.solicitacoes || []), ...a.visitas, ...a.atrasos, ...a.mensagens, ...(a.chamados || []), ...(a.estornos || [])].map((x) => x.key);
   return NextResponse.json({ chaves });
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fmtBRL, fmtDataHoraSP } from '@/lib/format';
 
-export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensagens, chamados = [] }) {
+export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensagens, chamados = [], estornos = [] }) {
   const [vistos, setVistos] = useState({});
   const [aba, setAba] = useState('todos');
 
@@ -34,9 +34,10 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
   const visitasVisiveis = (visitas || []).filter((v) => !vistos[v.key]);
   const atrasosVisiveis = (atrasos || []).filter((a) => !vistos[a.key]);
   const chamadosVisiveis = (chamados || []).filter((c) => !vistos[c.key]);
+  const estornosVisiveis = (estornos || []).filter((x) => !vistos[x.key]);
   const mensagensVisiveis = (mensagens || []).filter((m) => !vistos[m.key]);
 
-  if (solicitacoesVisiveis.length === 0 && visitasVisiveis.length === 0 && atrasosVisiveis.length === 0 && mensagensVisiveis.length === 0 && chamadosVisiveis.length === 0) {
+  if (solicitacoesVisiveis.length === 0 && visitasVisiveis.length === 0 && atrasosVisiveis.length === 0 && mensagensVisiveis.length === 0 && chamadosVisiveis.length === 0 && estornosVisiveis.length === 0) {
     return <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum aviso no momento. Tudo em dia.</div>;
   }
 
@@ -45,12 +46,13 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
     try { localStorage.setItem('fixin_avisos_aba', a); } catch (e) {}
   }
   const ABAS = [
-    ['todos', 'Todos', solicitacoesVisiveis.length + chamadosVisiveis.length + mensagensVisiveis.length + visitasVisiveis.length + atrasosVisiveis.length],
+    ['todos', 'Todos', solicitacoesVisiveis.length + chamadosVisiveis.length + mensagensVisiveis.length + visitasVisiveis.length + atrasosVisiveis.length + estornosVisiveis.length],
     ['solicitacoes', 'Orçamentos novos', solicitacoesVisiveis.length],
     ['chamados', 'Chamados', chamadosVisiveis.length],
     ['mensagens', 'Mensagens', mensagensVisiveis.length],
     ['visitas', 'Visitas', visitasVisiveis.length],
     ['atrasos', 'Atrasos', atrasosVisiveis.length],
+    ['estornos', 'Estornos', estornosVisiveis.length],
   ].filter(([k, , n]) => k === 'todos' || n > 0 || aba === k);
   const ver = (k) => aba === 'todos' || aba === k;
 
@@ -60,6 +62,7 @@ export default function AvisosList({ solicitacoes = [], visitas, atrasos, mensag
     chamados: { tag: (x) => (x.novo ? 'Novo chamado' : 'Nova resposta'), cor: 'bg-verde text-white', borda: 'border-l-verde', abrir: 'Abrir chamado', lista: chamadosVisiveis },
     mensagens: { tag: () => 'Mensagem', cor: 'bg-info text-white', borda: 'border-l-info', abrir: 'Abrir conversa', lista: mensagensVisiveis },
     visitas: { tag: () => 'Visita', cor: 'bg-alerta text-white', borda: 'border-l-alerta', abrir: 'Abrir visitas', lista: visitasVisiveis },
+    estornos: { tag: () => 'Pedido de estorno', cor: 'bg-erro text-white', borda: 'border-l-erro', abrir: 'Analisar pedido', lista: estornosVisiveis },
     atrasos: { tag: () => 'Pagamento em atraso', cor: 'bg-erro text-white', borda: 'border-l-erro', abrir: 'Abrir orçamento', lista: atrasosVisiveis },
   };
   const avisos = Object.entries(TIPOS)
