@@ -104,16 +104,35 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
         )}
         <div className="card p-5">
           <div className="text-xs text-marinho/50 mb-1">Ambientes e serviços</div>
-          {(itens || []).map((it) => (
-            <div key={it.id} className="py-1.5 border-b border-linha text-sm flex justify-between gap-3">
-              <div>
-                <span className="text-marinho/50">{it.ambiente} · </span>
-                <span className="font-medium">{it.servico}</span>
-                {it.descricao ? <span className="text-marinho/60"> — {it.descricao}</span> : null}
-              </div>
-              {verEste && it.preco != null && <span className="font-mono text-marinho/70 whitespace-nowrap">{fmtBRL(it.preco)}</span>}
-            </div>
-          ))}
+          {(() => {
+            // Agrupa por ambiente/serviço (Pintura geral, Reparos, Faxina e limpeza…) e mostra o subtotal de cada grupo.
+            const grupos = [];
+            (itens || []).forEach((it) => {
+              let g = grupos.find((x) => x.ambiente === it.ambiente);
+              if (!g) { g = { ambiente: it.ambiente, itens: [] }; grupos.push(g); }
+              g.itens.push(it);
+            });
+            return grupos.map((g) => {
+              const subtotal = g.itens.reduce((acc, it) => acc + (Number(it.preco) || 0), 0);
+              return (
+                <div key={g.ambiente || 'geral'} className="mt-3 first:mt-1">
+                  <div className="rounded bg-papel px-2 py-1 text-xs font-bold uppercase tracking-wide text-marinho">{g.ambiente || 'Geral'}</div>
+                  {g.itens.map((it) => (
+                    <div key={it.id} className="py-1.5 border-b border-linha text-sm flex justify-between gap-3">
+                      <div>
+                        <span className="font-medium">{it.servico}</span>
+                        {it.descricao ? <span className="text-marinho/60"> — {it.descricao}</span> : null}
+                      </div>
+                      {verEste && it.preco != null && <span className="font-mono text-marinho/70 whitespace-nowrap">{fmtBRL(it.preco)}</span>}
+                    </div>
+                  ))}
+                  {verEste && g.itens.some((it) => it.preco != null) && (
+                    <div className="pt-1.5 text-right text-sm font-semibold text-marinho">Subtotal {g.ambiente || 'Geral'}: <span className="font-mono">{fmtBRL(subtotal)}</span></div>
+                  )}
+                </div>
+              );
+            });
+          })()}
           {orcamento.garantia && (
             <div className="mt-3 text-sm"><span className="font-semibold">Garantia: </span>{orcamento.garantia}</div>
           )}
