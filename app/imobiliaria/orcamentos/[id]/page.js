@@ -62,6 +62,8 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
     try { const { data: p } = await createAdminClient().from('orcamentos').select('pdf_url').eq('id', params.id).single(); pdfUrlImpressao = p?.pdf_url || null; } catch (e) {}
   }
   const obras = await carregarObras(params.id);
+  const { data: acompRow } = await supabase.from('acompanhamentos').select('id').eq('orcamento_id', params.id).maybeSingle();
+  const acompId = acompRow?.id || null;
   const total = num(orcamento.total);
   // Administrador: vê tudo. Operacional: só valor e PDF dos orçamentos que ELA mesma solicitou — o banco já devolve nulo nos outros.
   const verEste = ver || total != null;
@@ -164,6 +166,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
           />
         )}
 
+        {acompId && <Link href={`/imobiliaria/acompanhamento/${acompId}`} className="card rounded-xl p-4 flex items-center justify-between text-sm font-semibold">Acompanhar a obra: fotos e andamento <span aria-hidden>→</span></Link>}
         <InteressadosObra obras={obras} />
         <DocumentosFiscais orcamentoId={orcamento.id} documentos={documentos} role="imobiliaria" />
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />

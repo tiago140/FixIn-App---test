@@ -13,6 +13,7 @@ import ComprovantesPagamento from '@/components/ComprovantesPagamento';
 import ExcluirOrcamentoButton from '@/components/ExcluirOrcamentoButton';
 import Chat from '@/components/Chat';
 import { MASTER_TABS } from '@/lib/navTabs';
+import IniciarAcompanhamento from '@/components/IniciarAcompanhamento';
 import { fmtDate, estaAtrasado, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,7 @@ export default async function OrcamentoDetalhePage({ params }) {
   }));
   const total = calcularTotalComMargem(itens, orcamento.margem_percentual);
   const destino = await destinatariosDoOrcamento(supabase, params.id);
+  const { data: acomp } = await supabase.from('acompanhamentos').select('id, etapa, percentual').eq('orcamento_id', params.id).maybeSingle();
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
@@ -123,6 +125,7 @@ export default async function OrcamentoDetalhePage({ params }) {
         <DocumentosFiscais orcamentoId={orcamento.id} documentos={documentos} role="master" />
           </div>
         </Recolhivel>
+        {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && <IniciarAcompanhamento orcamentoId={orcamento.id} acomp={acomp} />}
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />
         <Recolhivel titulo="Excluir orçamento" resumo="ação que não dá para desfazer">
         <ExcluirOrcamentoButton
