@@ -53,3 +53,16 @@ test('regra do banco vale mais que a padrão e regra inválida é ignorada', () 
   assert.equal(classificarPendencias([it('Sala', 'Algo qualquer')], regras)[0].acao, 'reparo');
   assert.deepEqual(contarPorAcao(classificarPendencias([it('A', 'sujo'), it('B', 'quebrado')])), { limpeza: 1, reparo: 1 });
 });
+
+test('pintura com limpeza é pintura; eletrodoméstico e móveis são reposição', () => {
+  assert.equal(acao('Sala', 'Pintura: fazer limpeza'), 'pintura');
+  assert.equal(acao('Sala', 'Fazer limpeza e pintura nova'), 'pintura');
+  assert.equal(acao('Cozinha', 'Geladeira com defeito'), 'reposicao');
+  assert.equal(acao('Sala', 'Sofá rasgado'), 'reposicao');
+  assert.equal(acao('Sala', 'Piso sujo'), 'limpeza');
+});
+test('seguro fiança: pintura com limpeza vai para Pintura geral', () => {
+  const r = organizarSeguroFianca([it('Sala', 'Fazer limpeza geral'), it('Sala', 'Pintura: fazer limpeza')]);
+  assert.equal(r.find((x) => /Pintura/.test(x.servico)).ambiente, 'Pintura geral');
+  assert.equal(r.find((x) => /limpeza geral/.test(x.servico)).ambiente, 'Faxina e limpeza');
+});

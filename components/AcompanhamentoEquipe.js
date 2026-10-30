@@ -104,7 +104,7 @@ export default function AcompanhamentoEquipe({ acomp, link, mensagem, interessad
           <>
             <div className="flex gap-2"><input readOnly value={link} className={`${ent} font-mono text-xs`} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => copiar(link)} className="border border-linha rounded-lg px-3 text-sm inline-flex items-center gap-1"><Copy size={14} />{copiado ? 'Copiado' : 'Copiar'}</button></div>
             <div className="grid sm:grid-cols-[1fr_auto] gap-2">
-              <input value={fone} onChange={(e) => setFone(e.target.value)} placeholder="WhatsApp do locador com DDD" list="fones-obra" className={ent} />
+              <input value={fone} onChange={(e) => setFone(e.target.value)} placeholder="WhatsApp com DDD" list="fones-obra" className={ent} />
               <a href={digitos.length >= 10 ? wa : undefined} target="_blank" rel="noreferrer" aria-disabled={digitos.length < 10} className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white ${digitos.length >= 10 ? 'bg-verde' : 'bg-marinho/30 pointer-events-none'}`}><MessageCircle size={15} /> Enviar pelo WhatsApp</a>
             </div>
             <datalist id="fones-obra">{interessados.filter((i) => i.whatsapp).map((i) => <option key={i.whatsapp} value={i.whatsapp}>{i.nome}</option>)}</datalist>

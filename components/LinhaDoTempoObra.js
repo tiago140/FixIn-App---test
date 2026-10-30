@@ -23,7 +23,7 @@ export default function LinhaDoTempoObra({ itens, fotoBase, Acoes = null, equipe
         const outros = g.itens.filter((i) => i.tipo !== 'foto');
         return (
           <section key={g.k}>
-            <h3 className="text-sm font-semibold text-marinho/70 capitalize mb-2">{dia(g.ref)}</h3>
+            <h3 className="text-sm font-semibold text-marinho/70 first-letter:uppercase mb-2">{dia(g.ref)}</h3>
             <ul className="space-y-2">
               {outros.map((i) => (
                 <li key={i.ref} className="card rounded-xl p-3 flex gap-3 items-start">
