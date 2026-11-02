@@ -5,6 +5,8 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import KanbanBoard from '@/components/KanbanBoard';
 import { MASTER_TABS } from '@/lib/navTabs';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { ACOES_FEITO, ACAO_ENVIADO } from '@/lib/orcamentosEnviados';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +19,14 @@ export default async function OrcamentosPage() {
     .from('orcamentos')
     .select('*, clientes(nome_empresa), orcamento_itens(servico, descricao, ambiente, mo, ma)')
     .order('criado_em', { ascending: false });
+
+  // Quem fez e quem enviou cada orçamento (vem do histórico de ações): alimenta os filtros de data e de pessoa.
+  const { data: eventos } = await createAdminClient().from('auditoria').select('alvo_id, acao, autor_nome, criado_em')
+    .eq('alvo_tipo', 'orcamento').in('acao', ACOES_FEITO).order('criado_em').limit(5000);
+  const porOrc = new Map();
+  for (const e of eventos || []) { const l = porOrc.get(e.alvo_id) || []; l.push({ t: e.criado_em, e: e.acao === ACAO_ENVIADO, n: e.autor_nome }); porOrc.set(e.alvo_id, l); }
+  const lista = (orcamentos || []).map((o) => ({ ...o, _ev: porOrc.get(o.id) || [] }));
+  const { data: eq } = await createAdminClient().from('profiles').select('nome_completo').eq('role', 'master').eq('ativo', true).order('nome_completo');
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
@@ -37,7 +47,7 @@ export default async function OrcamentosPage() {
           </>
         }
       />
-      <KanbanBoard orcamentos={orcamentos || []} basePath="/master/orcamentos" />
+      <KanbanBoard orcamentos={lista} basePath="/master/orcamentos" equipe={(eq || []).map((x) => x.nome_completo).filter(Boolean)} />
     </AppShell>
   );
 }

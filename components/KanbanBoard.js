@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Search, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { KANBAN_COLS, STATUS_LABEL, fmtBRL, fmtDataHoraSP, diasDesde, calcularTotalComMargem, estaAtrasado } from '@/lib/format';
 import { resumoEspeciais } from '@/lib/itensEspeciais';
+import { intervalo, inicioSP, fimSP } from '@/lib/periodos';
 
 // Texto sem acento e em minúsculas, para a busca não depender de acentuação nem de maiúsculas.
 const norm = (v) => String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -17,7 +18,7 @@ function textoBusca(o) {
   ].join(' '));
 }
 
-export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores = true }) {
+export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores = true, equipe = [] }) {
   const router = useRouter();
   const [itens, setItens] = useState(orcamentos);
   const [dragId, setDragId] = useState(null);
@@ -25,6 +26,8 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
   const [ordem, setOrdem] = useState('padrao');
   const [filtro, setFiltro] = useState('todos');
   const [verEncerrados, setVerEncerrados] = useState(false);
+  const [periodo, setPeriodo] = useState('');
+  const [quem, setQuem] = useState('');
   const ehMaster = String(basePath || '').startsWith('/master');
 
   // Lembra o filtro e a ordem escolhidos neste navegador
@@ -54,10 +57,14 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
     ['sem_aprovacao_7', 'Enviados há mais de 7 dias', (o) => o.status === 'enviado' && o.criado_em && diasDesde(o.criado_em) > 7],
   ];
   const regra = (FILTROS.find((f) => f[0] === filtro) || FILTROS[0])[2];
-  const visiveis = filtro === 'todos' ? porBusca : porBusca.filter(regra);
+  const porFiltro = filtro === 'todos' ? porBusca : porBusca.filter(regra);
+  // Equipe: "feito/enviado em" (hoje, ontem, semana, mês) e "quem fez", pelo histórico de ações de cada orçamento.
+  const janela = periodo ? (() => { const { de, ate } = intervalo(periodo); return [new Date(inicioSP(de)).getTime(), new Date(fimSP(ate)).getTime()]; })() : null;
+  const doPeriodo = (e) => !janela || (new Date(e.t).getTime() >= janela[0] && new Date(e.t).getTime() < janela[1]);
+  const visiveis = periodo || quem ? porFiltro.filter((o) => (o._ev || []).some((e) => doPeriodo(e) && (!quem || e.n === quem))) : porFiltro;
   // Finalizados e recusados saem da frente no dia a dia; aparecem ao clicar, ao buscar ou ao usar um filtro.
   const nEncerrados = visiveis.filter((o) => ['finalizado', 'rejeitado'].includes(o.status)).length;
-  const mostrarEncerrados = verEncerrados || termos.length > 0 || filtro !== 'todos';
+  const mostrarEncerrados = verEncerrados || termos.length > 0 || filtro !== 'todos' || !!periodo || !!quem;
 
   const totalDe = (o) => (o.total != null ? Number(o.total) : o.orcamento_itens ? calcularTotalComMargem(o.orcamento_itens, o.margem_percentual) : Infinity);
   const qtdItensDe = (o) => (o.orcamento_itens ? o.orcamento_itens.length : Number(o.qtd_itens) || 0);
@@ -129,7 +136,19 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
           </div>
         </details>
       </div>
-      {(termos.length > 0 || filtro !== 'todos') && (
+      {ehMaster && (
+        <div className="basis-full flex gap-2 flex-wrap items-center">
+          <span className="text-xs text-marinho/50">Feito/enviado em</span>
+          {[['', 'Qualquer data'], ['hoje', 'Hoje'], ['ontem', 'Ontem'], ['semana', 'Esta semana'], ['mes', 'Este mês']].map(([k, r]) => (
+            <button key={k} type="button" onClick={() => setPeriodo(k)} className={`text-sm rounded-full px-3.5 py-1 border ${periodo === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho/70 bg-white'}`}>{r}</button>
+          ))}
+          {equipe.length > 0 && <span className="text-xs text-marinho/50 ml-2">Quem fez</span>}
+          {equipe.length > 0 && [['', 'Todos'], ...equipe.map((n) => [n, n.split(' ')[0]])].map(([k, r]) => (
+            <button key={k || 'todos'} type="button" onClick={() => setQuem(k)} className={`text-sm rounded-full px-3.5 py-1 border ${quem === k ? 'bg-marinho text-white border-marinho' : 'border-linha text-marinho/70 bg-white'}`}>{r}</button>
+          ))}
+        </div>
+      )}
+      {(termos.length > 0 || filtro !== 'todos' || periodo || quem) && (
         <span className="text-xs text-marinho/60">
           {visiveis.length === 0 ? 'Nenhum orçamento encontrado' : `${visiveis.length} de ${itens.length} orçamento(s)`}
         </span>
@@ -188,6 +207,10 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
                     )}
                     <div className="font-semibold mt-0.5">{o.endereco}</div>
                     {veValores && total != null && <div className="font-mono mt-0.5">{fmtBRL(total)}</div>}
+                    {ehMaster && o._ev?.length > 0 && (() => {
+                      const env = [...o._ev].reverse().find((e) => e.e);
+                      return <div className="mt-1 text-[11px] text-marinho/60">👤 Feito por {o._ev[0].n}{env ? ` · enviado por ${env.n} em ${fmtDataHoraSP(env.t)}` : ' · ainda não enviado'}</div>;
+                    })()}
                     {['aprovado', 'em_execucao', 'finalizado'].includes(status) && o.aprovado_em && (
                       <div className="mt-1 flex items-start gap-1 text-[11px] text-sucesso">
                         <CheckCircle2 size={13} className="mt-px shrink-0" />
