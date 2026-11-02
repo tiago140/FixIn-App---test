@@ -14,7 +14,7 @@ export default async function Page({ searchParams }) {
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader icone="chamados" titulo="Chamados" subtitulo="Pedidos abertos por locatários e locadores" />
-      <ListaChamadosPainel supabase={supabase} base="/master/chamados" master={true} profile={profile} filtro={searchParams?.s} />
+      <ListaChamadosPainel supabase={supabase} base="/master/chamados" master={true} profile={profile} filtro={searchParams?.s} periodo={searchParams?.p} quem={searchParams?.u} />
     </AppShell>
   );
 }
