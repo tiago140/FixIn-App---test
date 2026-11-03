@@ -14,6 +14,7 @@ import ExcluirOrcamentoButton from '@/components/ExcluirOrcamentoButton';
 import Chat from '@/components/Chat';
 import { MASTER_TABS } from '@/lib/navTabs';
 import IniciarAcompanhamento from '@/components/IniciarAcompanhamento';
+import DividirOrdens from '@/components/DividirOrdens';
 import { fmtDate, estaAtrasado, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ export default async function OrcamentoDetalhePage({ params }) {
   }));
   const total = calcularTotalComMargem(itens, orcamento.margem_percentual);
   const destino = await destinatariosDoOrcamento(supabase, params.id);
+  const { data: ordensDoOrc } = await supabase.from('ordens_servico').select('id, numero').eq('orcamento_id', params.id).order('criado_em');
   const { data: acomp } = await supabase.from('acompanhamentos').select('id, etapa, percentual').eq('orcamento_id', params.id).maybeSingle();
 
   return (
@@ -125,6 +127,11 @@ export default async function OrcamentoDetalhePage({ params }) {
         <DocumentosFiscais orcamentoId={orcamento.id} documentos={documentos} role="master" />
           </div>
         </Recolhivel>
+        {(itens || []).length > 1 && (
+          <Recolhivel titulo="Dividir itens entre prestadores" resumo={`${(ordensDoOrc || []).length} ordem(ns) já criada(s)`}>
+            <DividirOrdens orcamentoId={orcamento.id} itens={(itens || []).map((i) => ({ id: i.id, ambiente: i.ambiente, servico: i.servico, mo: i.mo, ma: i.ma }))} prestadores={(prestadores || []).filter((p) => p.ativo !== false).map((p) => ({ id: p.id, nome: p.nome }))} ordens={ordensDoOrc || []} />
+          </Recolhivel>
+        )}
         {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && <IniciarAcompanhamento orcamentoId={orcamento.id} acomp={acomp} />}
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />
         <Recolhivel titulo="Excluir orçamento" resumo="ação que não dá para desfazer">
