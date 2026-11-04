@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Wand2, Undo2, Plus, Trash2, Loader2, PackagePlus } from 'lucide-react';
 import { fmtBRL } from '@/lib/format';
 import { categoriaEspecial } from '@/lib/itensEspeciais';
-import { organizarSeguroFianca, GRUPOS_SEGURO_FIANCA } from '@/lib/seguroFianca';
+import { organizarSeguroFianca, unirAcoesSoltas, auditarSeguroFianca, GRUPOS_SEGURO_FIANCA } from '@/lib/seguroFianca';
 import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 
 let seq = 0;
@@ -70,6 +70,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
   const [iaAberta, setIaAberta] = useState(() => itens.some(semPreco)); // abre sozinha quando há item sem preço
   const alvos = soSemPreco ? nSemPreco : itens.length;
   const somaItens = itens.reduce((a, it) => a + totalItem(it), 0);
+  const avisosSF = seguroFianca ? auditarSeguroFianca(itens) : [];
 
   // grupos = itens seguidos do mesmo ambiente
   const grupos = [];
@@ -169,17 +170,35 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
   return (
     <div className="space-y-6">
       {seguroFianca && (
-        <div className="rounded-lg border border-marinho/30 bg-marinho/5 px-4 py-3 text-sm flex gap-3 items-center flex-wrap">
-          <div className="flex-1 min-w-[240px]">
-            <div className="font-semibold text-marinho">Seguro fiança: orçamento item a item</div>
-            <div className="text-marinho/70">Ordem: {GRUPOS_SEGURO_FIANCA.join(' → ')}. Itens juntos (ex.: "pintura, gabinete danificado") são separados em itens diferentes; os novos entram sem preço.</div>
+        <div className="rounded-lg border border-marinho/30 bg-marinho/5 px-4 py-3 text-sm space-y-3">
+          <div className="flex gap-3 items-center flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <div className="font-semibold text-marinho">Seguro fiança: orçamento item a item</div>
+              <div className="text-marinho/70">Ordem: {GRUPOS_SEGURO_FIANCA.join(' → ')}. Problemas diferentes na mesma linha (ex.: "pintura, gabinete danificado") viram itens separados, e os novos entram sem preço. Uma ação como "fazer repintura" fica junto do problema dela, no mesmo item, e não é cobrada de novo.</div>
+            </div>
+            <button type="button" onClick={() => {
+              const antes = itens.length;
+              const novos = organizarSeguroFianca(itens, { dividir: true });
+              setItens(novos);
+              setMsg({ tipo: 'ok', texto: `Organizado no formato seguro fiança: ${antes} → ${novos.length} itens. Preencha o preço dos itens novos e salve.` });
+            }} className="bg-marinho text-white rounded-lg px-4 py-2 text-sm font-semibold">Organizar para seguro fiança</button>
+            <button type="button" onClick={() => {
+              const r = unirAcoesSoltas(itens);
+              if (!r.unidas) return setMsg({ tipo: 'info', texto: 'Não achei nenhuma ação solta ("Fazer repintura", "Retirar"…) para juntar ao item de origem.' });
+              setDesfazer({ itens, rotulo: 'Corrigir duplicidades' });
+              setItens(r.itens);
+              setMsg({ tipo: 'ok', texto: `${r.unidas} ação(ões) solta(s) juntada(s) ao item de origem. O preço de cada par ficou com o MAIOR dos dois valores, sem somar: ${fmtBRL(r.valorEvitado)} a menos no custo. Revise antes de salvar.` });
+            }} className="border border-marinho text-marinho rounded-lg px-4 py-2 text-sm font-semibold">Corrigir duplicidades</button>
           </div>
-          <button type="button" onClick={() => {
-            const antes = itens.length;
-            const novos = organizarSeguroFianca(itens, { dividir: true });
-            setItens(novos);
-            setMsg({ tipo: 'ok', texto: `Organizado no formato seguro fiança: ${antes} → ${novos.length} itens. Preencha o preço dos itens novos e salve.` });
-          }} className="bg-marinho text-white rounded-lg px-4 py-2 text-sm font-semibold">Organizar para seguro fiança</button>
+          {avisosSF.length > 0 && (
+            <details className="rounded border border-alerta/50 bg-alerta/10 px-3 py-2 text-marinho">
+              <summary className="cursor-pointer font-semibold">{avisosSF.length} ponto(s) para conferir antes de enviar</summary>
+              <ul className="mt-2 list-disc pl-5 space-y-1">
+                {avisosSF.slice(0, 40).map((a, k) => <li key={k}>{a.texto}</li>)}
+                {avisosSF.length > 40 && <li>… e mais {avisosSF.length - 40}.</li>}
+              </ul>
+            </details>
+          )}
         </div>
       )}
       <AlertaItensEspeciais itens={itens} />
