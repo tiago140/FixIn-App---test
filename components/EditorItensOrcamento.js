@@ -20,6 +20,7 @@ const ORIGEM = {
   editado: 'Item alterado pela IA',
   novo: 'Item criado pela IA',
   ia: 'Item criado pela IA',
+  regra: 'Valor da tabela do seguro fiança',
 };
 
 // Chama uma rota de IA SEM nunca ficar pendurado: sempre devolve { data } ou { erro } e tem limite de tempo.
@@ -104,7 +105,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
     setOcupado('valores');
     const { data, erro } = await chamarIA('/api/orcamentos/valores-ia', {
       itens: itens.map(({ id, ambiente, servico, descricao, mo, ma }) => ({ id, ambiente, servico, descricao, mo, ma })),
-      endereco, instrucao: obs, apenas_sem_preco: soSemPreco,
+      endereco, instrucao: obs, apenas_sem_preco: soSemPreco, seguro_fianca: seguroFianca,
     });
     setOcupado(null);
     if (erro) return setMsg({ tipo: 'erro', texto: erro });
@@ -120,7 +121,7 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
     const faltou = (data.total_alvos || 0) - valores.length;
     setMsg({
       tipo: 'ok',
-      texto: `${valores.length} de ${data.total_alvos} item(ns) com valor sugerido (${o.catalogo || 0} do seu catálogo, ${o.historico || 0} de orçamentos seus, ${o.estimativa || 0} estimados pelo mercado).${faltou > 0 ? ` ${faltou} ficaram sem preço: a IA entendeu que não geram custo ou não conseguiu estimar — preencha à mão se precisar.` : ''} ${data.aviso_cortada ? ' ' + data.aviso_cortada : ''} Revise antes de salvar.`,
+      texto: `${valores.length} de ${data.total_alvos} item(ns) com valor sugerido (${o.regra ? `${o.regra} da tabela do seguro fiança, ` : ''}${o.catalogo || 0} do seu catálogo, ${o.historico || 0} de orçamentos seus, ${o.estimativa || 0} estimados pelo mercado${data.seguro_fianca?.elevados ? `; os ${data.seguro_fianca.elevados} que não são da tabela já saíram com +${data.seguro_fianca.aumento_percentual}%` : ''}).${faltou > 0 ? ` ${faltou} ficaram sem preço: a IA entendeu que não geram custo ou não conseguiu estimar — preencha à mão se precisar.` : ''} ${data.aviso_cortada ? ' ' + data.aviso_cortada : ''} Revise antes de salvar.`,
     });
   }
 
