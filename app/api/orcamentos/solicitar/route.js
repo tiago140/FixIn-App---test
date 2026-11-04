@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { organizarSeguroFianca } from '@/lib/seguroFianca';
+import { prepararSeguroFianca } from '@/lib/seguroFianca';
 
 export async function POST(req) {
   const { user, profile, supabase } = await getProfile();
@@ -19,7 +19,7 @@ export async function POST(req) {
     p_nome_cliente_final: nome_cliente_final || null,
     p_cpf_cliente_final: cpf_cliente_final || null,
     p_cnpj_cliente_final: cnpj_cliente_final || null,
-    p_itens: seguro ? organizarSeguroFianca(itens || [], { dividir: true }) : itens || [],
+    p_itens: seguro ? prepararSeguroFianca(itens || []).itens : itens || [],
     p_vistoria_texto: vistoria_texto_bruto || null,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

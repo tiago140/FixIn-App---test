@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dividirItemSeguroFianca, organizarSeguroFianca, unirAcoesSoltas, auditarSeguroFianca, ehAcaoSolta, categoriaSeguroFianca } from '../lib/seguroFianca.js';
+import { prepararSeguroFianca, dividirItemSeguroFianca, organizarSeguroFianca, unirAcoesSoltas, auditarSeguroFianca, ehAcaoSolta, categoriaSeguroFianca } from '../lib/seguroFianca.js';
 import { parseVistoriaTexto } from '../lib/parseVistoria.js';
 
 const base = (servico, descricao = '', ambiente = 'Sala', mo = 0, ma = 0) => ({ id: servico, ambiente, servico, descricao, mo, ma });
@@ -86,4 +86,27 @@ test('leitor de vistoria: título de seção colado no fim da linha não vira te
   const r = parseVistoriaTexto(txt);
   assert.deepEqual(r.map((i) => i.ambiente), ['Cozinha', 'Cozinha', 'Escadaria']);
   assert.ok(!r.some((i) => /Escadaria/.test(i.descricao)));
+});
+
+test('prepararSeguroFianca: fluxo completo da vistoria ao orçamento, sem item de ação e sem preço dobrado', () => {
+  const itens = [
+    { id: 'a', ambiente: 'Sala', servico: 'Teto', descricao: 'pintura com manchas, fazer repintura', mo: 43, ma: 29 },
+    { id: 'b', ambiente: 'Sala', servico: 'Fazer repintura', descricao: '', mo: 43, ma: 29 },
+    { id: 'c', ambiente: 'Cozinha', servico: 'Teto', descricao: 'apresenta falhas de cobertura', mo: 53, ma: 29 },
+    { id: 'd', ambiente: 'Varanda', servico: 'Piso', descricao: 'deixado cabo de esfregão, retirar', mo: 10, ma: 0 },
+  ];
+  const r = prepararSeguroFianca(itens);
+  assert.equal(r.itens.length, 3);
+  assert.equal(r.itens.reduce((t, i) => t + i.mo + i.ma, 0), 72 + 82 + 10);
+  assert.deepEqual(r.itens.map((i) => i.ambiente), ['Pintura geral', 'Pintura geral', 'Reparos']);
+});
+
+test('ao juntar, fica o par MO/material do item mais caro (não mistura os dois)', () => {
+  const r = unirAcoesSoltas([
+    { id: 1, ambiente: 'Reparos', servico: 'Banheiro: Porta papel', descricao: '', mo: 18, ma: 23 },
+    { id: 2, ambiente: 'Reparos', servico: 'Banheiro: Providenciar', descricao: '', mo: 12, ma: 29 },
+  ]);
+  assert.equal(r.itens.length, 1);
+  assert.equal(r.itens[0].mo + r.itens[0].ma, 41);
+  assert.equal(r.valorEvitado, 41);
 });

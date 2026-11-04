@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Wand2, Undo2, Plus, Trash2, Loader2, PackagePlus } from 'lucide-react';
 import { fmtBRL } from '@/lib/format';
 import { categoriaEspecial } from '@/lib/itensEspeciais';
-import { organizarSeguroFianca, unirAcoesSoltas, auditarSeguroFianca, GRUPOS_SEGURO_FIANCA } from '@/lib/seguroFianca';
+import { prepararSeguroFianca, unirAcoesSoltas, auditarSeguroFianca, GRUPOS_SEGURO_FIANCA } from '@/lib/seguroFianca';
 import AlertaItensEspeciais from '@/components/AlertaItensEspeciais';
 
 let seq = 0;
@@ -178,16 +178,17 @@ export default function EditorItensOrcamento({ itens, setItens, endereco = '', c
             </div>
             <button type="button" onClick={() => {
               const antes = itens.length;
-              const novos = organizarSeguroFianca(itens, { dividir: true });
-              setItens(novos);
-              setMsg({ tipo: 'ok', texto: `Organizado no formato seguro fiança: ${antes} → ${novos.length} itens. Preencha o preço dos itens novos e salve.` });
+              const r = prepararSeguroFianca(itens);
+              setDesfazer({ itens, rotulo: 'Organizar para seguro fiança' });
+              setItens(r.itens);
+              setMsg({ tipo: 'ok', texto: `Organizado no formato seguro fiança: ${antes} → ${r.itens.length} itens.${r.unidas ? ` ${r.unidas} ação(ões) como "fazer repintura" ficaram junto do item de origem, sem cobrar de novo.` : ''} Preencha o preço dos itens novos e salve.` });
             }} className="bg-marinho text-white rounded-lg px-4 py-2 text-sm font-semibold">Organizar para seguro fiança</button>
             <button type="button" onClick={() => {
               const r = unirAcoesSoltas(itens);
               if (!r.unidas) return setMsg({ tipo: 'info', texto: 'Não achei nenhuma ação solta ("Fazer repintura", "Retirar"…) para juntar ao item de origem.' });
               setDesfazer({ itens, rotulo: 'Corrigir duplicidades' });
               setItens(r.itens);
-              setMsg({ tipo: 'ok', texto: `${r.unidas} ação(ões) solta(s) juntada(s) ao item de origem. O preço de cada par ficou com o MAIOR dos dois valores, sem somar: ${fmtBRL(r.valorEvitado)} a menos no custo. Revise antes de salvar.` });
+              setMsg({ tipo: 'ok', texto: `${r.unidas} ação(ões) solta(s) juntada(s) ao item de origem. O preço de cada par ficou com o do item mais caro, sem somar: ${fmtBRL(r.valorEvitado)} a menos no custo. Revise antes de salvar.` });
             }} className="border border-marinho text-marinho rounded-lg px-4 py-2 text-sm font-semibold">Corrigir duplicidades</button>
           </div>
           {avisosSF.length > 0 && (
