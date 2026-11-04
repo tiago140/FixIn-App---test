@@ -37,3 +37,18 @@ test('demais itens sobem 20%', () => {
   const r = elevarDemais([{ id: 1, mo: 18, ma: 2, origem: 'catalogo' }, { id: 2, mo: 53, ma: 29, origem: 'estimativa' }]);
   assert.deepEqual(r.map((v) => [v.mo, v.ma]), [[22, 2], [64, 35]]);
 });
+
+test('mancha pontual, respingo e cerâmica NÃO usam a tabela de repintura', () => {
+  assert.equal(chaveTabelaSeguroFianca(it('Teto', 'apresenta uma mancha de tinta')), null);
+  assert.equal(chaveTabelaSeguroFianca(it('Paredes', 'cerâmica apresenta manchas de tinta próximo a porta')), null);
+  assert.equal(chaveTabelaSeguroFianca(it('Porta', 'apresenta manchas de tinta e de sujeira')), null);
+  assert.equal(chaveTabelaSeguroFianca(it('Piso', 'respingos de tinta')), null);
+  assert.equal(chaveTabelaSeguroFianca(it('Porta', 'apresenta manchas e escorridos de tinta, fazer pintura nova')), 'porta');
+  assert.equal(chaveTabelaSeguroFianca(it('Teto', 'apresenta manchas e pontos descascados')), 'teto');
+});
+
+test('nome do local ("Sala Piso Superior") não atrapalha a regra', () => {
+  assert.equal(chaveTabelaSeguroFianca(it('Sala Piso Superior: Paredes', 'pintura com falhas de cobertura, fazer repintura')), 'parede');
+  assert.equal(chaveTabelaSeguroFianca(it('Sala Piso Superior: Piso', 'com respingos e manchas de tinta')), null);
+  assert.equal(chaveTabelaSeguroFianca(it('Banheiro Social Piso Superior: Teto', 'apresenta descascados e falhas de cobertura')), 'teto');
+});
