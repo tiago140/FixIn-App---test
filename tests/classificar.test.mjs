@@ -66,3 +66,11 @@ test('seguro fiança: pintura com limpeza vai para Pintura geral', () => {
   assert.equal(r.find((x) => /Pintura/.test(x.servico)).ambiente, 'Pintura geral');
   assert.equal(r.find((x) => /limpeza geral/.test(x.servico)).ambiente, 'Faxina e limpeza');
 });
+
+test('mancha de tinta em espelho de tomada, piso e janela é limpeza; pedir pintura continua sendo pintura', () => {
+  assert.equal(acao('Sala', 'Espelhos de luz com manchas de tinta'), 'limpeza');
+  assert.equal(acao('Sala', 'Piso com respingos de tinta'), 'limpeza');
+  assert.equal(acao('Quarto', 'Janela com mancha de tinta e escritas'), 'limpeza');
+  assert.equal(acao('Sala', 'Porta com escorridos de tinta, fazer pintura nova'), 'pintura');
+  assert.equal(acao('Sala', 'Pintura: fazer limpeza'), 'pintura');
+});

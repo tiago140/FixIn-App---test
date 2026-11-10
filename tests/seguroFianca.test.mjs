@@ -110,3 +110,75 @@ test('ao juntar, fica o par MO/material do item mais caro (não mistura os dois)
   assert.equal(r.itens[0].mo + r.itens[0].ma, 41);
   assert.equal(r.valorEvitado, 41);
 });
+
+const cat = (servico, descricao = '', ambiente = 'Sala') => categoriaSeguroFianca({ ambiente, servico, descricao });
+
+test('pintura é pintura: mancha/respingo de tinta é LIMPEZA, não pintura (espelho de tomada do ORC-0047)', () => {
+  assert.equal(cat('Espelhos de luz com manchas de tinta'), 'Faxina e limpeza');
+  assert.equal(cat('Espelho de luz e interfone com manchas de tinta'), 'Faxina e limpeza');
+  assert.equal(cat('Piso', 'apresenta manchas e respingos de tinta'), 'Faxina e limpeza');
+  assert.equal(cat('Janela', 'apresenta mancha de tinta e escritas'), 'Faxina e limpeza');
+  assert.equal(cat('Parede', 'cerâmica apresenta manchas de tinta próximo a porta'), 'Faxina e limpeza');
+  assert.equal(cat('Apresenta respingos de tinta', 'fazer limpeza'), 'Faxina e limpeza');
+  assert.equal(cat('Porta', 'apresenta manchas de tinta e de sujeira'), 'Faxina e limpeza');
+});
+
+test('quando o texto pede pintar, é pintura (mesmo com mancha de tinta ou limpeza junto)', () => {
+  assert.equal(cat('Porta', 'apresenta manchas e escorridos de tinta, fazer pintura nova'), 'Pintura geral');
+  assert.equal(cat('Degraus', 'com manchas de tinta branca, refazer pintura'), 'Pintura geral');
+  assert.equal(cat('Teto', 'pintura com manchas e falhas de cobertura'), 'Pintura geral');
+  assert.equal(cat('Pintura: fazer limpeza'), 'Pintura geral');
+  assert.equal(cat('Parede', 'precisa de tinta nova'), 'Pintura geral');
+});
+
+test('reparo é reparo e sujeira é limpeza, sem depender do que estava gravado antes', () => {
+  assert.equal(cat('Vaso Sanitário', 'ponto danificado'), 'Reparos');
+  assert.equal(cat('Chuveiro', 'trocado chuveiro'), 'Reparos');
+  assert.equal(cat('Ar Condicionado', 'controle sem funcionar'), 'Reparos');
+  assert.equal(cat('Armário Embutido', 'apresenta manchas de sujeira'), 'Faxina e limpeza');
+  assert.equal(cat('Churrasqueira', 'suja'), 'Faxina e limpeza');
+  // grupo gravado errado é corrigido pelo texto
+  assert.equal(cat('Sala: Espelhos de luz com manchas de tinta', '', 'Pintura geral'), 'Faxina e limpeza');
+  assert.equal(cat('Cozinha: Armário Embutido', 'apresenta manchas de sujeira', 'Reparos'), 'Faxina e limpeza');
+});
+
+test('organizar corrige o grupo de itens já organizados errado', () => {
+  const r = organizarSeguroFianca([
+    { id: 1, ambiente: 'Pintura geral', servico: 'Sala: Espelhos de luz com manchas de tinta', descricao: '', mo: 19, ma: 2 },
+    { id: 2, ambiente: 'Pintura geral', servico: 'Sala: Teto', descricao: 'pintura com manchas', mo: 1, ma: 1 },
+  ]);
+  assert.deepEqual(r.map((i) => [i.id, i.ambiente]), [[2, 'Pintura geral'], [1, 'Faxina e limpeza']]);
+});
+
+test('"reparos necessários e pintura nova" são dois serviços em grupos diferentes', () => {
+  const r = organizarSeguroFianca([{ id: 'x', ambiente: 'Banheiro', servico: 'Fazer os reparos necessários e pintura nova', descricao: '', mo: 43, ma: 18 }], { dividir: true });
+  assert.equal(r.length, 2);
+  const pint = r.find((i) => i.ambiente === 'Pintura geral');
+  const rep = r.find((i) => i.ambiente === 'Reparos');
+  assert.ok(pint && rep);
+  assert.equal(pint.mo + pint.ma, 61);
+  assert.equal(rep.mo + rep.ma, 0);
+  assert.match(rep.servico, /reparos/i);
+  assert.match(pint.servico, /pintura nova/i);
+});
+
+test('etiqueta do leitor da vistoria vale; casos reais dos orçamentos antigos', () => {
+  const g = (servico, ambiente = 'Reparos') => categoriaSeguroFianca({ ambiente, servico, descricao: '' });
+  assert.equal(g('Limpeza: trilhos das janelas e portas balcão com sujidades de uso'), 'Faxina e limpeza');
+  assert.equal(g('Banheiro Suíte 01: Limpeza: fita adesiva instalada no puxador do box'), 'Faxina e limpeza');
+  assert.equal(g('Quintal piscina: Limpeza: ralo entupido'), 'Faxina e limpeza');
+  assert.equal(g('Pintura/retoque: tetos não foram pintados'), 'Pintura geral');
+  assert.equal(g('Pintura/retoque: pintura nova com falhas na cobertura'), 'Pintura geral');
+  assert.equal(g('Closet Suíte 01: Reparo: cabideiro do móvel com pontos descascados'), 'Reparos');
+  assert.equal(g('Cozinha: Reparo: base de ferro da bancada da ilha com ferrugem e descascando'), 'Reparos');
+  assert.equal(g('Escritório: Reparo: perfil da janela com respingos de tinta'), 'Faxina e limpeza');
+  assert.equal(g('Dormitório 3 (superior): Porta balcão amassada sem lingueta e com respingos de tinta'), 'Reparos');
+  assert.equal(g('Banheiro Social: Gabinete com estufamentos e manchas de sujeira'), 'Reparos');
+  assert.equal(g('Escada / Hall: Rodapés com manchas de tinta'), 'Faxina e limpeza');
+  assert.equal(g('Dormitório: Tampar furos'), 'Pintura geral');
+  assert.equal(g('Sala: Fazer limpeza e pintura látex nova na cor branca'), 'Pintura geral');
+  assert.equal(g('Limpeza: rodapés com manchas/sujidades'), 'Faxina e limpeza');
+  assert.equal(g('Varanda: Piso com manchas e falta de limpeza'), 'Faxina e limpeza');
+  assert.equal(g('Imóvel: Fez a substituição das tomadas. fazer faxina geral no imóvel'), 'Faxina e limpeza');
+  assert.equal(g('Sala: Porta com falta de acabamento'), 'Reparos');
+});

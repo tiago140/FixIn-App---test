@@ -48,7 +48,7 @@ test('mancha pontual, respingo e cerâmica NÃO usam a tabela de repintura', () 
 });
 
 test('nome do local ("Sala Piso Superior") não atrapalha a regra', () => {
-  assert.equal(chaveTabelaSeguroFianca(it('Sala Piso Superior: Paredes', 'pintura com falhas de cobertura, fazer repintura')), 'parede');
-  assert.equal(chaveTabelaSeguroFianca(it('Sala Piso Superior: Piso', 'com respingos e manchas de tinta')), null);
-  assert.equal(chaveTabelaSeguroFianca(it('Banheiro Social Piso Superior: Teto', 'apresenta descascados e falhas de cobertura')), 'teto');
+  assert.equal(chaveTabelaSeguroFianca(it('Sala Piso Superior: Paredes', 'pintura com falhas de cobertura, fazer repintura', 'Pintura geral')), 'parede');
+  assert.equal(chaveTabelaSeguroFianca(it('Sala Piso Superior: Piso', 'com respingos e manchas de tinta', 'Pintura geral')), null);
+  assert.equal(chaveTabelaSeguroFianca(it('Banheiro Social Piso Superior: Teto', 'apresenta descascados e falhas de cobertura', 'Pintura geral')), 'teto');
 });
