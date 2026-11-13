@@ -12,6 +12,7 @@ const CLASSE_STATUS = {
   finalizado: 'bg-sucesso/15 text-sucesso',
 };
 
+const selFiltro = 'border border-linha rounded px-2 py-1.5 bg-white text-[12.5px] font-normal normal-case tracking-normal text-marinho max-w-[190px]';
 const numeroCsv = (n) => Number(n || 0).toFixed(2).replace('.', ',');
 
 // Comissão e valor da imobiliária são internos da FixIn — só o dono vê.
@@ -23,15 +24,36 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
   const [erro, setErro] = useState('');
   const [busca, setBusca] = useState('');
 
+  const VAZIO = { status: '', imob: '', orc: '', prestador: '', deposito: '', depDe: '', depAte: '', inicio: '', iniDe: '', iniAte: '' };
+  const [f, setF] = useState(VAZIO);
+  const setCampo = (k) => (e) => setF((a) => ({ ...a, [k]: e.target.value }));
+  const filtrosAtivos = Object.values(f).some(Boolean);
+
+  const imobs = useMemo(() => [...new Set(linhas.map((l) => l.cliente).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [linhas]);
+  const prestadores = useMemo(() => [...new Set(linhas.map((l) => l.prestador).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [linhas]);
+
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    if (!q) return linhas;
-    return linhas.filter((l) =>
-      [l.cliente, l.numero_contrato, l.endereco, l.prestador, STATUS_LABEL[l.status]]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q))
-    );
-  }, [linhas, busca]);
+    const dia = (v) => (v ? String(v).slice(0, 10) : '');
+    return linhas.filter((l) => {
+      if (q && ![l.cliente, l.numero_contrato, l.endereco, l.prestador, STATUS_LABEL[l.status]].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))) return false;
+      if (f.status && l.status !== f.status) return false;
+      if (f.imob && l.cliente !== f.imob) return false;
+      if (f.orc && (f.orc === 'sim') !== !!l.temItens) return false;
+      if (f.prestador === '__sem' ? !!l.prestador : f.prestador && l.prestador !== f.prestador) return false;
+      const dep = dia(l.data_deposito);
+      if (f.deposito === 'com' && !dep) return false;
+      if (f.deposito === 'sem' && dep) return false;
+      if (f.depDe && (!dep || dep < f.depDe)) return false;
+      if (f.depAte && (!dep || dep > f.depAte)) return false;
+      const ini = dia(l.data_inicio);
+      if (f.inicio === 'com' && !ini) return false;
+      if (f.inicio === 'sem' && ini) return false;
+      if (f.iniDe && (!ini || ini < f.iniDe)) return false;
+      if (f.iniAte && (!ini || ini > f.iniAte)) return false;
+      return true;
+    });
+  }, [linhas, busca, f]);
 
   async function salvar(id, campo, valor) {
     setErro('');
@@ -106,6 +128,31 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
         </span>
         {salvando && <span className="text-xs text-marinho/50">salvando…</span>}
         {erro && <span className="text-xs text-erro">{erro}</span>}
+      </div>
+
+      <div className="flex items-end gap-2 mb-3 flex-wrap">
+        {[
+          ['Situação', <select key="s" value={f.status} onChange={setCampo('status')} className={selFiltro}><option value="">Todas</option>{KANBAN_COLS.map((st) => <option key={st} value={st}>{STATUS_LABEL[st]}</option>)}</select>],
+          ['Imobiliária', <select key="i" value={f.imob} onChange={setCampo('imob')} className={selFiltro}><option value="">Todas</option>{imobs.map((n) => <option key={n} value={n}>{n}</option>)}</select>],
+          ['Orçamento', <select key="o" value={f.orc} onChange={setCampo('orc')} className={selFiltro}><option value="">Todos</option><option value="sim">SIM (com itens)</option><option value="nao">NÃO (sem itens)</option></select>],
+          ['Prestador', <select key="p" value={f.prestador} onChange={setCampo('prestador')} className={selFiltro}><option value="">Todos</option><option value="__sem">Sem prestador</option>{prestadores.map((n) => <option key={n} value={n}>{n}</option>)}</select>],
+          ['Depósito', <select key="d" value={f.deposito} onChange={setCampo('deposito')} className={selFiltro}><option value="">Todos</option><option value="com">Com data</option><option value="sem">Sem data</option></select>],
+          ['Depósito de', <input key="dd" type="date" value={f.depDe} onChange={setCampo('depDe')} className={selFiltro} />],
+          ['até', <input key="da" type="date" value={f.depAte} onChange={setCampo('depAte')} className={selFiltro} />],
+          ['Início', <select key="n" value={f.inicio} onChange={setCampo('inicio')} className={selFiltro}><option value="">Todos</option><option value="com">Com data</option><option value="sem">Sem data</option></select>],
+          ['Início de', <input key="nd" type="date" value={f.iniDe} onChange={setCampo('iniDe')} className={selFiltro} />],
+          ['até', <input key="na" type="date" value={f.iniAte} onChange={setCampo('iniAte')} className={selFiltro} />],
+        ].map(([rot, el], i) => (
+          <label key={i} className="text-[10.5px] uppercase tracking-wide font-semibold text-marinho/60 flex flex-col gap-0.5">
+            {rot}
+            {el}
+          </label>
+        ))}
+        {filtrosAtivos && (
+          <button onClick={() => setF(VAZIO)} className="text-xs font-medium text-marinho underline pb-2">
+            Limpar filtros
+          </button>
+        )}
       </div>
 
       <div className="overflow-auto max-h-[calc(100vh-24rem)] min-h-[16rem] sm:max-h-[calc(100vh-17rem)] sm:min-h-[22rem] border border-linha bg-white rounded-md shadow-sm">
@@ -201,7 +248,7 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
         </table>
         {filtradas.length === 0 && (
           <div className="p-8 text-center text-marinho/50">
-            {linhas.length === 0 ? 'Nenhum orçamento ainda.' : 'Nenhum resultado para essa busca.'}
+            {linhas.length === 0 ? 'Nenhum orçamento ainda.' : 'Nenhum resultado para esses filtros.'}
           </div>
         )}
       </div>
