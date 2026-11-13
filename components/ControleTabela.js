@@ -195,11 +195,11 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
             {filtradas.map((l) => (
               <tr
                 key={l.id}
-                onClick={() => router.push(`${basePath}/${l.id}`)}
+                onClick={() => router.push(`${basePath}/${l.id}?de=controle`)}
                 className="group odd:bg-white even:bg-papel hover:bg-info/10 cursor-pointer transition-colors"
               >
                 <td className="px-3 py-2 border-b border-r border-linha sticky left-0 z-10 group-odd:bg-white group-even:bg-papel group-hover:bg-[#ECF1F5]">
-                  <Link href={`${basePath}/${l.id}`} onClick={pararPropagacao} className="font-medium text-marinho hover:underline">
+                  <Link href={`${basePath}/${l.id}?de=controle`} onClick={pararPropagacao} className="font-medium text-marinho hover:underline">
                     {l.cliente}
                   </Link>
                 </td>

@@ -8,6 +8,9 @@ export default function BotaoVoltar({ fallback, className = 'text-sm text-marinh
   const router = useRouter();
   function voltar(e) {
     e.preventDefault();
+    // Veio do Controle? (o link da tabela leva ?de=controle) — volta sempre para lá.
+    const de = new URLSearchParams(window.location.search).get('de');
+    if (de === 'controle') { router.push(fallback.split('/orcamentos')[0].replace(/\/dashboard$/, '') + '/controle'); return; }
     let veioDoApp = false;
     try { veioDoApp = !!document.referrer && new URL(document.referrer).origin === window.location.origin; } catch (_) {}
     if (veioDoApp && window.history.length > 1) router.back();
