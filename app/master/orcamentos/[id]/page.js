@@ -1,3 +1,4 @@
+import BotaoVoltar from '@/components/BotaoVoltar';
 import { urlArquivo } from '@/lib/arquivos';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -63,7 +64,7 @@ export default async function OrcamentoDetalhePage({ params }) {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <Link href="/master/orcamentos" className="text-sm text-marinho/50">← voltar</Link>
+      <BotaoVoltar fallback="/master/orcamentos" />
 
       <div className="mt-3">
         <PageHeader

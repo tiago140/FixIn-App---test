@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fmtBRL, fmtDate, STATUS_LABEL, KANBAN_COLS } from '@/lib/format';
@@ -23,10 +23,24 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
   const [salvando, setSalvando] = useState(null);
   const [erro, setErro] = useState('');
   const [busca, setBusca] = useState('');
+  const CHAVE = `controle-filtros-${role}`;
 
   const VAZIO = { status: '', imob: '', orc: '', prestador: '', deposito: '', depDe: '', depAte: '', inicio: '', iniDe: '', iniAte: '' };
   const [f, setF] = useState(VAZIO);
   const setCampo = (k) => (e) => setF((a) => ({ ...a, [k]: e.target.value }));
+  const [lido, setLido] = useState(false);
+  // Guarda busca e filtros: ao abrir um orçamento e voltar, a lista continua filtrada.
+  useEffect(() => {
+    try {
+      const salvo = JSON.parse(sessionStorage.getItem(CHAVE) || 'null');
+      if (salvo) { setF({ ...VAZIO, ...salvo.f }); setBusca(salvo.busca || ''); }
+    } catch (_) {}
+    setLido(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!lido) return;
+    try { sessionStorage.setItem(CHAVE, JSON.stringify({ f, busca })); } catch (_) {}
+  }, [f, busca, lido]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtrosAtivos = Object.values(f).some(Boolean);
 
   const imobs = useMemo(() => [...new Set(linhas.map((l) => l.cliente).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [linhas]);

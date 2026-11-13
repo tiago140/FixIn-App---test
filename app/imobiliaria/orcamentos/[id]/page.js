@@ -1,3 +1,4 @@
+import BotaoVoltar from '@/components/BotaoVoltar';
 import { urlArquivo } from '@/lib/arquivos';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -70,7 +71,7 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
 
   return (
     <AppShell profile={profile} tabs={imobiliariaTabs(profile)} homeHref="/imobiliaria/dashboard">
-      <Link href="/imobiliaria/dashboard" className="text-sm text-marinho/50">← voltar</Link>
+      <BotaoVoltar fallback="/imobiliaria/dashboard" />
 
       <div className="mt-3">
         <PageHeader
