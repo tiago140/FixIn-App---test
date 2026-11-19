@@ -325,9 +325,9 @@ export default function GestaoOrcamentoForm({ orcamento, itensIniciais, prestado
             <BotoesPdfOrcamento pdfUrl={pdfUrlAtual} nomeArquivo={`${orcamento.numero}.pdf`} />
           </div>
         )}
-        <details className="sm:col-span-2 rounded-lg border border-marinho/15 bg-marinho/[0.03] p-4">
+        <details open={seguroFianca || undefined} className="sm:col-span-2 rounded-lg border border-marinho/15 bg-marinho/[0.03] p-4">
           <summary className="cursor-pointer text-sm font-semibold select-none">Orçamento 2 <span className="font-normal text-marinho/50">(segunda empresa)</span></summary>
-          <p className="text-xs text-marinho/60 mt-1">Segunda versão do PDF, emitida pela sua outra empresa (Davi Moreira Construtor), com textos reescritos e valores 30% acima do valor final (MO e material, arredondados para cima). Só é gerada quando você clica, não muda a etapa e não vai para a imobiliária.</p>
+          <p className="text-xs text-marinho/60 mt-1">Segunda versão do PDF, emitida pela sua outra empresa (Davi Moreira Construtor), com textos reescritos e valores 30% acima do valor final (MO e material, arredondados para cima). Só é gerada quando você clica e não muda a etapa. {seguroFianca ? 'Como é seguro fiança, depois de gerado o segundo orçamento também aparece para a imobiliária baixar e imprimir.' : 'Não vai para a imobiliária.'}</p>
           <button type="button" onClick={gerarOrcamento2} disabled={gerando2 || salvando} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-verde bg-white px-4 py-2.5 text-sm font-semibold text-verde hover:bg-verde/5 disabled:opacity-50">
             {gerando2 ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />} {gerando2 ? 'Gerando…' : pdf2Url ? 'Gerar o Orçamento 2 de novo' : 'Gerar segundo orçamento'}
           </button>

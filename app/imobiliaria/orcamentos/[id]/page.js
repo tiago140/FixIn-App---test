@@ -62,6 +62,11 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
   if (!pdfUrlImpressao) {
     try { const { data: p } = await createAdminClient().from('orcamentos').select('pdf_url').eq('id', params.id).single(); pdfUrlImpressao = p?.pdf_url || null; } catch (e) {}
   }
+  // Seguro fiança: o segundo orçamento (PDF) também fica disponível para baixar/imprimir, quando já foi gerado.
+  let pdf2Url = null;
+  if (orcamento.seguro_fianca) {
+    try { const { data: p2 } = await createAdminClient().from('orcamentos').select('pdf2_url').eq('id', params.id).single(); pdf2Url = p2?.pdf2_url || null; } catch (e) {}
+  }
   const obras = await carregarObras(params.id);
   const { data: acompRow } = await supabase.from('acompanhamentos').select('id').eq('orcamento_id', params.id).maybeSingle();
   const acompId = acompRow?.id || null;
@@ -103,6 +108,12 @@ export default async function ImobiliariaOrcamentoDetalhe({ params }) {
           <div className="card p-5">
             <div className="text-xs text-marinho/50">Orçamento em PDF</div>
             <BotoesPdfOrcamento pdfUrl={pdfUrlImpressao} nomeArquivo={`${orcamento.numero}.pdf`} orcamentoId={orcamento.id} />
+          </div>
+        )}
+        {pdf2Url && ['enviado', 'aprovado', 'em_execucao', 'finalizado', 'rejeitado'].includes(orcamento.status) && (
+          <div className="card p-5">
+            <div className="text-xs text-marinho/50">Segundo orçamento em PDF (seguro fiança)</div>
+            <BotoesPdfOrcamento pdfUrl={pdf2Url} nomeArquivo={`${orcamento.numero} - Orcamento 2.pdf`} />
           </div>
         )}
         <div className="card p-5">
