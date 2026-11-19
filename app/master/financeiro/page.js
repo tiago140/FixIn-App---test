@@ -3,6 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
+import Link from 'next/link';
 import ContasSecao from '@/components/lancamentos/ContasSecao';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,7 @@ export default async function FinanceiroPage() {
         titulo="Financeiro"
         subtitulo="Contas a receber e a pagar: cobranças, comprovantes e pagamentos aos prestadores"
       />
+      <div className="mb-3 text-sm"><Link href="/master/financeiro/dre" className="inline-block rounded-lg border border-marinho text-marinho px-3 py-1.5 font-medium">Ver DRE gerencial</Link></div>
       <ContasSecao supabase={supabase} />
     </AppShell>
   );
