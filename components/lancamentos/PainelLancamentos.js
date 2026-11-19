@@ -158,7 +158,8 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
         <div className="card p-3 mb-4 flex flex-wrap items-center gap-3 text-xs">
           <span className="font-semibold">Asaas ({ambiente === 'producao' ? 'produção' : 'teste'})</span>
           <span className="text-marinho/60">Para o "No caixa" automático, o Asaas precisa avisar o sistema quando alguém pagar.</span>
-          <Btn onClick={ligarAvisos} off={ocupado === 'aviso'}>Ligar avisos do Asaas</Btn>
+          <Btn onClick={ligarAvisos} off={ocupado === 'aviso'}>{ocupado === 'aviso' ? 'Ligando…' : 'Ligar avisos do Asaas'}</Btn>
+          {msg && <span className={`w-full font-semibold text-sm ${/ligados/i.test(msg) ? 'text-emerald-700' : 'text-red-700'}`}>{msg}</span>}
         </div>
       )}
       <PainelHoje
