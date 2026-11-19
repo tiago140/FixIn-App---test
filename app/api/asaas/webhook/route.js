@@ -14,7 +14,7 @@ export async function POST() {
     const lista = await asaas('/webhooks');
     const existente = (lista?.data || []).find((w) => w.url === URL_AVISO);
     const corpo = {
-      name: 'FixIn - pagamentos', url: URL_AVISO, enabled: true, interrupted: false, apiVersion: 3,
+      name: 'FixIn - pagamentos', url: URL_AVISO, email: process.env.ASAAS_WEBHOOK_EMAIL || 'tiago@renovavistoria.com.br', enabled: true, interrupted: false, apiVersion: 3,
       authToken: process.env.ASAAS_WEBHOOK_TOKEN, sendType: 'SEQUENTIALLY',
       events: ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED', 'PAYMENT_OVERDUE', 'PAYMENT_DELETED', 'PAYMENT_REFUNDED'],
     };
