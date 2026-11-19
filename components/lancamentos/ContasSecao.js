@@ -26,6 +26,12 @@ export default async function ContasSecao({ supabase }) {
     cobrancas = data || [];
   } catch (e) {}
 
+  let negociados = [];
+  if (ids.length) {
+    const { data } = await supabase.from('orcamentos').select('id').in('id', ids).eq('parcelado_negociado', true);
+    negociados = (data || []).map((o) => o.id);
+  }
+
   const asaasPronto = !!process.env.ASAAS_API_KEY;
 
   return (
@@ -38,6 +44,7 @@ export default async function ContasSecao({ supabase }) {
         prestadores={prestadores || []}
         comprovantes={comprovantes}
         cobrancas={cobrancas}
+        negociados={negociados}
         asaasPronto={asaasPronto}
         tikpagPronto={tikpagConfigurado()}
         ambiente={process.env.ASAAS_AMBIENTE === 'producao' ? 'producao' : 'sandbox'}

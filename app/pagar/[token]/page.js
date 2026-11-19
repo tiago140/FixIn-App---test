@@ -21,7 +21,8 @@ export default async function PaginaPagar({ params }) {
         {d.estado === 'pago' && <p className="text-emerald-700 font-medium">Este orçamento já está pago. Obrigado!</p>}
         {d.estado === 'indisponivel' && <p className="text-marinho/80">Não foi possível abrir o pagamento agora. Fale com a FixIn para receber um novo link.</p>}
         {d.estado === 'ok' && (<>
-          <div className="text-3xl font-bold text-marinho">{fmtBRL(d.valor)}<span className="block text-xs font-normal text-marinho/60">Vence em {fmtDate(d.vencimento)}</span></div>
+          <div className="text-3xl font-bold text-marinho">{fmtBRL(d.valor)}<span className="block text-xs font-normal text-marinho/60">{d.parcela === 'entrada' ? 'Entrada de 50% · ' : d.parcela === 'saldo' ? 'Saldo · ' : ''}Vence em {fmtDate(d.vencimento)}</span></div>
+          {d.faltaDepois > 0 && <p className="text-sm text-marinho/70 bg-papel rounded-lg p-3">Pagamento combinado em duas partes. Os outros {fmtBRL(d.faltaDepois)} (50%) ficam para {fmtDate(d.saldoVence)}, no mesmo link.</p>}
           {qr && (<section className="border rounded-xl p-4 text-center space-y-2">
             <h2 className="font-semibold text-marinho">Pix</h2>
             <img src={qr} alt="QR code Pix" width={220} height={220} className="mx-auto" />

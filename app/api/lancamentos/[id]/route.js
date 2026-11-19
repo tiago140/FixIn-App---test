@@ -35,6 +35,23 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true });
   }
 
+  // Pagamento negociado em 50% + 50%: só quando o dono combina com o cliente. Padrão é à vista (100%).
+  if (b.acao === 'negociar') {
+    if (l.tipo !== 'receber' || !l.orcamento_id) return NextResponse.json({ error: 'Só vale para um valor a receber de orçamento.' }, { status: 400 });
+    if (!['previsto', 'aprovado'].includes(l.status)) return NextResponse.json({ error: 'Este valor não está em aberto.' }, { status: 400 });
+    const ativo = b.ativo === true;
+    if (!ativo && Number(l.valor_pago || 0) > 0) return NextResponse.json({ error: 'Já houve pagamento: não dá para voltar para à vista.' }, { status: 400 });
+    if (ativo && Number(l.valor_pago || 0) > 0) return NextResponse.json({ error: 'A entrada já foi recebida.' }, { status: 400 });
+    if (ativo && !dataValida(b.saldo_vencimento)) return NextResponse.json({ error: 'Informe até quando o saldo (50%) vence.' }, { status: 400 });
+    const { data: abertas } = await supabase.from('cobrancas').select('id').eq('lancamento_id', l.id).eq('status', 'pendente');
+    if (abertas && abertas.length) return NextResponse.json({ error: 'Cancele a cobrança em aberto antes de mudar a forma de pagamento.' }, { status: 400 });
+    const { error: e1 } = await supabase.from('orcamentos').update({ parcelado_negociado: ativo }).eq('id', l.orcamento_id);
+    if (e1) return NextResponse.json({ error: 'Não foi possível salvar.' }, { status: 400 });
+    if (ativo) await supabase.from('lancamentos').update({ vencimento: b.saldo_vencimento, atualizado_em: new Date().toISOString() }).eq('id', l.id);
+    try { await supabase.from('auditoria').insert({ acao: ativo ? 'Pagamento negociado 50% + 50%' : 'Pagamento voltou para à vista', detalhe: `${l.descricao}${ativo ? ` · saldo vence ${b.saldo_vencimento}` : ''}`, alvo_tipo: 'lancamento', alvo_id: l.id, autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {}
+    return NextResponse.json({ ok: true });
+  }
+
   const agora = new Date().toISOString();
   let campos = { atualizado_em: agora };
   let rotulo = '';

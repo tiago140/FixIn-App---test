@@ -22,6 +22,10 @@ export async function POST(req, { params }) {
   if (!l.cliente_id) return NextResponse.json({ error: 'Este lançamento não tem imobiliária.' }, { status: 400 });
 
   const admin = createAdminClient();
+  if (parcela === 'entrada') {
+    const { data: o } = l.orcamento_id ? await admin.from('orcamentos').select('parcelado_negociado').eq('id', l.orcamento_id).maybeSingle() : { data: null };
+    if (!o?.parcelado_negociado) return NextResponse.json({ error: 'A entrada de 50% só vale quando o pagamento foi negociado em 50% + 50%. Clique em "Negociar 50% + 50%" antes.' }, { status: 400 });
+  }
   // já existe cobrança aberta? devolve a mesma (evita cobrar duas vezes)
   const { data: abertas } = await admin.from('cobrancas').select('*').eq('lancamento_id', l.id).in('status', ['pendente', 'aprovado']);
   if (abertas && abertas.length) {

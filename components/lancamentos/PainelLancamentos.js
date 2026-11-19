@@ -11,7 +11,7 @@ const FILTROS = [
 ];
 const campo = 'border border-linha rounded px-3 py-2 bg-papel text-sm w-full';
 
-export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], cobrancas = [], asaasPronto = false, tikpagPronto = false, ambiente = 'sandbox', hoje }) {
+export default function PainelLancamentos({ lancamentos, clientes, prestadores, comprovantes = [], cobrancas = [], negociados = [], asaasPronto = false, tikpagPronto = false, ambiente = 'sandbox', hoje }) {
   const router = useRouter();
   const [aba, setAba] = useState('receber');
   const [filtro, setFiltro] = useState('aberto');
@@ -22,6 +22,7 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
   const [atribuindo, setAtribuindo] = useState(null); // { id, prestador_id, valor }
   const [pagando, setPagando] = useState(null);
   const [copiado, setCopiado] = useState('');
+  const [negociando, setNegociando] = useState(null); // { id, data }
   const [gerando, setGerando] = useState(null); // { id, parcela, avulso, nome, documento, email } // { id, valor, data }
 
   const pagarDoOrcamento = useMemo(() => {
@@ -94,6 +95,15 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
       const r = await fetch('/api/asaas/webhook', { method: 'POST' });
       const j = await r.json().catch(() => ({}));
       setMsg(r.ok ? 'Avisos do Asaas ligados. Pode gerar uma cobrança de teste.' : (j.error || 'Não foi possível ligar.'));
+    } catch (e) { setMsg('Falha de conexão.'); }
+    setOcupado('');
+  }
+  async function negociar(id, ativo, data) {
+    setOcupado(id); setMsg('');
+    try {
+      const r = await fetch(`/api/lancamentos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'negociar', ativo, saldo_vencimento: data }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) setMsg(j.error || 'Não foi possível salvar.'); else { setNegociando(null); router.refresh(); }
     } catch (e) { setMsg('Falha de conexão.'); }
     setOcupado('');
   }
@@ -224,7 +234,11 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                 {l.tipo === 'receber' && Number(l.valor) > 0 && (
                   <div className="mt-3">
                     <div className="h-2 rounded bg-marinho/10 overflow-hidden"><div className="h-2 bg-verde" style={{ width: `${Math.min(100, (Number(l.valor_pago || 0) / Number(l.valor)) * 100)}%` }} /></div>
-                    <div className="text-[11px] text-marinho/60 mt-1">Entrada 50% {fmtBRL(Number(l.valor) / 2)} · Saldo 50% {fmtBRL(Number(l.valor) / 2)} · recebido {fmtBRL(l.valor_pago || 0)}</div>
+                    <div className="text-[11px] text-marinho/60 mt-1">
+                      {negociados.includes(l.orcamento_id)
+                        ? <>Negociado em 50% + 50% · entrada {fmtBRL(Number(l.valor) / 2)} · saldo {fmtBRL(Number(l.valor) / 2)} vence {fmtDate(l.vencimento)} · recebido {fmtBRL(l.valor_pago || 0)}</>
+                        : <>À vista (100%) · recebido {fmtBRL(l.valor_pago || 0)}</>}
+                    </div>
                   </div>
                 )}
                 {l.tipo === 'receber' && (compsDoOrc[l.orcamento_id] || []).length > 0 && (
@@ -262,11 +276,24 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                     {emAberto(l) && !(cobrDoLanc[l.id] || []).some((c) => c.status === 'pendente') && (
                       <div className="flex flex-wrap gap-2 items-center">
                         <span className="text-[11px] text-marinho/60">Gerar cobrança{ambiente === 'sandbox' ? ' (teste)' : ''}:</span>
-                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'entrada', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Entrada 50%</Btn>}
-                        {Number(l.valor_pago || 0) > 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'saldo', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Saldo</Btn>}
-                        {Number(l.valor_pago || 0) === 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'total', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>100%</Btn>}
+                        {negociados.includes(l.orcamento_id) && Number(l.valor_pago || 0) === 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'entrada', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Cobrar entrada 50%</Btn>}
+                        {Number(l.valor_pago || 0) > 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'saldo', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Cobrar saldo</Btn>}
+                        {!negociados.includes(l.orcamento_id) && Number(l.valor_pago || 0) === 0 && <Btn onClick={() => setGerando({ id: l.id, parcela: 'total', avulso: false, nome: '', documento: '', email: '' })} off={ocupado === l.id}>Cobrar 100%</Btn>}
+                        {Number(l.valor_pago || 0) === 0 && !negociados.includes(l.orcamento_id) && <Btn suave onClick={() => setNegociando({ id: l.id, data: somarDias(hoje, 30) })} off={ocupado === l.id}>Negociar 50% + 50%</Btn>}
+                        {Number(l.valor_pago || 0) === 0 && negociados.includes(l.orcamento_id) && <Btn suave onClick={() => negociar(l.id, false)} off={ocupado === l.id}>Voltar para à vista</Btn>}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {negociando?.id === l.id && (
+                  <div className="mt-2 bg-papel rounded p-3 space-y-2 text-xs">
+                    <div className="font-semibold">Negociar 50% + 50%</div>
+                    <p className="text-marinho/70">O link do orçamento passa a cobrar 50% agora ({fmtBRL(Number(l.valor) / 2)}). Os outros 50% ficam em aberto e aparecem como atrasados se passarem da data abaixo.</p>
+                    <label className="block">Saldo (50%) vence em
+                      <input type="date" value={negociando.data} onChange={(e) => setNegociando({ ...negociando, data: e.target.value })} className="ml-2 border border-linha rounded px-2 py-1 bg-white" />
+                    </label>
+                    <div className="flex gap-2"><Btn onClick={() => negociar(l.id, true, negociando.data)} off={ocupado === l.id}>Confirmar negociação</Btn><Btn suave onClick={() => setNegociando(null)}>Cancelar</Btn></div>
                   </div>
                 )}
 

@@ -22,7 +22,7 @@ export default async function FinanceiroPage() {
         titulo="Financeiro"
         subtitulo="Contas a receber e a pagar: cobranças, comprovantes e pagamentos aos prestadores"
       />
-      <div className="mb-3 text-sm"><Link href="/master/financeiro/dre" className="inline-block rounded-lg border border-marinho text-marinho px-3 py-1.5 font-medium">Ver DRE gerencial</Link></div>
+      <div className="mb-3 text-sm"><Link href="/master/financeiro/visao" className="inline-block rounded-lg bg-marinho text-white px-3 py-1.5 font-medium mr-2">Visão por orçamento</Link><Link href="/master/financeiro/dre" className="inline-block rounded-lg border border-marinho text-marinho px-3 py-1.5 font-medium">DRE gerencial</Link></div>
       <ContasSecao supabase={supabase} />
     </AppShell>
   );
