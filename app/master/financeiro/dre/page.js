@@ -7,6 +7,10 @@ import { MASTER_TABS } from '@/lib/navTabs';
 import { montarDre, totalAno, MESES } from '@/lib/dre';
 import { hojeSP } from '@/lib/lancamentos';
 import { fmtBRL } from '@/lib/format';
+import { Rosca, BarrasMensais } from '@/components/Graficos';
+import ExportarCsv from '@/components/ExportarCsv';
+import { CircleDollarSign, TrendingUp, PiggyBank, CalendarCheck } from 'lucide-react';
+import KpiCard from '@/components/KpiCard';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'DRE gerencial' };
@@ -28,6 +32,19 @@ export default async function DrePage({ searchParams }) {
   const link = (a, r) => `/master/financeiro/dre?ano=${a}&regime=${r}`;
   const pct = (v) => (tRec > 0 ? `${((v / tRec) * 100).toFixed(1).replace('.', ',')}%` : '—');
   const cel = (v, neg) => (v === 0 ? <span className="text-marinho/30">–</span> : <span className={v < 0 || neg ? 'text-red-700' : ''}>{neg ? '(' : ''}{fmtBRL(Math.abs(v))}{neg ? ')' : ''}</span>);
+
+  const tRes = totalAno(d.resultado);
+  const tMargem = totalAno(d.margem);
+  const melhor = d.resultado.reduce((m, v, i) => (v > m.v ? { v, i } : m), { v: -Infinity, i: 0 });
+  const pctMargem = tRec > 0 ? `${((tMargem / tRec) * 100).toFixed(1).replace('.', ',')}% da receita` : undefined;
+  const dadosMes = MESES.map((mes, i) => ({ mes, Receita: d.receitaBruta[i], Saídas: d.L.impostos[i] + d.custos[i] + d.despesas[i], Resultado: d.resultado[i] }));
+  const composicao = [
+    { nome: 'Prestadores', valor: totalAno(d.L.prestadores), cor: '#B8862E' },
+    { nome: 'Material', valor: totalAno(d.L.material), cor: '#D9A441' },
+    { nome: 'Impostos e taxas', valor: totalAno(d.L.impostos), cor: '#6C9BB8' },
+    { nome: 'Software, pessoal e outras', valor: totalAno(d.despesas), cor: '#5A6459' },
+    { nome: 'Sobrou (resultado)', valor: Math.max(0, tRes), cor: '#3F7A5E' },
+  ];
 
   // tipo: 'linha' normal, 'sub' subtotal (negrito), 'res' resultado final
   const linhas = [
@@ -59,11 +76,32 @@ export default async function DrePage({ searchParams }) {
         <span className="font-semibold">{ano}</span>
         {ano < anoAtual + 1 && <Link href={link(ano + 1, regime)} className="rounded-lg px-3 py-1.5 border border-linha">{ano + 1} ›</Link>}
       </div>
+      <div className="mb-3"><ExportarCsv nome={`dre-${ano}-${regime}`} cabecalho={['Linha', ...MESES, 'Ano']} linhas={linhas.map((l) => [l.n.replace(/^\([+–=]\)\s*/, ''), ...l.a.map((v) => (l.neg ? -v : v)), l.neg ? -totalAno(l.a) : totalAno(l.a)])} /></div>
       <p className="text-xs text-marinho/60 mb-3">
         {regime === 'caixa'
           ? 'Caixa: conta só o dinheiro que realmente entrou e saiu, no mês em que foi pago.'
           : 'Previsto: conta todo valor lançado (pago ou não), no mês do vencimento. Mostra o que ainda vai entrar e sair.'}
       </p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        <KpiCard icone={CircleDollarSign} cor="#182F50" num={fmtBRL(tRec)} lbl="Receita bruta no ano" />
+        <KpiCard icone={TrendingUp} cor="#3B6B8C" num={fmtBRL(tMargem)} lbl="Margem de contribuição" sub={pctMargem} />
+        <KpiCard icone={PiggyBank} cor={tRes >= 0 ? '#3F7A5E' : '#C0392B'} num={fmtBRL(tRes)} lbl="Resultado do ano" sub={tRec > 0 ? `${((tRes / tRec) * 100).toFixed(1).replace('.', ',')}% da receita` : undefined} />
+        <KpiCard icone={CalendarCheck} cor="#B8862E" num={melhor.v > 0 ? MESES[melhor.i] : '—'} lbl="Melhor mês" sub={melhor.v > 0 ? fmtBRL(melhor.v) : undefined} />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4 mb-5">
+        <div className="card rounded-xl p-5">
+          <h3 className="font-semibold text-marinho mb-0.5">Receita x saídas, mês a mês</h3>
+          <p className="text-xs text-marinho/50 mb-3">{regime === 'caixa' ? 'Dinheiro que entrou e saiu' : 'Tudo que está lançado'} em {ano}</p>
+          <BarrasMensais altura={230} dados={dadosMes} series={[{ chave: 'Receita', nome: 'Receita', cor: '#3F7A5E' }, { chave: 'Saídas', nome: 'Saídas', cor: '#B8862E' }]} />
+        </div>
+        <div className="card rounded-xl p-5">
+          <h3 className="font-semibold text-marinho mb-0.5">Para onde vai cada R$ 1 de receita</h3>
+          <p className="text-xs text-marinho/50 mb-3">Como a receita do ano se divide entre custos, impostos e o que sobra</p>
+          <Rosca altura={190} centroTitulo="receita" dados={composicao} />
+        </div>
+      </div>
+
       <div className="card overflow-x-auto">
         <table className="w-full text-xs">
           <thead>

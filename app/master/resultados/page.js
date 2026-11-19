@@ -6,6 +6,9 @@ import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import ToggleAtraso from '@/components/ToggleAtraso';
 import { GraficoBarrasClientes, GraficoBarrasAprovadoReprovado } from '@/components/DashboardCharts';
+import { CheckCircle2, Wallet, AlertTriangle, XCircle, Percent } from 'lucide-react';
+import KpiCard from '@/components/KpiCard';
+import { Rosca } from '@/components/Graficos';
 import { PAGAMENTO_CLIENTE_LABEL, fmtBRL, calcularTotalComMargem, calcularTotalItens, estaAtrasado } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -56,12 +59,21 @@ export default async function ResultadosPage() {
         subtitulo="Totais aprovados, margem interna e desempenho por serviço e por imobiliária"
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <Kpi num={fmtBRL(totalAprovadoGeral)} lbl="Aprovado" />
-        <Kpi num={fmtBRL(totalAprovadoGeral - totalPagoGeral)} lbl="A receber" />
-        <Kpi num={String(atrasadosGeral.length)} lbl="Em atraso" tom={atrasadosGeral.length ? 'erro' : ''} />
-        <Kpi num={fmtBRL(totalReprovadoGeral)} lbl="Reprovado" />
-        <Kpi num={fmtBRL(margemGeral)} lbl="Margem FixIn (só aqui)" destaque />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <KpiCard icone={CheckCircle2} cor="#3F7A5E" num={fmtBRL(totalAprovadoGeral)} lbl="Aprovado" />
+        <KpiCard icone={Wallet} cor="#3B6B8C" num={fmtBRL(totalAprovadoGeral - totalPagoGeral)} lbl="A receber" />
+        <KpiCard icone={AlertTriangle} cor={atrasadosGeral.length ? '#C0392B' : '#5A6459'} num={String(atrasadosGeral.length)} lbl="Em atraso" />
+        <KpiCard icone={XCircle} cor="#A63A2D" num={fmtBRL(totalReprovadoGeral)} lbl="Reprovado" />
+        <KpiCard icone={Percent} cor="#182F50" num={fmtBRL(margemGeral)} lbl="Margem FixIn (só aqui)" />
+      </div>
+
+      <div className="card rounded-xl p-5 mb-6">
+        <h3 className="font-semibold text-marinho mb-0.5">Dos orçamentos aprovados: quanto já caiu</h3>
+        <p className="text-xs text-marinho/50 mb-3">Recebido e o que ainda falta receber</p>
+        <Rosca altura={170} centroTitulo="aprovado" dados={[
+          { nome: 'Já recebido', valor: totalPagoGeral, cor: '#3F7A5E' },
+          { nome: 'Falta receber', valor: Math.max(0, totalAprovadoGeral - totalPagoGeral), cor: '#B8862E' },
+        ]} />
       </div>
 
       <div className="grid xl:grid-cols-2 gap-5 mb-8">
@@ -76,6 +88,7 @@ export default async function ResultadosPage() {
       </div>
 
       <h2 className="font-semibold text-xl mb-3">Por imobiliária</h2>
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
       {(clientes || []).map((c) => {
         const os = aprovados.filter((o) => o.cliente_id === c.id);
         const reprovadosCliente = reprovados.filter((o) => o.cliente_id === c.id);
@@ -83,23 +96,24 @@ export default async function ResultadosPage() {
         const totalPago = os.reduce((a, o) => a + (Number(o.valor_pago) || 0), 0);
         const pendente = Math.max(0, totalAprovado - totalPago);
         const atrasadosCliente = os.filter(estaAtrasado);
+        const pct = totalAprovado > 0 ? Math.min(100, (totalPago / totalAprovado) * 100) : 0;
         return (
-          <div key={c.id} className="flex justify-between items-center py-3 border-b border-linha gap-2 flex-wrap">
-            <div>
-              <Link href={`/master/clientes/${c.id}`} className="font-semibold text-marinho hover:underline">{c.nome_empresa}</Link>
-              <div className="text-xs text-marinho/50">
-                {os.length} aprovado(s) · {reprovadosCliente.length} reprovado(s)
-                {atrasadosCliente.length ? ` · ${atrasadosCliente.length} em atraso` : ''}
-              </div>
+          <div key={c.id} className="card rounded-xl p-4">
+            <Link href={`/master/clientes/${c.id}`} className="font-semibold text-marinho hover:underline">{c.nome_empresa}</Link>
+            <div className="text-xs text-marinho/50 mb-3">
+              {os.length} aprovado(s) · {reprovadosCliente.length} reprovado(s)
+              {atrasadosCliente.length ? <span className="text-erro font-semibold"> · {atrasadosCliente.length} em atraso</span> : ''}
             </div>
-            <div className="text-right text-sm">
-              <div>Aprovado: {fmtBRL(totalAprovado)}</div>
-              <div>Pago: {fmtBRL(totalPago)}</div>
-              <div className="text-erro font-semibold">Pendente: {fmtBRL(pendente)}</div>
+            <div className="text-xl font-bold text-marinho">{fmtBRL(totalAprovado)}</div>
+            <div className="h-2 rounded-full bg-marinho/10 overflow-hidden my-2"><div className="h-2 bg-sucesso rounded-full" style={{ width: `${pct}%` }} /></div>
+            <div className="flex justify-between text-xs">
+              <span className="text-sucesso font-semibold">Pago {fmtBRL(totalPago)}</span>
+              <span className={pendente > 0 ? 'text-erro font-semibold' : 'text-marinho/50'}>Pendente {fmtBRL(pendente)}</span>
             </div>
           </div>
         );
       })}
+      </div>
 
       <h2 className="font-semibold text-xl mb-3 mt-8">Aprovados: marcar atraso</h2>
       {aprovados.length === 0 && <div className="border border-dashed border-linha p-8 text-center text-marinho/50">Nenhum orçamento aprovado ainda.</div>}

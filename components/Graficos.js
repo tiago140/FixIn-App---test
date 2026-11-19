@@ -65,7 +65,7 @@ export function BarrasMensais({ dados, series, altura = 240 }) {
       <BarChart data={dados} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barGap={3}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ECEDE6" vertical={false} />
         <XAxis dataKey="mes" tick={{ fontSize: 12, fill: '#5A6459' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#8A9088' }} axisLine={false} tickLine={false} tickFormatter={brlCurto} width={46} />
+        <YAxis tick={{ fontSize: 11, fill: '#8A9088' }} axisLine={false} tickLine={false} tickFormatter={brlCurto} width={56} />
         <Tooltip formatter={(v, n) => [brl(v), n]} cursor={{ fill: 'rgba(24,47,80,.05)' }} contentStyle={dica} />
         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
         {series.map((s) => <Bar key={s.chave} dataKey={s.chave} name={s.nome} fill={s.cor} radius={[6, 6, 0, 0]} maxBarSize={34} />)}
