@@ -132,19 +132,19 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por imobiliária, endereço, contrato, prestador ou status…"
-          className="border border-linha rounded px-3 py-2 bg-white text-sm w-full sm:w-96"
+          className="border border-linha rounded-xl px-4 py-2.5 bg-white text-sm w-full sm:w-96 shadow-sm focus:outline-none focus:border-marinho"
         />
-        <button onClick={exportarCsv} className="border border-linha bg-white text-sm font-medium px-3 py-2 rounded hover:bg-papel">
+        <button onClick={exportarCsv} className="border border-linha bg-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm hover:border-marinho">
           Exportar CSV
         </button>
         <span className="text-xs text-marinho/50">
-          {filtradas.length} de {linhas.length} orçamento(s)
+          <b className="text-marinho">{filtradas.length}</b> de {linhas.length} orçamento(s)
         </span>
         {salvando && <span className="text-xs text-marinho/50">salvando…</span>}
         {erro && <span className="text-xs text-erro">{erro}</span>}
       </div>
 
-      <div className="flex items-end gap-2 mb-3 flex-wrap">
+      <div className="flex items-end gap-3 mb-4 flex-wrap bg-white border border-linha rounded-xl p-3 shadow-sm">
         {[
           ['Situação', <select key="s" value={f.status} onChange={setCampo('status')} className={selFiltro}><option value="">Todas</option>{KANBAN_COLS.map((st) => <option key={st} value={st}>{STATUS_LABEL[st]}</option>)}</select>],
           ['Imobiliária', <select key="i" value={f.imob} onChange={setCampo('imob')} className={selFiltro}><option value="">Todas</option>{imobs.map((n) => <option key={n} value={n}>{n}</option>)}</select>],
@@ -169,7 +169,7 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
         )}
       </div>
 
-      <div className="overflow-auto max-h-[calc(100vh-24rem)] min-h-[16rem] sm:max-h-[calc(100vh-17rem)] sm:min-h-[22rem] border border-linha bg-white rounded-md shadow-sm">
+      <div className="overflow-auto max-h-[calc(100vh-24rem)] min-h-[16rem] sm:max-h-[calc(100vh-17rem)] sm:min-h-[22rem] border border-linha bg-white rounded-xl shadow-sm">
         <table className="w-full text-[12.5px] whitespace-nowrap border-collapse">
           <thead>
             <tr>
@@ -196,9 +196,9 @@ export default function ControleTabela({ linhas, role = 'master', podeEditar = t
               <tr
                 key={l.id}
                 onClick={() => router.push(`${basePath}/${l.id}?de=controle`)}
-                className="group odd:bg-white even:bg-papel hover:bg-info/10 cursor-pointer transition-colors"
+                className="group odd:bg-white even:bg-[#F7F8F4] hover:bg-info/10 cursor-pointer transition-colors"
               >
-                <td className="px-3 py-2 border-b border-r border-linha sticky left-0 z-10 group-odd:bg-white group-even:bg-papel group-hover:bg-[#ECF1F5]">
+                <td className="px-3 py-2 border-b border-r border-linha sticky left-0 z-10 group-odd:bg-white group-even:bg-[#F7F8F4] group-hover:bg-[#ECF1F5]">
                   <Link href={`${basePath}/${l.id}?de=controle`} onClick={pararPropagacao} className="font-medium text-marinho hover:underline">
                     {l.cliente}
                   </Link>

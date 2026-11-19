@@ -7,6 +7,12 @@ import { KANBAN_COLS, STATUS_LABEL, fmtBRL, fmtDataHoraSP, diasDesde, calcularTo
 import { resumoEspeciais } from '@/lib/itensEspeciais';
 import { intervalo, inicioSP, fimSP } from '@/lib/periodos';
 
+// Cor de cada etapa: aparece na faixa da coluna e na lateral de cada cartão, para bater o olho.
+const COR_ETAPA = {
+  pendente: '#B8862E', em_preparacao: '#6C9BB8', enviado: '#3B6B8C', aprovado: '#3F7A5E',
+  em_execucao: '#2C5570', finalizado: '#5A6459', rejeitado: '#A63A2D',
+};
+
 // Texto sem acento e em minúsculas, para a busca não depender de acentuação nem de maiúsculas.
 const norm = (v) => String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -160,7 +166,8 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
         return (
           <div
             key={status}
-            className="flex-shrink-0 w-[85vw] sm:w-72 snap-start bg-white border border-linha rounded max-h-[70vh] flex flex-col"
+            className="flex-shrink-0 w-[85vw] sm:w-72 snap-start bg-[#F4F5F0] border border-linha rounded-xl max-h-[70vh] flex flex-col overflow-hidden shadow-sm"
+            style={{ borderTop: `4px solid ${COR_ETAPA[status] || '#182F50'}` }}
             onDragOver={(e) => !readOnly && e.preventDefault()}
             onDrop={(e) => {
               if (readOnly) return;
@@ -168,9 +175,9 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
               if (dragId) moverPara(dragId, status);
             }}
           >
-            <div className="px-3 py-2 border-b border-linha text-sm font-semibold flex justify-between">
-              <span>{STATUS_LABEL[status]}</span>
-              <span className="font-mono text-marinho/50">{doStatus.length}</span>
+            <div className="px-3 py-2.5 text-sm font-semibold flex justify-between items-center bg-white">
+              <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full" style={{ background: COR_ETAPA[status] || '#182F50' }} />{STATUS_LABEL[status]}</span>
+              <span className="text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: `${COR_ETAPA[status] || '#182F50'}1F`, color: COR_ETAPA[status] || '#182F50' }}>{doStatus.length}</span>
             </div>
             <div className="p-2 overflow-y-auto flex-1">
               {doStatus.length === 0 && <div className="text-xs text-marinho/40 p-2">{termos.length ? 'Nada nesta etapa' : 'Vazio'}</div>}
@@ -183,7 +190,8 @@ export default function KanbanBoard({ orcamentos, readOnly, basePath, veValores 
                     key={o.id}
                     draggable={!readOnly}
                     onDragStart={() => setDragId(o.id)}
-                    className="bg-papel border border-linha rounded p-2 mb-2 text-xs cursor-pointer"
+                    className="bg-white border border-linha rounded-lg p-2.5 mb-2 text-xs cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-px transition"
+                    style={{ borderLeft: `4px solid ${estaAtrasado(o) ? '#C0392B' : (COR_ETAPA[status] || '#182F50')}` }}
                     onClick={() => router.push(`${basePath}/${o.id}`)}
                   >
                     <span className="block font-mono text-[10px] text-marinho/50">

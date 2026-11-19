@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { estaAtrasado, diasDesde, calcularTotalComMargem, PRAZO_PAGAMENTO_DIAS } from '@/lib/format';
 import { enviarEmailPendenciaFinanceira } from '@/lib/email';
+import { urlPagamento } from '@/lib/pagamentoOrcamento';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
 
 export const runtime = 'nodejs';
@@ -20,7 +21,7 @@ export async function GET(req) {
 
   const { data: orcamentos, error } = await admin
     .from('orcamentos')
-    .select('id, numero, endereco, status, aprovado_em, valor_pago, margem_percentual, pagamento_cliente_status, orcamento_itens(mo, ma), clientes(nome_empresa, email, ativo)')
+    .select('id, pagar_token, numero, endereco, status, aprovado_em, valor_pago, margem_percentual, pagamento_cliente_status, orcamento_itens(mo, ma), clientes(nome_empresa, email, ativo)')
     .in('status', ['aprovado', 'em_execucao'])
     .neq('pagamento_cliente_status', 'pago_total');
 
@@ -41,6 +42,7 @@ export async function GET(req) {
       endereco: o.endereco,
       valorPendente: pendente,
       diasAtraso: diasDesde(o.aprovado_em) - PRAZO_PAGAMENTO_DIAS,
+      linkPagamento: o.pagar_token ? urlPagamento(o.pagar_token) : undefined,
     });
     detalhes.push({ numero: o.numero, ...resultado });
     if (resultado.enviado) enviados++;
