@@ -49,7 +49,9 @@ export default async function DrePage({ searchParams }) {
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader icone="financeiro" titulo="DRE gerencial" subtitulo="Quanto entrou, quanto saiu e quanto sobrou, mês a mês" />
       <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
-        <Link href="/master/financeiro" className="underline text-marinho/70 mr-2">← Financeiro</Link>
+        <Link href="/master/financeiro" className="rounded-full px-4 py-1.5 border border-linha bg-white text-marinho font-medium hover:border-marinho mr-1">Contas a receber e a pagar</Link>
+        <Link href="/master/financeiro/visao" className="rounded-full px-4 py-1.5 border border-linha bg-white text-marinho font-medium hover:border-marinho mr-1">Visão por orçamento</Link>
+        <span className="rounded-full px-4 py-1.5 bg-marinho text-white font-medium mr-2">DRE gerencial</span>
         <Link href={link(ano, 'caixa')} className={`rounded-lg px-3 py-1.5 border ${regime === 'caixa' ? 'bg-marinho text-white border-marinho' : 'border-linha'}`}>Caixa (o que foi pago)</Link>
         <Link href={link(ano, 'previsto')} className={`rounded-lg px-3 py-1.5 border ${regime === 'previsto' ? 'bg-marinho text-white border-marinho' : 'border-linha'}`}>Previsto (tudo lançado)</Link>
         <span className="mx-2 text-marinho/30">|</span>

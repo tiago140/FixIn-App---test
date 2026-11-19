@@ -4,6 +4,8 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import Link from 'next/link';
+import ResumoFinanceiro from '@/components/lancamentos/ResumoFinanceiro';
+import { hojeSP } from '@/lib/lancamentos';
 import ContasSecao from '@/components/lancamentos/ContasSecao';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +17,8 @@ export default async function FinanceiroPage() {
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
   if (!profile.dono) redirect('/master/dashboard');
 
+  const { data: lancs } = await supabase.from('lancamentos').select('tipo, status, valor, valor_pago, vencimento, data_pagamento').neq('status', 'cancelado').limit(20000);
+
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader
@@ -22,7 +26,12 @@ export default async function FinanceiroPage() {
         titulo="Financeiro"
         subtitulo="Contas a receber e a pagar: cobranças, comprovantes e pagamentos aos prestadores"
       />
-      <div className="mb-3 text-sm"><Link href="/master/financeiro/visao" className="inline-block rounded-lg bg-marinho text-white px-3 py-1.5 font-medium mr-2">Visão por orçamento</Link><Link href="/master/financeiro/dre" className="inline-block rounded-lg border border-marinho text-marinho px-3 py-1.5 font-medium">DRE gerencial</Link></div>
+      <nav className="flex flex-wrap gap-2 mb-5 text-sm">
+        <Link href="/master/financeiro" className="rounded-full px-4 py-1.5 bg-marinho text-white font-medium">Contas a receber e a pagar</Link>
+        <Link href="/master/financeiro/visao" className="rounded-full px-4 py-1.5 border border-linha bg-white text-marinho font-medium hover:border-marinho">Visão por orçamento</Link>
+        <Link href="/master/financeiro/dre" className="rounded-full px-4 py-1.5 border border-linha bg-white text-marinho font-medium hover:border-marinho">DRE gerencial</Link>
+      </nav>
+      <ResumoFinanceiro lancamentos={lancs || []} hoje={hojeSP()} />
       <ContasSecao supabase={supabase} />
     </AppShell>
   );

@@ -5,6 +5,7 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { hojeSP, emAberto, vencido } from '@/lib/lancamentos';
+import { Rosca } from '@/components/Graficos';
 import { fmtBRL, fmtDate } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -68,10 +69,11 @@ export default async function VisaoPage({ searchParams }) {
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
       <PageHeader icone="financeiro" titulo="Visão por orçamento" subtitulo="O que já caiu, o que está atrasado e o que falta pagar ao prestador, orçamento por orçamento" />
-      <div className="mb-4 text-sm flex flex-wrap gap-2 items-center">
-        <Link href="/master/financeiro" className="underline text-marinho/70 mr-2">← Financeiro</Link>
-        <Link href="/master/financeiro/dre" className="underline text-marinho/70">DRE gerencial</Link>
-      </div>
+      <nav className="flex flex-wrap gap-2 mb-5 text-sm">
+        <Link href="/master/financeiro" className="rounded-full px-4 py-1.5 border border-linha bg-white text-marinho font-medium hover:border-marinho">Contas a receber e a pagar</Link>
+        <Link href="/master/financeiro/visao" className="rounded-full px-4 py-1.5 bg-marinho text-white font-medium">Visão por orçamento</Link>
+        <Link href="/master/financeiro/dre" className="rounded-full px-4 py-1.5 border border-linha bg-white text-marinho font-medium hover:border-marinho">DRE gerencial</Link>
+      </nav>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         <Kpi rotulo="Já caiu na conta" valor={kRecebido} cor="#3F7A5E" />
@@ -79,6 +81,15 @@ export default async function VisaoPage({ searchParams }) {
         <Kpi rotulo="Em atraso" valor={kAtraso} cor="#B91C1C" sub={`${linhas.filter((r) => r.atrasado).length} orçamentos`} />
         <Kpi rotulo="A pagar aos prestadores" valor={kPrestAberto} cor="#B45309" />
         <Kpi rotulo="Já pago aos prestadores" valor={kPrestPago} cor="#3F7A5E" />
+      </div>
+
+      <div className="card rounded-xl p-5 mb-5">
+        <h3 className="font-semibold text-marinho mb-3">Onde está o dinheiro dos orçamentos aprovados</h3>
+        <Rosca altura={180} centroTitulo="total aprovado" dados={[
+          { nome: 'Já caiu', valor: kRecebido, cor: '#3F7A5E' },
+          { nome: 'A receber, em dia', valor: kEmDia, cor: '#3B6B8C' },
+          { nome: 'Em atraso', valor: kAtraso, cor: '#C0392B' },
+        ]} />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-3">

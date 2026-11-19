@@ -3,8 +3,8 @@
 // No celular o ícone fica em cima do número, para sobrar largura.
 export default function KpiCard({ icone: Icone, cor = '#182F50', num, lbl, sub }) {
   return (
-    <div className="card rounded-lg p-3 sm:p-5 flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-4 border-l-4 hover:shadow-md transition min-w-0 h-full" style={{ borderLeftColor: cor }}>
-      <span className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white" style={{ background: cor }}>
+    <div className="card rounded-xl p-3 sm:p-5 flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-4 hover:shadow-md hover:-translate-y-0.5 transition min-w-0 h-full">
+      <span className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center" style={{ background: `${cor}1F`, color: cor }}>
         <Icone size={22} />
       </span>
       <div className="min-w-0 max-w-full">

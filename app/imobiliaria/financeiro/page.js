@@ -7,6 +7,7 @@ import KpiCard from '@/components/KpiCard';
 import OrcamentoCard from '@/components/OrcamentoCard';
 import { imobiliariaTabs } from '@/lib/navTabs';
 import { veValores } from '@/lib/permissoes';
+import { Rosca } from '@/components/Graficos';
 import { fmtBRL } from '@/lib/format';
 import { ESTAGIOS_APROVADO } from '@/lib/painel';
 
@@ -38,6 +39,16 @@ export default async function ImobiliariaFinanceiro() {
         <KpiCard icone={CircleDollarSign} cor="#182F50" num={fmtBRL(totalAprovado)} lbl="total aprovado" />
         <KpiCard icone={Banknote} cor="#3F7A5E" num={fmtBRL(totalPago)} lbl="já pago" />
         <KpiCard icone={AlertTriangle} cor="#B8862E" num={fmtBRL(totalFalta)} lbl="falta pagar" />
+      </div>
+
+      <div className="card rounded-xl p-5 mb-8">
+        <h3 className="font-semibold text-marinho mb-0.5">Para onde vai o seu dinheiro</h3>
+        <p className="text-xs text-marinho/50 mb-3">Do que já foi aprovado e do que ainda espera a sua resposta</p>
+        <Rosca altura={180} centroTitulo="total" dados={[
+          { nome: 'Já pago', valor: totalPago, cor: '#3F7A5E' },
+          { nome: 'Falta pagar', valor: totalFalta, cor: '#B8862E' },
+          { nome: 'Aguardando sua aprovação', valor: aguardando.reduce((a, o) => a + (o.total || 0), 0), cor: '#3B6B8C' },
+        ]} />
       </div>
 
       <h2 className="font-slab text-2xl font-bold text-marinho mb-3">Orçamentos aprovados</h2>

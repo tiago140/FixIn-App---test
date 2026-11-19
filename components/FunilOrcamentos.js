@@ -1,5 +1,6 @@
 import { Hourglass, PencilRuler, CheckCircle2, XCircle, AlertTriangle, Clock } from 'lucide-react';
 import AlvoRolagem from '@/components/AlvoRolagem';
+import { Rosca } from '@/components/Graficos';
 import { fmtBRL } from '@/lib/format';
 import { SITUACOES, FAIXAS_ESPERA, resumoPorSituacao, visaoDoTodo } from '@/lib/painel';
 
@@ -48,7 +49,8 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
         </>
       )}
 
-      <div className="bg-white border border-linha rounded-lg overflow-hidden mb-4">
+      <div className="grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-4 mb-4 items-start">
+      <div className="bg-white border border-linha rounded-xl overflow-hidden">
         {linhas.filter((l) => l.qtd > 0).map((l, i) => {
           const s = SITUACOES.find((x) => x.chave === l.chave);
           const linha = (
@@ -70,6 +72,12 @@ export default function FunilOrcamentos({ orcamentos, papel = 'master', veValore
             </div>
           </AlvoRolagem>
         )}
+      </div>
+      <div className="bg-white border border-linha rounded-xl p-5">
+        <h3 className="font-semibold text-marinho mb-3">Distribuição {veValores ? 'por valor' : 'por quantidade'}</h3>
+        <Rosca altura={170} formato={veValores ? 'brl' : 'num'} centroTitulo={veValores ? 'valor total' : 'orçamentos'}
+          dados={linhas.filter((l) => l.qtd > 0).map((l) => ({ nome: SITUACOES.find((x) => x.chave === l.chave).rotulo[master ? 'master' : 'imobiliaria'], valor: veValores ? l.valor : l.qtd, cor: SITUACOES.find((x) => x.chave === l.chave).cor }))} />
+      </div>
       </div>
 
       {v.aguardando.qtd > 0 && (
