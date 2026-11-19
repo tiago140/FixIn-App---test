@@ -9,11 +9,12 @@ const brlCurto = (v) => {
   if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)} mil`;
   return String(Math.round(n));
 };
-const brlCompacto = (v) => {
+// Para o centro da rosca: só o número, sem "R$" (o rótulo de cima já diz), para caber dentro do círculo.
+const numCentro = (v) => {
   const n = Number(v || 0);
-  if (Math.abs(n) >= 1000000) return `R$ ${(n / 1000000).toFixed(1).replace('.', ',')} mi`;
-  if (Math.abs(n) >= 10000) return `R$ ${(n / 1000).toFixed(1).replace('.', ',').replace(',0', '')} mil`;
-  return brl(n);
+  if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1).replace('.', ',')} mi`;
+  if (Math.abs(n) >= 10000) return `${(n / 1000).toFixed(1).replace('.', ',').replace(',0', '')} mil`;
+  return Math.round(n).toLocaleString('pt-BR');
 };
 const dica = { borderRadius: 10, border: '1px solid #E4E6DF', boxShadow: '0 4px 14px rgba(24,47,80,.12)', fontSize: 12 };
 
@@ -29,15 +30,15 @@ export function Rosca({ dados, centroTitulo, centroValor, formato = 'brl', altur
       <div className="relative flex-shrink-0 mx-auto" style={{ width: altura, height: altura }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={lista} dataKey="valor" nameKey="nome" innerRadius="62%" outerRadius="92%" paddingAngle={lista.length > 1 ? 2 : 0} stroke="none" startAngle={90} endAngle={-270}>
+            <Pie data={lista} dataKey="valor" nameKey="nome" innerRadius="68%" outerRadius="94%" paddingAngle={lista.length > 1 ? 2 : 0} stroke="none" startAngle={90} endAngle={-270}>
               {lista.map((d, i) => <Cell key={i} fill={d.cor} />)}
             </Pie>
             <Tooltip formatter={(v, n) => [fmt(v), n]} contentStyle={dica} />
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
-          <span className="text-[11px] text-marinho/50 leading-tight">{centroTitulo}</span>
-          <span className="font-bold text-marinho leading-tight" style={{ fontSize: '1.05rem' }}>{centroValor ?? (formato === 'brl' ? brlCompacto(total) : fmt(total))}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-[18%]">
+          <span className="text-[10px] text-marinho/50 leading-tight">{centroTitulo}{formato === 'brl' ? ' (R$)' : ''}</span>
+          <span className="font-bold text-marinho leading-tight" style={{ fontSize: '1.1rem' }}>{centroValor ?? (formato === 'brl' ? numCentro(total) : fmt(total))}</span>
         </div>
       </div>
       <ul className="flex-1 min-w-0 space-y-1.5 w-full">
