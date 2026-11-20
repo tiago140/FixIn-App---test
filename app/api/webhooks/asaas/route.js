@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asaas } from '@/lib/asaas';
 import { aplicarTransferencia } from '@/lib/pixPrestador';
+import { aplicarNotaDoAsaas } from '@/lib/nfse';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,13 @@ export async function POST(req) {
     const admin0 = createAdminClient();
     const { data: pag } = await admin0.from('pagamentos_prestador').select('*').eq('asaas_transfer_id', ev.transfer.id).maybeSingle();
     if (pag) { try { const tr = await asaas(`/transfers/${ev.transfer.id}`); await aplicarTransferencia(admin0, pag, tr); } catch (e) { return NextResponse.json({ error: 'tente de novo' }, { status: 500 }); } }
+    return NextResponse.json({ ok: true });
+  }
+  // Nota fiscal (NFS-e): resposta da prefeitura. Sempre responde 200, mesmo para nota desconhecida.
+  if (ev?.invoice?.id && String(evento || '').startsWith('INVOICE_')) {
+    const admin1 = createAdminClient();
+    const { data: regs } = await admin1.from('notas_fiscais').select('id, nota_fiscal').eq('nota_fiscal->>id', ev.invoice.id).limit(1);
+    if (regs?.[0]) { try { await aplicarNotaDoAsaas(admin1, regs[0], ev.invoice, evento); } catch (e) {} }
     return NextResponse.json({ ok: true });
   }
   if (!pid || !evento) return NextResponse.json({ ok: true });

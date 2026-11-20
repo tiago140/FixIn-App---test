@@ -2,6 +2,7 @@ import BotaoVoltar from '@/components/BotaoVoltar';
 import { urlArquivo } from '@/lib/arquivos';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import { valoresMoMa } from '@/lib/nfse';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
@@ -133,6 +134,19 @@ export default async function OrcamentoDetalhePage({ params }) {
             <DividirOrdens orcamentoId={orcamento.id} itens={(itens || []).map((i) => ({ id: i.id, ambiente: i.ambiente, servico: i.servico, mo: i.mo, ma: i.ma }))} prestadores={(prestadores || []).filter((p) => p.ativo !== false).map((p) => ({ id: p.id, nome: p.nome }))} ordens={ordensDoOrc || []} />
           </Recolhivel>
         )}
+        {profile.dono && ['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && (() => {
+          const v = valoresMoMa(itens, orcamento.margem_percentual);
+          const f = (x) => x.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          return (
+            <div className="card p-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="font-semibold text-marinho">Nota fiscal</div>
+                <div className="text-sm text-gray-600">NFS-e (só mão de obra): <b>{f(v.mo)}</b> · Material, em NF-e de produto: <b>{f(v.ma)}</b></div>
+              </div>
+              <Link href={`/master/financeiro/notas?orc=${orcamento.id}`} className="rounded-full px-5 py-2 text-sm font-semibold bg-marinho text-white">Emitir nota</Link>
+            </div>
+          );
+        })()}
         {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && <IniciarAcompanhamento orcamentoId={orcamento.id} acomp={acomp} />}
         <Chat orcamentoId={orcamento.id} profile={profile} mensagensIniciais={mensagens || []} />
         <Recolhivel titulo="Excluir orçamento" resumo="ação que não dá para desfazer">

@@ -16,7 +16,7 @@ export async function POST() {
     const corpo = {
       name: 'FixIn - pagamentos', url: URL_AVISO, email: process.env.ASAAS_WEBHOOK_EMAIL || 'orcamentos@fixinreformas.com.br', enabled: true, interrupted: false, apiVersion: 3,
       authToken: process.env.ASAAS_WEBHOOK_TOKEN, sendType: 'SEQUENTIALLY',
-      events: ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED', 'PAYMENT_OVERDUE', 'PAYMENT_DELETED', 'PAYMENT_REFUNDED'],
+      events: ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED', 'PAYMENT_OVERDUE', 'PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'INVOICE_CREATED', 'INVOICE_UPDATED', 'INVOICE_SYNCHRONIZED', 'INVOICE_AUTHORIZED', 'INVOICE_PROCESSING_CANCELLATION', 'INVOICE_CANCELED', 'INVOICE_CANCELLATION_DENIED', 'INVOICE_ERROR'],
     };
     if (existente) await asaas(`/webhooks/${existente.id}`, { method: 'PUT', body: corpo });
     else await asaas('/webhooks', { method: 'POST', body: corpo });
