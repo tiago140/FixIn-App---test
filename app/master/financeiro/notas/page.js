@@ -19,6 +19,11 @@ export default async function NotasPage({ searchParams }) {
   if (!profile.dono) redirect('/master/dashboard');
 
   const aba = searchParams?.aba === 'recibos' ? 'recibos' : 'notas';
+  let historico = [];
+  if (aba === 'recibos') {
+    const { data: h } = await supabase.from('recibos').select('id, criado_em, valor, dados').gte('criado_em', new Date(Date.now() - 30 * 86400000).toISOString()).order('id', { ascending: false }).limit(200);
+    historico = h || [];
+  }
   const { data: cfg } = await supabase.from('nf_config').select('*').eq('id', 1).maybeSingle();
   const { data: notas } = await supabase.from('notas_fiscais').select('id, criado_em, orcamento_id, tomador, descricao, valor, valor_material, nota_fiscal').order('id', { ascending: false }).limit(200);
   const { data: orcs } = await supabase.from('orcamentos').select('id, numero, endereco, status, cliente_id, margem_percentual, clientes(nome_empresa, nf_tomador), orcamento_itens(mo, ma)').in('status', ['aprovado', 'em_execucao', 'finalizado']).order('criado_em', { ascending: false }).limit(300);
@@ -39,7 +44,7 @@ export default async function NotasPage({ searchParams }) {
           <Link key={k} href={`/master/financeiro/notas?aba=${k}`} className={`rounded-full px-5 py-1.5 text-sm font-medium border ${aba === k ? 'bg-marinho text-white border-marinho' : 'bg-white text-marinho border-linha'}`}>{l}</Link>
         ))}
       </div>
-      {aba === 'recibos' ? <ReciboForm /> : <NotasFiscais cfg={cfg || {}} opcoes={opcoes} notas={lista} ambiente={ambiente} orcInicial={searchParams?.orc || ''} />}
+      {aba === 'recibos' ? <ReciboForm historico={historico} /> : <NotasFiscais cfg={cfg || {}} opcoes={opcoes} notas={lista} ambiente={ambiente} orcInicial={searchParams?.orc || ''} />}
     </AppShell>
   );
 }
