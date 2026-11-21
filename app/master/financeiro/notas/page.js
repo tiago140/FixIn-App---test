@@ -7,6 +7,7 @@ import { valoresMoMa } from '@/lib/nfse';
 import { asaasBase } from '@/lib/asaas';
 import Link from 'next/link';
 import NotasFiscais from '@/components/notas/NotasFiscais';
+import AtualizarPdfs from '@/components/notas/AtualizarPdfs';
 import ReciboForm from '@/components/notas/ReciboForm';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,7 @@ export default async function NotasPage({ searchParams }) {
           <Link key={k} href={`/master/financeiro/notas?aba=${k}`} className={`rounded-full px-5 py-1.5 text-sm font-medium border ${aba === k ? 'bg-marinho text-white border-marinho' : 'bg-white text-marinho border-linha'}`}>{l}</Link>
         ))}
       </div>
+      <div className="mt-4"><AtualizarPdfs /></div>
       {aba === 'recibos' ? <ReciboForm historico={historico} /> : <NotasFiscais cfg={cfg || {}} opcoes={opcoes} notas={lista} ambiente={ambiente} orcInicial={searchParams?.orc || ''} />}
     </AppShell>
   );
