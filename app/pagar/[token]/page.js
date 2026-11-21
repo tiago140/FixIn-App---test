@@ -2,6 +2,7 @@ import QRCode from 'qrcode';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { dadosPagamento, linkTikpag, MAX_PARCELAS_TIKPAG } from '@/lib/pagamentoOrcamento';
 import { fmtBRL, fmtDate } from '@/lib/format';
+import { simularParcelas } from '@/lib/infinitepay';
 import BotaoCopiar from '@/components/BotaoCopiar';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,17 @@ export default async function PaginaPagar({ params }) {
         {d.estado === 'ok' && (<>
           <div className="text-3xl font-bold text-marinho">{fmtBRL(d.valor)}<span className="block text-xs font-normal text-marinho/60">{d.parcela === 'entrada' ? 'Entrada de 50% · ' : d.parcela === 'saldo' ? 'Saldo · ' : ''}Vence em {fmtDate(d.vencimento)}</span></div>
           {d.faltaDepois > 0 && <p className="text-sm text-marinho/70 bg-papel rounded-lg p-3">Pagamento combinado em duas partes. Os outros {fmtBRL(d.faltaDepois)} (50%) ficam para {fmtDate(d.saldoVence)}, no mesmo link.</p>}
+          {d.provedor === 'infinitepay' && d.linkPagamento && (<section className="border rounded-xl p-4 text-center space-y-3">
+            <img src="/infinitepay-logo.png" alt="InfinitePay" width={150} className="mx-auto" />
+            <a href={d.linkPagamento} className="block rounded-lg bg-marinho text-white py-3 font-semibold">Pagar com Pix ou cartão em até 12x</a>
+            <p className="text-xs text-marinho/60">Pix sem taxa. No cartão, a taxa do parcelamento é repassada; o valor exato aparece no checkout.</p>
+            <details className="text-left text-sm">
+              <summary className="cursor-pointer text-marinho/80 font-medium">Ver estimativa no cartão</summary>
+              <table className="w-full mt-2 text-xs"><tbody>
+                {simularParcelas(d.valor).map((p) => (<tr key={p.n} className="border-t"><td className="py-1">{p.n}x de {fmtBRL(p.parcela)}</td><td className="py-1 text-right text-marinho/60">total aprox. {fmtBRL(p.total)}</td></tr>))}
+              </tbody></table>
+            </details>
+          </section>)}
           {qr && (<section className="border rounded-xl p-4 text-center space-y-2">
             <h2 className="font-semibold text-marinho">Pix</h2>
             <img src={qr} alt="QR code Pix" width={220} height={220} className="mx-auto" />
@@ -35,7 +47,7 @@ export default async function PaginaPagar({ params }) {
             {d.boletoUrl && <a href={d.boletoUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-lg border border-marinho text-marinho py-2 text-sm font-medium">Baixar boleto (PDF)</a>}
           </section>)}
           {tik && (<a href={tik} target="_blank" rel="noopener noreferrer" className="block text-center rounded-lg bg-marinho text-white py-3 font-semibold">Parcelar em até {MAX_PARCELAS_TIKPAG}x com a TikPag</a>)}
-          {d.faturaUrl && <a href={d.faturaUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-sm text-marinho/70 underline">Pagar com cartão ou outras formas (fatura Asaas)</a>}
+          {d.faturaUrl && d.provedor !== 'infinitepay' && <a href={d.faturaUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-sm text-marinho/70 underline">Pagar com cartão ou outras formas (fatura Asaas)</a>}
         </>)}
       </div>
     </main>

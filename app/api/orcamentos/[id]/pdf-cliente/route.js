@@ -23,7 +23,7 @@ export async function POST(req, { params }) {
   const admin = createAdminClient();
   const { data: ja } = await admin.from('orcamentos').select('pdf_url').eq('id', params.id).single();
   if (ja?.pdf_url) return NextResponse.json({ ok: true, pdf_url: ja.pdf_url });
-  const { data: orcamento } = await admin.from('orcamentos').select('*, clientes(nome_empresa, email)').eq('id', params.id).single();
+  const { data: orcamento } = await admin.from('orcamentos').select('*, clientes(nome_empresa, email, pagamento_provedor)').eq('id', params.id).single();
   if (!orcamento) return NextResponse.json({ error: 'orçamento não encontrado' }, { status: 404 });
   const { data: itens } = await admin.from('orcamento_itens').select('*').eq('orcamento_id', params.id).order('ordem');
 

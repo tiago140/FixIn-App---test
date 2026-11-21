@@ -19,7 +19,7 @@ export async function POST(req, { params }) {
 
   const { data: orcamento, error: erroOrc } = await supabase
     .from('orcamentos')
-    .select('*, clientes(nome_empresa, email)')
+    .select('*, clientes(nome_empresa, email, pagamento_provedor)')
     .eq('id', id)
     .single();
 
