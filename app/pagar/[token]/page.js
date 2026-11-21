@@ -1,8 +1,9 @@
 import QRCode from 'qrcode';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { dadosPagamento, linkTikpag, MAX_PARCELAS_TIKPAG } from '@/lib/pagamentoOrcamento';
+import { dadosPagamento, linkTikpag, MAX_PARCELAS_TIKPAG, MAX_PARTES, MIN_PARTE } from '@/lib/pagamentoOrcamento';
 import { fmtBRL, fmtDate } from '@/lib/format';
 import { simularParcelas } from '@/lib/infinitepay';
+import DividirPagamento from '@/components/DividirPagamento';
 import BotaoCopiar from '@/components/BotaoCopiar';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,12 @@ export default async function PaginaPagar({ params }) {
         {d.estado === 'ok' && (<>
           <div className="text-3xl font-bold text-marinho">{fmtBRL(d.valor)}<span className="block text-xs font-normal text-marinho/60">{d.parcela === 'entrada' ? 'Entrada de 50% · ' : d.parcela === 'saldo' ? 'Saldo · ' : ''}Vence em {fmtDate(d.vencimento)}</span></div>
           {d.faltaDepois > 0 && <p className="text-sm text-marinho/70 bg-papel rounded-lg p-3">Pagamento combinado em duas partes. Os outros {fmtBRL(d.faltaDepois)} (50%) ficam para {fmtDate(d.saldoVence)}, no mesmo link.</p>}
-          {d.provedor === 'infinitepay' && d.linkPagamento && (<section className="border rounded-xl p-4 text-center space-y-3">
+          {d.provedor === 'infinitepay' && d.partes && (<section className="border rounded-xl p-4 space-y-3">
+            <img src="/infinitepay-logo.png" alt="InfinitePay" width={150} className="mx-auto" />
+            <p className="text-sm text-marinho/70 text-center">Pagamento dividido em {d.partes.length} partes. Pague cada uma com Pix ou cartão.</p>
+            {d.partes.map((p, i) => (<a key={i} href={p.url} className="block rounded-lg bg-marinho text-white py-3 text-center font-semibold">Parte {i + 1} · {fmtBRL(p.valor)}</a>))}
+          </section>)}
+          {d.provedor === 'infinitepay' && !d.partes && d.linkPagamento && (<section className="border rounded-xl p-4 text-center space-y-3">
             <img src="/infinitepay-logo.png" alt="InfinitePay" width={150} className="mx-auto" />
             <a href={d.linkPagamento} className="block rounded-lg bg-marinho text-white py-3 font-semibold">Pagar com Pix ou cartão em até 12x</a>
             <p className="text-xs text-marinho/60">Pix sem taxa. No cartão, a taxa do parcelamento é repassada; o valor exato aparece no checkout.</p>
@@ -35,6 +41,7 @@ export default async function PaginaPagar({ params }) {
               </tbody></table>
             </details>
           </section>)}
+          {d.provedor === 'infinitepay' && d.alvoTotal > 0 && <DividirPagamento token={token} total={d.alvoTotal} max={MAX_PARTES} min={MIN_PARTE} dividido={!!d.partes} />}
           {qr && (<section className="border rounded-xl p-4 text-center space-y-2">
             <h2 className="font-semibold text-marinho">Pix</h2>
             <img src={qr} alt="QR code Pix" width={220} height={220} className="mx-auto" />
