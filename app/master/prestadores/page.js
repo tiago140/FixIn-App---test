@@ -43,7 +43,7 @@ export default async function PrestadoresPage() {
           <div className="text-xs text-marinho/60 truncate">{linkCadastro}</div>
         </div>
         <div className="w-40"><BotaoCopiar texto={linkCadastro} rotulo="Copiar link" /></div>
-        <Link href="/master/prestadores/cadastros" className="bg-marinho text-white text-sm font-semibold px-4 py-2 rounded-lg">Cadastros recebidos{pendentes > 0 ? ` (${pendentes})` : ''}</Link>
+        <Link href="/master/cadastros" className="bg-marinho text-white text-sm font-semibold px-4 py-2 rounded-lg">Cadastros recebidos{pendentes > 0 ? ` (${pendentes})` : ''}</Link>
       </div>
 
       {!prestadores || prestadores.length === 0 ? (

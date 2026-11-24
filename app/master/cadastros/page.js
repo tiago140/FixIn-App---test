@@ -4,10 +4,11 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
+import BotaoCopiar from '@/components/BotaoCopiar';
 import DecidirCadastro from '@/components/prestadores/DecidirCadastro';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Cadastros recebidos' };
+export const metadata = { title: 'Cadastros' };
 
 export default async function CadastrosPage() {
   const { user, profile, supabase } = await getProfile();
@@ -20,8 +21,15 @@ export default async function CadastrosPage() {
 
   return (
     <AppShell profile={profile} tabs={MASTER_TABS} homeHref="/master/dashboard">
-      <PageHeader icone="prestadores" titulo="Cadastros recebidos" subtitulo="Prestadores que se cadastraram pelo link externo. Só viram prestador depois que você aprova."
-        direita={<Link href="/master/prestadores" className="text-sm underline">Voltar aos prestadores</Link>} />
+      <PageHeader icone="prestadores" titulo="Cadastros" subtitulo="Links de cadastro externo e pedidos aguardando sua aprovação."
+        direita={<Link href="/master/prestadores" className="text-sm underline">Prestadores</Link>} />
+      <div className="card rounded-xl p-4 mb-5 space-y-3">
+        {[['Prestadores de serviço (escolhem as áreas)', 'https://app.fixinreformas.com/cadastro-prestador'], ['Imobiliárias parceiras (Painel Renova)', 'https://portal.renovavistoria.com.br/painel/cadastro-imobiliaria']].map(([n, u]) => (
+          <div key={u} className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold">{n}:</span><code className="text-xs break-all">{u}</code><div className="w-40"><BotaoCopiar texto={u} rotulo="Copiar link" /></div></div>
+        ))}
+        <div className="text-xs text-marinho/60">Os pedidos de imobiliárias são aprovados no Painel Renova, tela Imobiliárias.</div>
+      </div>
+      <h3 className="font-semibold mb-2">Prestadores aguardando ({pend.length})</h3>
       {pend.length === 0 ? <div className="border border-dashed border-linha p-8 text-center text-marinho/50 rounded-xl">Nenhum cadastro aguardando.</div> : (
         <div className="space-y-3">
           {pend.map((c) => { const d = c.dados || {}; return (
