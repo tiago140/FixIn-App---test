@@ -4,6 +4,7 @@ import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
+import BotaoCopiar from '@/components/BotaoCopiar';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,8 @@ export default async function PrestadoresPage() {
     supabase.from('profiles').select('prestador_id').eq('role', 'prestador'),
     supabase.from('ordens_servico').select('prestador_id, status'),
   ]);
+  const { count: pendentes } = await supabase.from('prestadores_cadastros').select('id', { count: 'exact', head: true }).eq('status', 'pendente');
+  const linkCadastro = 'https://app.fixinreformas.com/cadastro-prestador';
   const comAcesso = new Set((acessos || []).map((a) => a.prestador_id));
   const abertas = {};
   (ordens || []).forEach((o) => { if (!['paga', 'cancelada', 'recusada'].includes(o.status)) abertas[o.prestador_id] = (abertas[o.prestador_id] || 0) + 1; });
@@ -33,6 +36,15 @@ export default async function PrestadoresPage() {
         subtitulo="Cadastro, acesso ao portal e dados de pagamento"
         direita={<Link href="/master/prestadores/novo" className="bg-verde text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm">+ Novo prestador</Link>}
       />
+
+      <div className="card rounded-xl p-4 mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold">Link de cadastro para prestadores</div>
+          <div className="text-xs text-marinho/60 truncate">{linkCadastro}</div>
+        </div>
+        <div className="w-40"><BotaoCopiar texto={linkCadastro} rotulo="Copiar link" /></div>
+        <Link href="/master/prestadores/cadastros" className="bg-marinho text-white text-sm font-semibold px-4 py-2 rounded-lg">Cadastros recebidos{pendentes > 0 ? ` (${pendentes})` : ''}</Link>
+      </div>
 
       {!prestadores || prestadores.length === 0 ? (
         <div className="border border-dashed border-linha p-8 text-center text-marinho/50 rounded-xl">Nenhum prestador cadastrado ainda.</div>
@@ -49,6 +61,7 @@ export default async function PrestadoresPage() {
                 </div>
                 {abertas[p.id] > 0 && <span className="shrink-0 bg-marinho text-white text-xs font-bold rounded-full px-2.5 py-1">{abertas[p.id]} em aberto</span>}
               </div>
+              {(p.areas || []).length > 0 && <div className="text-xs text-marinho/70 mt-2">{p.areas.join(' · ')}</div>}
               <div className="flex flex-wrap gap-1.5 mt-3">
                 <Selo ok={comAcesso.has(p.id)}>{comAcesso.has(p.id) ? 'Acesso criado' : 'Sem acesso'}</Selo>
                 <Selo ok={!!p.pix_chave}>{p.pix_chave ? 'Pix cadastrado' : 'Sem Pix'}</Selo>

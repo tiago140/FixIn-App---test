@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AREAS_SERVICO } from '@/lib/areasServico';
 
 const BANCOS = ['Asaas', 'Banco do Brasil', 'Bradesco', 'Caixa Econômica', 'C6 Bank', 'Inter', 'Itaú', 'Mercado Pago', 'Nubank', 'PagBank', 'Santander', 'Sicoob', 'Sicredi', 'Outro'];
 const ent = 'w-full border border-linha rounded-lg px-3 py-2 bg-papel text-sm';
@@ -21,8 +22,8 @@ export default function PrestadorForm({ inicial = {}, modo = 'novo' }) {
   const router = useRouter();
   const [f, setF] = useState({
     nome: '', email: '', telefone: '', tipo_pessoa: 'pf', cpf: '', rg: '', cnpj: '', razao_social: '',
-    banco: '', agencia: '', conta: '', tipo_conta: 'corrente', pix_tipo: 'cpf', pix_chave: '', asaas_wallet_id: '', ativo: true,
-    ...Object.fromEntries(Object.entries(inicial).map(([k, v]) => [k, v ?? (k === 'ativo' ? true : '')])),
+    banco: '', agencia: '', conta: '', tipo_conta: 'corrente', pix_tipo: 'cpf', pix_chave: '', asaas_wallet_id: '', ativo: true, cidade: '', areas: [],
+    ...Object.fromEntries(Object.entries(inicial).map(([k, v]) => [k, v ?? (k === 'ativo' ? true : k === 'areas' ? [] : '')])),
   });
   const [erro, setErro] = useState('');
   const [ok, setOk] = useState('');
@@ -64,6 +65,19 @@ export default function PrestadorForm({ inicial = {}, modo = 'novo' }) {
           {!pj && <Campo rotulo="RG"><input value={f.rg} onChange={set('rg')} className={ent} /></Campo>}
           {pj && <Campo rotulo="CNPJ"><input value={f.cnpj} onChange={set('cnpj')} className={ent} /></Campo>}
           {pj && <Campo rotulo="Razão social" className="sm:col-span-2"><input value={f.razao_social} onChange={set('razao_social')} className={ent} /></Campo>}
+        </div>
+      </section>
+
+      <section className="card p-5 rounded-xl">
+        <h3 className="font-semibold mb-1">Áreas de atuação</h3>
+        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+          <Campo rotulo="Cidade / região atendida"><input value={f.cidade} onChange={set('cidade')} className={ent} /></Campo>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {AREAS_SERVICO.map((a) => {
+            const on = (f.areas || []).includes(a);
+            return <button key={a} type="button" onClick={() => setF((x) => ({ ...x, areas: on ? x.areas.filter((y) => y !== a) : [...(x.areas || []), a] }))} className={`rounded-full px-3 py-1.5 text-sm border ${on ? 'bg-marinho text-white border-marinho' : 'border-linha bg-papel'}`}>{a}</button>;
+          })}
         </div>
       </section>
 
