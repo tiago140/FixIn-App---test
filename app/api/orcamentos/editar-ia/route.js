@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { semNul } from '@/lib/semNul';
 import { getProfile } from '@/lib/getProfile';
 import { ErroIA, LIMITE_ITENS, normalizarItemEntrada, carregarBase, promptEdicao, chamarClaudeDetalhado, extrairJson, aplicarEdicao, redistribuirTotal } from '@/lib/iaOrcamento';
 
@@ -13,7 +14,7 @@ export async function POST(req) {
   if (!user || profile?.role !== 'master') return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 
   let corpo = {};
-  try { corpo = await req.json(); } catch (e) {}
+  try { corpo = semNul(await req.json()); } catch (e) {}
   const instrucao = String(corpo.instrucao || '').trim().slice(0, 800);
   if (!instrucao) return NextResponse.json({ error: 'Escreva o que você quer mudar nos itens.' }, { status: 400 });
   const entrada = Array.isArray(corpo.itens) ? corpo.itens : [];

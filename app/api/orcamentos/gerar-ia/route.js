@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { semNul } from '@/lib/semNul';
 import { getProfile } from '@/lib/getProfile';
 import { ErroIA, numeroSeguro, carregarBase, chamarClaudeDetalhado, extrairJson } from '@/lib/iaOrcamento';
 
@@ -11,7 +12,7 @@ export async function POST(req) {
   if (!user || profile?.role !== 'master') return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 
   let corpo = {};
-  try { corpo = await req.json(); } catch (e) {}
+  try { corpo = semNul(await req.json()); } catch (e) {}
   const descricao = String(corpo.descricao || '').trim().slice(0, 1500);
   if (!descricao) return NextResponse.json({ error: 'Descreva o imóvel/serviço para a IA criar os itens.' }, { status: 400 });
   const endereco = String(corpo.endereco || '').slice(0, 200);

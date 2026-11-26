@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { semNul } from '@/lib/semNul';
 import { getProfile } from '@/lib/getProfile';
 import { prepararSeguroFianca } from '@/lib/seguroFianca';
 
@@ -8,7 +9,7 @@ export async function POST(req) {
     return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
   }
 
-  const body = await req.json();
+  const body = semNul(await req.json());
   const {
     cliente_id,
     endereco,

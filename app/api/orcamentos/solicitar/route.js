@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { semNul } from '@/lib/semNul';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { prepararSeguroFianca } from '@/lib/seguroFianca';
@@ -8,7 +9,7 @@ export async function POST(req) {
   if (!user || profile?.role !== 'imobiliaria') {
     return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
   }
-  const { endereco, tipo, descricao, nome_cliente_final, cpf_cliente_final, cnpj_cliente_final, itens, vistoria_texto_bruto, seguro_fianca } = await req.json();
+  const { endereco, tipo, descricao, nome_cliente_final, cpf_cliente_final, cnpj_cliente_final, itens, vistoria_texto_bruto, seguro_fianca } = semNul(await req.json());
   const seguro = seguro_fianca === true || seguro_fianca === 'sim';
   if (!endereco) return NextResponse.json({ error: 'informe o endereço' }, { status: 400 });
 

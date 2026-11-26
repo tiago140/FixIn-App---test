@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { semNul } from '@/lib/semNul';
 import { getProfile } from '@/lib/getProfile';
 import { ErroIA, LIMITE_ITENS, normalizarItemEntrada, semPreco, carregarBase, promptPrecos, chamarClaudeDetalhado, extrairJson, aplicarPrecos } from '@/lib/iaOrcamento';
 import { separarPrecosSeguroFianca, elevarDemais, AUMENTO_DEMAIS_SEGURO_FIANCA } from '@/lib/precoSeguroFianca';
@@ -13,7 +14,7 @@ export async function POST(req) {
   if (!user || profile?.role !== 'master') return NextResponse.json({ error: 'sem permissão' }, { status: 403 });
 
   let corpo = {};
-  try { corpo = await req.json(); } catch (e) {}
+  try { corpo = semNul(await req.json()); } catch (e) {}
   const entrada = Array.isArray(corpo.itens) ? corpo.itens : [];
   if (entrada.length === 0) return NextResponse.json({ error: 'Não há itens no orçamento para precificar.' }, { status: 400 });
   if (entrada.length > LIMITE_ITENS) return NextResponse.json({ error: `São itens demais para uma vez só (máximo ${LIMITE_ITENS}).` }, { status: 400 });

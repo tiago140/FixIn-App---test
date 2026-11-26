@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { semNul } from '@/lib/semNul';
 import { getProfile } from '@/lib/getProfile';
 import { calcularProximoStatusAutomatico, calcularTotalComMargem, fmtBRL, STATUS_LABEL } from '@/lib/format';
 import { enviarEmailStatusOrcamento } from '@/lib/email';
@@ -74,7 +75,7 @@ export async function PATCH(req, { params }) {
   }
 
   const id = params.id;
-  const body = await req.json();
+  const body = semNul(await req.json());
   const { itens, ...camposOrcamento } = body;
 
   const { data: antes } = await supabase.from('orcamentos').select('*, orcamento_itens(mo,ma)').eq('id', id).single();
