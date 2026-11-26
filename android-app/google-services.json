@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "757245864342",
+    "project_id": "fixin-prestador",
+    "storage_bucket": "fixin-prestador.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757245864342:android:4ec0e574918a7282eed5b7",
+        "android_client_info": {
+          "package_name": "br.com.fixinreformas.prestador"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoj2Ol3FQ-A4W4QHFuPC8dfXaRhOJ6LEs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -25,6 +25,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Criar projeto Android
         run: npx cap add android
+      - name: Firebase (push)
+        run: cp google-services.json android/app/google-services.json
       - name: Permissões (câmera, galeria, localização, internet)
         run: |
           M=android/app/src/main/AndroidManifest.xml

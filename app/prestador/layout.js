@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { prestadorAceitouTermo } from '@/lib/termoPrestador';
 import AtivarNotificacoes from '@/components/AtivarNotificacoes';
 import PopupNovidades from '@/components/PopupNovidades';
+import PushApp from '@/components/PushApp';
 
 export const metadata = {
   manifest: '/prestador/manifest.webmanifest',
@@ -24,6 +25,7 @@ export default async function PrestadorLayout({ children }) {
     <>
       {children}
       <PopupNovidades />
+      <PushApp />
       <AtivarNotificacoes chavePublica={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''} />
     </>
   );

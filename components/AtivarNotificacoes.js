@@ -16,6 +16,7 @@ export default function AtivarNotificacoes({ chavePublica }) {
 
   useEffect(() => {
     if (!chavePublica) return;
+    if (window.Capacitor?.isNativePlatform?.()) return;
     if (!('serviceWorker' in navigator)) return;
     (async () => {
       try {
