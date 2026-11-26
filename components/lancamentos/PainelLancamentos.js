@@ -262,6 +262,7 @@ export default function PainelLancamentos({ lancamentos, clientes, prestadores, 
                       <div key={c.id} className="flex flex-wrap items-center gap-2 text-xs border border-linha rounded px-2 py-1.5">
                         <span className="font-semibold">Cobrança {c.parcela === 'entrada' ? 'entrada 50%' : c.parcela === 'saldo' ? 'saldo' : 'integral'}</span>
                         <span className="text-marinho/60">{fmtBRL(c.valor)} · vence {fmtDate(c.vencimento)}</span>
+                        {c.observacao && <span className="basis-full text-[11px] text-marinho/50 break-all">Ref. do comprovante: {c.observacao}</span>}
                         <span className="flex-1" />
                         {c.status === 'no_caixa' && <span className="text-verde font-semibold">✓ No caixa</span>}
                         {c.status === 'aprovado' && <span className="text-verde font-semibold">Aprovado (aguardando repasse)</span>}

@@ -22,7 +22,7 @@ export default async function ContasSecao({ supabase }) {
   // Cobranças do Asaas (se a tabela ainda não existir, a tela continua funcionando sem elas).
   let cobrancas = [];
   try {
-    const { data } = await supabase.from('cobrancas').select('id, lancamento_id, parcela, valor, url, status, vencimento, pago_em').order('criado_em', { ascending: true });
+    const { data } = await supabase.from('cobrancas').select('id, lancamento_id, parcela, valor, url, status, vencimento, pago_em, observacao, provedor').order('criado_em', { ascending: true });
     cobrancas = data || [];
   } catch (e) {}
 
