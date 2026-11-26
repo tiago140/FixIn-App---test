@@ -20,6 +20,13 @@ export async function PATCH(req, { params }) {
   const agora = new Date().toISOString();
   const auditar = async (a, d) => { try { await admin.from('auditoria').insert({ acao: a, detalhe: `${os.numero} · ${d}`, alvo_tipo: 'ordem_servico', alvo_id: os.id, autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {} };
 
+  if (acao === 'chaves') {
+    const c = String(body.chaves || '').replace(/\s+/g, ' ').trim().slice(0, 300) || null;
+    await admin.from('ordens_servico').update({ chaves: c, atualizado_em: agora }).eq('id', os.id);
+    await auditar('Atualizou onde pegar as chaves', c || 'removido');
+    return NextResponse.json({ ok: true });
+  }
+
   if (acao === 'cancelar') {
     if (['paga', 'cancelada'].includes(os.status)) return NextResponse.json({ error: 'esta ordem não pode mais ser cancelada' }, { status: 400 });
     await admin.from('ordens_servico').update({ status: 'cancelada', atualizado_em: agora }).eq('id', os.id);

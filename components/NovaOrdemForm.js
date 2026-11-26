@@ -13,7 +13,7 @@ export default function NovaOrdemForm({ prestadores, visitas, chamados, orcament
   const [f, setF] = useState({
     prestador_id: inicial.prestador_id || '', origem: inicial.origem || 'visita',
     visita_id: inicial.visita_id || '', chamado_id: inicial.chamado_id || '', orcamento_id: inicial.orcamento_id || '',
-    cliente_id: '', endereco: '', descricao: '',
+    cliente_id: '', endereco: '', descricao: '', chaves: '',
   });
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -85,6 +85,11 @@ export default function NovaOrdemForm({ prestadores, visitas, chamados, orcament
       <label className="block">
         <span className="block text-xs font-semibold text-marinho/70 mb-1">Instruções para o prestador (opcional)</span>
         <textarea rows={4} value={f.descricao} onChange={set('descricao')} className={ent} placeholder="O que precisa ser visto ou feito, contato no local, horários…" />
+      </label>
+
+      <label className="block">
+        <span className="block text-xs font-semibold text-marinho/70 mb-1">Onde pegar as chaves (opcional)</span>
+        <input value={f.chaves} onChange={set('chaves')} className={ent} placeholder="Ex.: portaria do condomínio com o João, imobiliária AE (Rua X, 100), caixinha com senha 1234…" />
       </label>
 
       <button disabled={salvando} className="bg-verde text-white rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50">

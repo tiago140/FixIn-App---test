@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import EditarChaves from '@/components/EditarChaves';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
@@ -31,6 +32,7 @@ export default async function OrdemPage({ params }) {
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
   const { data: os } = await supabase.from('ordens_servico').select('*, prestadores(nome, telefone, email, pix_tipo, pix_chave), os_itens(*)').eq('id', params.id).maybeSingle();
+  const { data: laudoAss } = os ? await supabase.from('os_laudos_finalizacao').select('id').eq('os_id', os.id).eq('rodada', os.rodada || 0).maybeSingle() : { data: null };
   if (!os) notFound();
   if (profile.dono && os.status === 'aprovada') { try { await atualizarPixDaOrdem(createAdminClient(), os.id); } catch (e) {} }
   const [{ data: fotos }, { data: notas }, { data: pagamentos }, { data: mensagens }] = await Promise.all([
@@ -68,6 +70,8 @@ export default async function OrdemPage({ params }) {
             {os.orcamento_id && <div><span className="text-xs text-marinho/50 block">Orçamento</span><Link className="hover:underline font-semibold" href={`/master/orcamentos/${os.orcamento_id}`}>Abrir orçamento</Link></div>}
             {os.aceito_em && <div><span className="text-xs text-marinho/50 block">Aceita em</span>{fmtDataHoraSP(os.aceito_em)}</div>}
             {os.liberado_em && <div><span className="text-xs text-marinho/50 block">Liberada para execução</span>{fmtDataHoraSP(os.liberado_em)}</div>}
+            <EditarChaves osId={os.id} valor={os.chaves} />
+            {laudoAss && <div className="sm:col-span-2"><a href={`/api/ordens/${os.id}/laudo-final`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-marinho text-white px-5 py-2 text-sm font-semibold">Abrir laudo de finalização assinado (PDF)</a></div>}
             {os.descricao && <div className="sm:col-span-2"><span className="text-xs text-marinho/50 block">Instruções</span><p className="whitespace-pre-wrap">{os.descricao}</p></div>}
             {os.recusa_motivo && <div className="sm:col-span-2 bg-erro/10 border border-erro/30 rounded-lg p-3"><span className="text-xs text-erro block font-semibold">Motivo da recusa</span>{os.recusa_motivo}</div>}
           </div>

@@ -47,7 +47,7 @@ export async function POST(req) {
   if (!endereco) return NextResponse.json({ error: 'informe o endereço' }, { status: 400 });
 
   const { data: os, error } = await admin.from('ordens_servico').insert({
-    prestador_id: prest.id, origem, ...ref, cliente_id, endereco, descricao: descricao || null,
+    prestador_id: prest.id, origem, ...ref, cliente_id, endereco, descricao: descricao || null, chaves: txt(b.chaves, 300) || null,
     status: statusInicial, criado_por: user.id,
     liberado_em: statusInicial === 'em_execucao' ? new Date().toISOString() : null,
   }).select().single();

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, MapPin, KeyRound } from 'lucide-react';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
@@ -11,6 +11,7 @@ import NotasFiscaisOS from '@/components/NotasFiscaisOS';
 import GaleriaFotosOS from '@/components/GaleriaFotosOS';
 import PassosOS from '@/components/PassosOS';
 import MensagensOS from '@/components/MensagensOS';
+import LaudoFinalizacao from '@/components/LaudoFinalizacao';
 import { PRESTADOR_TABS } from '@/lib/navTabs';
 import { ORIGEM_OS, totalItensOS } from '@/lib/ordensStatus';
 import { urlArquivo } from '@/lib/arquivos';
@@ -23,6 +24,10 @@ export default async function PrestadorOrdem({ params }) {
   const { profile, supabase } = await getProfile();
   const { data: os } = await supabase.from('ordens_servico').select('*, os_itens(*)').eq('id', params.id).maybeSingle();
   if (!os) notFound();
+  const [{ data: laudoAss }, { data: prest }] = await Promise.all([
+    supabase.from('os_laudos_finalizacao').select('id').eq('os_id', os.id).eq('rodada', os.rodada || 0).maybeSingle(),
+    supabase.from('prestadores').select('nome, cpf, cnpj').eq('id', os.prestador_id).maybeSingle(),
+  ]);
   const [{ data: fotosTodas }, { data: notas }, { data: pagamentos }, { data: mensagens }, { data: mesmoEndereco }] = await Promise.all([
     supabase.from('os_fotos').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('os_notas').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
@@ -50,6 +55,14 @@ export default async function PrestadorOrdem({ params }) {
 
       <div className={`max-w-3xl space-y-5 ${emAndamento ? 'pb-24 md:pb-0' : ''}`}>
         <PassosOS status={os.status} prazo={os.prazo_em} />
+        <div className="card p-5 rounded-xl space-y-3">
+          <div className="flex items-start gap-3"><MapPin size={20} className="mt-0.5 text-marinho shrink-0" /><div className="min-w-0"><div className="text-xs text-marinho/50">Endereço</div><div className="font-semibold">{os.endereco}</div></div></div>
+          <div className="flex flex-wrap gap-2">
+            <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(os.endereco)}&travelmode=driving`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-marinho text-white px-5 py-2.5 text-sm font-semibold"><MapPin size={16} /> Como chegar</a>
+            <a href={`https://waze.com/ul?q=${encodeURIComponent(os.endereco)}&navigate=yes`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-linha px-5 py-2.5 text-sm font-medium">Abrir no Waze</a>
+          </div>
+          <div className="flex items-start gap-3 pt-1 border-t border-linha"><KeyRound size={20} className="mt-2.5 text-marinho shrink-0" /><div className="pt-2"><div className="text-xs text-marinho/50">Onde pegar as chaves</div><div className="text-sm">{os.chaves || 'Não informado. Fale com a FixIn pelo chat da ordem.'}</div></div></div>
+        </div>
         {os.descricao && (
           <div className="card p-5 rounded-xl">
             <h3 className="font-semibold mb-1">Instruções da FixIn</h3>
@@ -80,6 +93,7 @@ export default async function PrestadorOrdem({ params }) {
             ? <FotosExecucao os={{ id: os.id, status: os.status }} fotos={fotosRodada} linkFotos={linkFotos} />
             : (fotosRodada.length > 0 && <div className="card p-5 rounded-xl space-y-3"><h3 className="font-semibold">Fotos enviadas</h3><GaleriaFotosOS fotos={fotosRodada} /></div>)
         )}
+        {fase && <LaudoFinalizacao osId={os.id} status={os.status} nomePadrao={prest?.nome} docPadrao={prest?.cnpj || prest?.cpf} assinado={!!laudoAss} temFotoFinal={fotosRodada.some((f) => f.tipo === 'depois')} />}
         {fotosAnteriores.length > 0 && <details className="card p-4 rounded-xl"><summary className="text-sm font-semibold cursor-pointer">Fotos de envios anteriores ({fotosAnteriores.length})</summary><div className="mt-3"><GaleriaFotosOS fotos={fotosAnteriores} /></div></details>}
 
         {!editavel && itens.length > 0 && (
