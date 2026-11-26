@@ -13,7 +13,7 @@ export async function GET() {
   const { data: ordens } = await admin.from('ordens_servico').select('id, numero, endereco, status, origem, liberado_em, atualizado_em').eq('prestador_id', profile.prestador_id).in('status', ['enviada', 'reprovada', 'em_execucao']).order('atualizado_em', { ascending: false }).limit(30);
   const itens = [];
   for (const o of ordens || []) {
-    if (o.status === 'enviada') itens.push({ chave: `${o.id}:enviada`, titulo: o.origem === 'orcamento' ? 'Orçamento para você' : 'Novo chamado', texto: `${o.endereco}. Aceite ou recuse.`, href: `/prestador/ordens/${o.id}`, cor: 'verde' });
+    if (o.status === 'enviada') itens.push({ chave: `${o.id}:enviada`, titulo: o.origem === 'orcamento' ? 'Orçamento para você' : 'Novo chamado', texto: `${o.endereco}. Aceite ou recuse.`, href: `/prestador/ordens/${o.id}`, cor: 'verde', aceitarId: o.id });
     else if (o.status === 'reprovada') itens.push({ chave: `${o.id}:reprovada:${o.atualizado_em}`, titulo: 'A FixIn pediu ajustes', texto: o.endereco, href: `/prestador/ordens/${o.id}`, cor: 'erro' });
     else if (o.status === 'em_execucao' && o.liberado_em && Date.now() - new Date(o.liberado_em).getTime() < 3 * 86400000) itens.push({ chave: `${o.id}:liberada`, titulo: 'Obra liberada', texto: `${o.endereco}. Pode iniciar. Registre as fotos de início.`, href: `/prestador/ordens/${o.id}`, cor: 'verde' });
   }
