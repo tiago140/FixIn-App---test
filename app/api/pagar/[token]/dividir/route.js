@@ -8,7 +8,7 @@ import { hojeSP, somarDias } from '@/lib/lancamentos';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// O próprio cliente divide o pagamento em até 4 partes (ex.: Pix + cartão, ou dois cartões).
+// O próprio cliente divide o pagamento em até 2 partes (ex.: Pix + cartão, ou dois cartões).
 // Cada parte vira um link de pagamento único da InfinitePay; o orçamento fica pago quando todas forem quitadas.
 export async function POST(req, { params }) {
   const token = String(params.token || '');
