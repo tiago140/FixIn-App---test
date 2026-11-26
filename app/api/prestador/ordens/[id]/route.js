@@ -3,6 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { avisarEquipeOS } from '@/lib/ordens';
 import { concluirOS } from '@/lib/ordensExec';
+import { pendenciasLaudo, textoPendencias } from '@/lib/laudoObrigatorio';
 
 const num = (v) => { const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null; };
 
@@ -20,6 +21,8 @@ export async function POST(req, { params }) {
 
   if (acao === 'aceitar') {
     if (os.status !== 'enviada') return NextResponse.json({ error: 'esta ordem não está aguardando aceite' }, { status: 400 });
+    const pend = await pendenciasLaudo(admin, profile.prestador_id);
+    if (pend.length) return NextResponse.json({ error: textoPendencias(pend) }, { status: 409 });
     await admin.from('ordens_servico').update({ status: 'aceita', aceito_em: agora, atualizado_em: agora }).eq('id', os.id);
     await auditar('Prestador aceitou a ordem');
     await avisarEquipeOS(os, 'aceita');

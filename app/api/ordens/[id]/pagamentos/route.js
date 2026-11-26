@@ -5,6 +5,7 @@ import { guardarArquivo, removerArquivo, TAMANHO_MAX_DOC } from '@/lib/ordensArq
 import { recalcularPagamentoOS } from '@/lib/ordensExec';
 import { avisarPrestadorOS } from '@/lib/ordens';
 import { fmtBRL } from '@/lib/format';
+import { laudoAssinado, exigeLaudo } from '@/lib/laudoObrigatorio';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -24,6 +25,19 @@ export async function POST(req, { params }) {
   const data = String(form.get('data_pagamento') || '');
   if (!(valor > 0) || valor > 10000000) return erro('Informe um valor válido.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return erro('Informe a data do pagamento.');
+
+  // pagamento final (ordem já concluída ou que quita o valor) só com o laudo de finalização assinado
+  if (exigeLaudo(os) && !(await laudoAssinado(admin, os))) {
+    let final = os.status !== 'em_execucao';
+    if (!final) {
+      const { data: it } = await admin.from('os_itens').select('mo, ma').eq('os_id', os.id);
+      const { data: pg } = await admin.from('pagamentos_prestador').select('valor').eq('os_id', os.id).eq('status', 'confirmado');
+      const total = (it || []).reduce((s, i) => s + (Number(i.mo) || 0) + (Number(i.ma) || 0), 0);
+      const pago = (pg || []).reduce((s, x) => s + Number(x.valor), 0);
+      final = total > 0 && pago + valor >= total - 0.005;
+    }
+    if (final) return erro('Pagamento final bloqueado: o prestador ainda não assinou o laudo de finalização desta ordem.', 409);
+  }
 
   let comprovante = null;
   if (form.get('arquivo') && form.get('arquivo').size > 0) {

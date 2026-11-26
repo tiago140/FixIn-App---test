@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { pendenciasLaudo } from '@/lib/laudoObrigatorio';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export async function GET() {
     else if (o.status === 'reprovada') itens.push({ chave: `${o.id}:reprovada:${o.atualizado_em}`, titulo: 'A FixIn pediu ajustes', texto: o.endereco, href: `/prestador/ordens/${o.id}`, cor: 'erro' });
     else if (o.status === 'em_execucao' && o.liberado_em && Date.now() - new Date(o.liberado_em).getTime() < 3 * 86400000) itens.push({ chave: `${o.id}:liberada`, titulo: 'Obra liberada', texto: `${o.endereco}. Pode iniciar. Registre as fotos de início.`, href: `/prestador/ordens/${o.id}`, cor: 'verde' });
   }
+  for (const o of await pendenciasLaudo(admin, profile.prestador_id)) itens.unshift({ chave: `${o.id}:laudo:${o.rodada || 0}`, titulo: 'Assine o laudo de finalização', texto: `${o.numero} · ${o.endereco}. É obrigatório para concluir, receber o pagamento final e pegar novos chamados.`, href: `/prestador/ordens/${o.id}`, cor: 'erro' });
   const ids = (ordens || []).map((o) => o.id);
   if (ids.length) {
     const { data: ms } = await admin.from('os_mensagens').select('id, os_id, texto, criado_em').eq('lado', 'equipe').in('os_id', ids).gte('criado_em', new Date(Date.now() - 2 * 86400000).toISOString()).order('criado_em', { ascending: false }).limit(10);

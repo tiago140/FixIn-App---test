@@ -6,21 +6,21 @@ import { Bell } from 'lucide-react';
 const COR = { verde: 'bg-verde', erro: 'bg-erro', marinho: 'bg-marinho' };
 
 // Pop-up dentro do app: avisa de ordem nova, ajuste pedido, obra liberada e mensagem, sem precisar de push.
-export default function PopupNovidades() {
+export default function PopupNovidades({ endpoint = '/api/prestador/novidades', chave = 'fixin_vistos' }) {
   const router = useRouter();
   const pathname = usePathname();
   const [fila, setFila] = useState([]);
 
   const buscar = useCallback(async () => {
     try {
-      const r = await fetch('/api/prestador/novidades', { cache: 'no-store' });
+      const r = await fetch(endpoint, { cache: 'no-store' });
       if (!r.ok) return;
       const { itens } = await r.json();
-      let vistos = []; try { vistos = JSON.parse(localStorage.getItem('fixin_vistos') || '[]'); } catch (e) {}
+      let vistos = []; try { vistos = JSON.parse(localStorage.getItem(chave) || '[]'); } catch (e) {}
       const novos = (itens || []).filter((i) => !vistos.includes(i.chave) && !pathname.startsWith(i.href));
       setFila((f) => { const ja = new Set(f.map((x) => x.chave)); return [...f, ...novos.filter((n) => !ja.has(n.chave))]; });
     } catch (e) {}
-  }, [pathname]);
+  }, [pathname, endpoint, chave]);
 
   useEffect(() => {
     buscar();
@@ -31,7 +31,7 @@ export default function PopupNovidades() {
   }, [buscar]);
 
   function dispensar(item, abrir) {
-    try { const v = JSON.parse(localStorage.getItem('fixin_vistos') || '[]'); localStorage.setItem('fixin_vistos', JSON.stringify([...v, item.chave].slice(-200))); } catch (e) {}
+    try { const v = JSON.parse(localStorage.getItem(chave) || '[]'); localStorage.setItem(chave, JSON.stringify([...v, item.chave].slice(-200))); } catch (e) {}
     setFila((f) => f.filter((x) => x.chave !== item.chave));
     if (abrir) router.push(item.href);
   }

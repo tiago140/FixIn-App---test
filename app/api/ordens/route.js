@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { avisarPrestadorOS } from '@/lib/ordens';
+import { pendenciasLaudo } from '@/lib/laudoObrigatorio';
 
 const txt = (v, n) => String(v ?? '').trim().slice(0, n);
 
@@ -16,6 +17,8 @@ export async function POST(req) {
   if (!b.prestador_id) return NextResponse.json({ error: 'escolha o prestador' }, { status: 400 });
   const { data: prest } = await admin.from('prestadores').select('id, nome, ativo').eq('id', b.prestador_id).maybeSingle();
   if (!prest || prest.ativo === false) return NextResponse.json({ error: 'prestador não encontrado ou inativo' }, { status: 400 });
+  const pend = await pendenciasLaudo(admin, prest.id);
+  if (pend.length) return NextResponse.json({ error: `${prest.nome} ainda não assinou o laudo de finalização de: ${pend.map((o) => o.numero).join(', ')}. Sem o laudo, ele não recebe novo chamado.` }, { status: 409 });
 
   let cliente_id = b.cliente_id || null;
   let endereco = txt(b.endereco, 250);

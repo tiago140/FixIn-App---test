@@ -6,6 +6,7 @@ import { totalItensOS } from '@/lib/ordensStatus';
 import { novoToken } from '@/lib/ordensArquivos';
 import { recalcularPagamentoOS } from '@/lib/ordensExec';
 import { urlSite } from '@/lib/chamados';
+import { laudoAssinado, exigeLaudo } from '@/lib/laudoObrigatorio';
 
 // Ações da equipe FixIn sobre uma ordem: cancelar, devolver para o prestador corrigir, aplicar os valores ao orçamento.
 export async function PATCH(req, { params }) {
@@ -72,6 +73,7 @@ export async function PATCH(req, { params }) {
 
   if (acao === 'aprovar_conclusao') {
     if (os.status !== 'conclusao_pendente') return NextResponse.json({ error: 'não há conclusão em análise' }, { status: 400 });
+    if (exigeLaudo(os) && !(await laudoAssinado(admin, os))) return NextResponse.json({ error: 'O prestador ainda não assinou o laudo de finalização. Sem o laudo, a conclusão não pode ser aprovada.' }, { status: 409 });
     await admin.from('ordens_servico').update({ status: 'aprovada', revisado_em: agora, revisado_por: user.id, reprovacao_motivo: null, atualizado_em: agora }).eq('id', os.id);
     await auditar('Aprovou a conclusão do serviço', 'aprovada');
     const r = await recalcularPagamentoOS(admin, os.id);

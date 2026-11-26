@@ -3,6 +3,7 @@ import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { concluirOS } from '@/lib/ordensExec';
 import { hashLaudo } from '@/lib/laudoFinalizacao';
+import { avisarObraFinalizada } from '@/lib/ordens';
 
 export const runtime = 'nodejs';
 const ABRE = ['em_execucao', 'reprovada', 'conclusao_pendente', 'aprovada', 'paga'];
@@ -41,6 +42,7 @@ export async function POST(req, { params }) {
   if (['em_execucao', 'reprovada'].includes(os.status)) {
     const r = await concluirOS(admin, os, obs, profile.nome_completo || nome);
     if (r.erro) return NextResponse.json({ error: r.erro, assinado: true }, { status: r.status || 400 });
+    await avisarObraFinalizada(os, profile.nome_completo || nome);
   }
   return NextResponse.json({ ok: true });
 }
