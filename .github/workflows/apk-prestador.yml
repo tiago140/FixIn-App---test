@@ -1,0 +1,63 @@
+name: APK do prestador
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['android-app/**', '.github/workflows/apk-prestador.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Criar projeto Android
+        run: npx cap add android
+      - name: Permissões (câmera, galeria, localização, internet)
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          p='android/app/src/main/AndroidManifest.xml'
+          s=open(p).read()
+          extra='''    <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-feature android:name="android.hardware.camera" android:required="false" />
+          '''
+          s=s.replace('<uses-permission android:name="android.permission.INTERNET" />','<uses-permission android:name="android.permission.INTERNET" />\n'+extra,1)
+          open(p,'w').write(s)
+          PY
+          grep -c CAMERA $M
+      - name: Ícone e tela de abertura
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#182F50' --splashBackgroundColor '#182F50' || echo "ícones padrão mantidos"
+      - name: Nome e versão
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+      - name: Compilar APK
+        working-directory: android-app/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Guardar o APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk FixIn-Prestador.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FixIn-Prestador-apk
+          path: android-app/FixIn-Prestador.apk
+      - name: Publicar na página de lançamentos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="apk-prestador-${{ github.run_number }}"
+          gh release create "$TAG" FixIn-Prestador.apk --title "App do prestador (build ${{ github.run_number }})" --notes "APK para instalar no Android. Abra o arquivo no celular e permita a instalação de fontes desconhecidas."

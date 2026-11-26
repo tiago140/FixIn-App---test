@@ -1,0 +1,16 @@
+{
+  "appId": "br.com.fixinreformas.prestador",
+  "appName": "FixIn Prestador",
+  "webDir": "www",
+  "server": {
+    "url": "https://app.fixinreformas.com/prestador/dashboard",
+    "cleartext": false,
+    "errorPath": "offline.html",
+    "allowNavigation": ["app.fixinreformas.com", "*.supabase.co"]
+  },
+  "android": { "allowMixedContent": false },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1200, "backgroundColor": "#182F50", "showSpinner": false },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#182F50" }
+  }
+}
