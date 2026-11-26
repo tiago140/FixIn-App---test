@@ -5,6 +5,7 @@ import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import BotaoCopiar from '@/components/BotaoCopiar';
+import EnviarAcesso from '@/components/prestadores/EnviarAcesso';
 import DecidirCadastro from '@/components/prestadores/DecidirCadastro';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +51,7 @@ export default async function CadastrosPage() {
       {feitos.length > 0 && (
         <div className="mt-8"><h3 className="font-semibold mb-2">Já decididos</h3>
           <div className="divide-y divide-linha card rounded-xl">
-            {feitos.map((c) => (<div key={c.id} className="p-3 text-sm flex flex-wrap justify-between gap-2"><span>{c.dados?.nome}</span><span className="text-marinho/55">{c.status === 'aprovado' ? 'Aprovado' : 'Recusado'} · {new Date(c.decidido_em || c.criado_em).toLocaleDateString('pt-BR')}</span></div>))}
+            {feitos.map((c) => (<div key={c.id} className="p-3 text-sm flex flex-wrap justify-between gap-2"><span>{c.dados?.nome}</span><span className="flex items-center gap-2 text-marinho/55">{c.status === 'aprovado' ? 'Aprovado' : 'Recusado'} · {new Date(c.decidido_em || c.criado_em).toLocaleDateString('pt-BR')}{c.status === 'aprovado' && c.prestador_id && <EnviarAcesso id={c.prestador_id} rotulo="Reenviar acesso" />}</span></div>))}
           </div></div>
       )}
     </AppShell>

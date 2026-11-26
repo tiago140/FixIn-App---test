@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import { MASTER_TABS } from '@/lib/navTabs';
 import PrestadorForm from '@/components/PrestadorForm';
 import AcessoPrestadorForm from '@/components/AcessoPrestadorForm';
+import EnviarAcesso from '@/components/prestadores/EnviarAcesso';
 import StatusOS from '@/components/StatusOS';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,7 @@ export default async function PrestadorPage({ params }) {
           <div className={`card p-4 rounded-xl text-sm ${termo ? 'border-l-4 border-l-sucesso' : 'border-l-4 border-l-erro'}`}>
             <b>Termo de garantia e responsabilidade:</b> {termo ? `assinado em ${new Date(termo.aceito_em).toLocaleDateString('pt-BR')} (versão ${termo.versao})` : 'ainda não assinado — será pedido no primeiro login.'}
           </div>
+          <div className="card p-4 rounded-xl"><div className="text-sm mb-2">Dispara o e-mail com login e senha provisória (cria o login se ainda não existir).</div><EnviarAcesso id={p.id} rotulo={acesso ? 'Reenviar acesso por e-mail' : 'Criar login e enviar por e-mail'} /></div>
           {acesso ? (
             <div className="card p-5 rounded-xl border-l-4 border-l-sucesso">
               <h3 className="font-semibold">Acesso ao portal</h3>
