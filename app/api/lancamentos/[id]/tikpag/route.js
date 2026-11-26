@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile } from '@/lib/getProfile';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { textoComprovante } from '@/lib/pagamentoOrcamento';
 import { tikpagConfigurado, criarCheckout } from '@/lib/tikpag';
 
 export const dynamic = 'force-dynamic';
@@ -29,13 +30,15 @@ export async function POST(req, { params }) {
   if (parcela === 'entrada' && Number(l.valor_pago || 0) > 0) return NextResponse.json({ error: 'A entrada já foi recebida. Gere o saldo.' }, { status: 400 });
   const valor = parcela === 'entrada' ? Math.min(restante, Math.round((Number(l.valor) / 2) * 100) / 100) : restante;
 
+  const { data: orc } = l.orcamento_id ? await admin.from('orcamentos').select('id, numero, endereco').eq('id', l.orcamento_id).maybeSingle() : { data: null };
+  const obs = orc ? textoComprovante(orc, parcela === 'entrada' ? ' entrada 50%' : parcela === 'saldo' ? ' saldo' : '') : l.descricao;
   let ck;
   try {
-    ck = await criarCheckout({ valor, descricao: l.descricao, referencia: l.id, pagador: b.pagador || null });
+    ck = await criarCheckout({ valor, descricao: obs, referencia: l.id, pagador: b.pagador || null });
   } catch (e) {
     return NextResponse.json({ error: e.message || 'Não foi possível criar o checkout.' }, { status: 400 });
   }
-  const { error } = await admin.from('cobrancas').insert({ lancamento_id: l.id, provedor: 'tikpag', parcela, valor, externo_id: ck.externo_id, url: ck.url, tipo_cobranca: 'CARTAO', criado_por: user.id });
+  const { error } = await admin.from('cobrancas').insert({ lancamento_id: l.id, provedor: 'tikpag', parcela, valor, externo_id: ck.externo_id, url: ck.url, tipo_cobranca: 'CARTAO', criado_por: user.id, observacao: obs });
   if (error) return NextResponse.json({ error: 'O checkout foi criado, mas não foi salvo aqui. Avise o suporte.' }, { status: 500 });
   try { await supabase.from('auditoria').insert({ acao: 'Cobrança gerada (TikPag)', detalhe: `${l.descricao} · ${parcela} · R$ ${valor.toFixed(2)}`, alvo_tipo: 'lancamento', alvo_id: l.id, autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {}
   return NextResponse.json({ ok: true, url: ck.url });

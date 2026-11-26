@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { calcularAlvo, urlPagamento, SITE, MAX_PARTES, MIN_PARTE } from '@/lib/pagamentoOrcamento';
+import { calcularAlvo, textoComprovante, urlPagamento, SITE, MAX_PARTES, MIN_PARTE } from '@/lib/pagamentoOrcamento';
 import { criarLink } from '@/lib/infinitepay';
 import { hojeSP, somarDias } from '@/lib/lancamentos';
 
@@ -18,7 +18,7 @@ export async function POST(req, { params }) {
   if (centavos.length < 1 || centavos.length > MAX_PARTES || centavos.some((c) => !Number.isFinite(c) || c <= 0)) return NextResponse.json({ error: `Divida em 1 a ${MAX_PARTES} partes.` }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: o } = await admin.from('orcamentos').select('id, cliente_id, parcelado_negociado').eq('pagar_token', token).maybeSingle();
+  const { data: o } = await admin.from('orcamentos').select('id, numero, endereco, cliente_id, parcelado_negociado').eq('pagar_token', token).maybeSingle();
   if (!o?.cliente_id) return NextResponse.json({ error: 'link inválido' }, { status: 404 });
   const { data: cli } = await admin.from('clientes').select('pagamento_provedor').eq('id', o.cliente_id).maybeSingle();
   if (cli?.pagamento_provedor !== 'infinitepay') return NextResponse.json({ error: 'indisponível' }, { status: 400 });
@@ -35,9 +35,10 @@ export async function POST(req, { params }) {
     const novas = [];
     for (let i = 0; i < centavos.length; i++) {
       const valor = centavos[i] / 100; const orderNsu = randomUUID();
-      const sufixo = centavos.length > 1 ? ` (parte ${i + 1} de ${centavos.length})` : (entrada ? ' (entrada 50%)' : parcela === 'saldo' ? ' (saldo)' : '');
-      const url = await criarLink({ orderNsu, valor, descricao: `${l.descricao}${sufixo}`, redirectUrl: urlPagamento(token), webhookUrl: `${SITE}/api/webhooks/infinitepay` });
-      novas.push({ lancamento_id: l.id, provedor: 'infinitepay', parcela, valor, externo_id: orderNsu, url, tipo_cobranca: 'LINK', vencimento });
+      const sufixo = centavos.length > 1 ? ` parte ${i + 1} de ${centavos.length}` : (entrada ? ' entrada 50%' : parcela === 'saldo' ? ' saldo' : '');
+      const obs = textoComprovante(o, sufixo);
+      const url = await criarLink({ orderNsu, valor, descricao: obs, redirectUrl: urlPagamento(token), webhookUrl: `${SITE}/api/webhooks/infinitepay` });
+      novas.push({ lancamento_id: l.id, provedor: 'infinitepay', parcela, valor, externo_id: orderNsu, url, tipo_cobranca: 'LINK', vencimento, observacao: obs });
     }
     const { error } = await admin.from('cobrancas').insert(novas);
     if (error) throw new Error('não salvou');
