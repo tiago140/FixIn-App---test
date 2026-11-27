@@ -5,7 +5,8 @@ import { calcularProximoStatusAutomatico, calcularTotalComMargem, fmtBRL, STATUS
 import { enviarEmailStatusOrcamento } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
-import { liberarOrdensDoOrcamento } from '@/lib/ordens';
+import { liberarOrdensDoOrcamento, avisarPrestadorOS } from '@/lib/ordens';
+import { recalcularPagamentoOS } from '@/lib/ordensExec';
 
 // Pastas de arquivos de um orçamento: todos os buckets guardam tudo sob "<id do orçamento>/".
 const BUCKETS_DO_ORCAMENTO = ['orcamentos-pdfs', 'documentos-fiscais', 'comprovantes-pagamento', 'chat-anexos'];
@@ -140,6 +141,8 @@ export async function PATCH(req, { params }) {
       if (erroInsert) return NextResponse.json({ error: erroInsert.message }, { status: 400 });
     }
     if (antes) await registrarAuditoria(supabase, user, profile, 'Editou itens/margem', `${antes.numero}: ${itens.length} item(ns)`, 'orcamento', id);
+    // A ordem de serviço acompanha o orçamento na hora (quando há uma só ordem ativa; com ordens divididas não mexe).
+    try { await sincronizarOrdemComOrcamento(id, paraInserir, antes?.numero); } catch (e) { console.error('sync OS', e?.message); }
   }
 
   return NextResponse.json({ ok: true });
@@ -184,3 +187,21 @@ async function registrarAuditoria(supabase, user, profile, acao, detalhe, alvoTi
   }
 }
 
+
+async function sincronizarOrdemComOrcamento(orcamentoId, itens, numeroOrc) {
+  if (!itens?.length) return;
+  const admin = createAdminClient();
+  const { data: oss } = await admin.from('ordens_servico').select('*').eq('orcamento_id', orcamentoId).not('status', 'in', '(cancelada,recusada,paga)');
+  if (!oss || oss.length !== 1) return;
+  const os = oss[0];
+  const { error: e1 } = await admin.from('os_itens').delete().eq('os_id', os.id);
+  if (e1) throw e1;
+  const { error: e2 } = await admin.from('os_itens').insert(itens.map((it) => ({ os_id: os.id, ambiente: it.ambiente, servico: it.servico, descricao: it.descricao, mo: it.mo, ma: it.ma, ordem: it.ordem })));
+  if (e2) throw e2;
+  const tMO = itens.reduce((s, i) => s + i.mo, 0), tMA = itens.reduce((s, i) => s + i.ma, 0);
+  const f = (v) => v.toFixed(2).replace('.', ',');
+  const texto = `O orçamento ${numeroOrc || ''} foi alterado e a ordem foi atualizada: mão de obra R$ ${f(tMO)}, material R$ ${f(tMA)}, total R$ ${f(tMO + tMA)}.`;
+  await admin.from('os_mensagens').insert({ os_id: os.id, lado: 'equipe', autor_nome: 'FixIn (automático)', texto });
+  try { await avisarPrestadorOS(os, 'mensagem', texto); } catch (e) {}
+  try { await recalcularPagamentoOS(admin, os.id); } catch (e) {}
+}
