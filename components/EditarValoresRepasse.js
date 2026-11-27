@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtBRL } from '@/lib/format';
 
-const num = (v) => { const x = parseFloat(String(v ?? '').replace(/\./g, '').replace(',', '.')); return Number.isFinite(x) && x >= 0 ? x : 0; };
+const num = (v) => { const s = String(v ?? '').trim(); const x = parseFloat(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s); return Number.isFinite(x) && x >= 0 ? x : 0; };
 const ini = (v) => String(Number(v) || 0).replace('.', ',');
 
 // A FixIn ajusta o valor que repassa ao prestador (mão de obra e material por serviço) vendo o que recebe do cliente.
