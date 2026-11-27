@@ -38,7 +38,12 @@ export default async function PrestadorOrdens({ searchParams }) {
                 <span className="block text-xs text-marinho/55">{o.numero} · {ORIGEM_OS[o.origem]} · {fmtDataHoraSP(o.criado_em)}</span>
               </span>
               <span className="flex items-center gap-3">
-                {o.os_itens?.length > 0 && <span className="font-mono text-sm font-semibold">{fmtBRL(totalItensOS(o.os_itens))}</span>}
+                {o.os_itens?.length > 0 && (
+                  <span className="text-right leading-tight">
+                    <span className="block font-mono text-sm font-semibold">{fmtBRL(totalItensOS(o.os_itens))}</span>
+                    <span className="block text-[11px] text-marinho/55">MO {fmtBRL(o.os_itens.reduce((s, i) => s + (Number(i.mo) || 0), 0))} · MA {fmtBRL(o.os_itens.reduce((s, i) => s + (Number(i.ma) || 0), 0))}</span>
+                  </span>
+                )}
                 <StatusOS status={o.status} />
               </span>
             </Link>
