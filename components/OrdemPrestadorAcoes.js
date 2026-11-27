@@ -81,9 +81,10 @@ export default function OrdemPrestadorAcoes({ os, itensIniciais = [] }) {
             </div>
           ))}
           <button type="button" onClick={() => setItens((l) => [...l, vazio()])} className="text-sm flex items-center gap-1 text-marinho font-semibold"><Plus size={16} /> Adicionar item</button>
-          <div className="flex items-center justify-between border-t border-linha pt-3">
-            <span className="text-sm text-marinho/60">Total que você está orçando</span>
-            <span className="text-xl font-bold font-mono">{fmtBRL(total)}</span>
+          <div className="border-t border-linha pt-3 space-y-1.5">
+            <div className="flex items-center justify-between text-sm"><span className="text-marinho/60">Total de mão de obra</span><span className="font-mono font-semibold">{fmtBRL(itens.reduce((s, i) => s + n(i.mo), 0))}</span></div>
+            <div className="flex items-center justify-between text-sm"><span className="text-marinho/60">Total de material</span><span className="font-mono font-semibold">{fmtBRL(itens.reduce((s, i) => s + n(i.ma), 0))}</span></div>
+            <div className="flex items-center justify-between"><span className="text-sm text-marinho/60">Total que você está orçando</span><span className="text-xl font-bold font-mono">{fmtBRL(total)}</span></div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button disabled={ocupado} onClick={() => enviar({ acao: 'enviar_valores', itens })} className="bg-verde text-white rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50">{ocupado ? 'Enviando…' : os.status === 'orcada' ? 'Reenviar valores' : 'Enviar valores'}</button>

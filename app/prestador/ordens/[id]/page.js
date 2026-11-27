@@ -45,6 +45,8 @@ export default async function PrestadorOrdem({ params }) {
   const fotosAnteriores = (fotosTodas || []).filter((f) => f.tipo !== 'reprovacao' && f.rodada < rodada);
   const linkFotos = os.token_fotos && (!os.token_expira || new Date(os.token_expira) > new Date()) ? `${urlSite()}/foto/${os.token_fotos}` : null;
   const total = totalItensOS(itens);
+  const totMO = itens.reduce((s, i) => s + (Number(i.mo) || 0), 0);
+  const totMA = itens.reduce((s, i) => s + (Number(i.ma) || 0), 0);
   const pago = (pagamentos || []).filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
   const fase = ['em_execucao', 'reprovada', 'conclusao_pendente', 'aprovada', 'paga'].includes(os.status);
 
@@ -86,6 +88,14 @@ export default async function PrestadorOrdem({ params }) {
           </div>
         )}
 
+        {itens.length > 0 && (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="card rounded-xl p-4"><div className="text-[11px] uppercase tracking-wide text-marinho/50">Mão de obra</div><div className="text-lg font-bold font-mono mt-1">{fmtBRL(totMO)}</div></div>
+            <div className="card rounded-xl p-4"><div className="text-[11px] uppercase tracking-wide text-marinho/50">Material</div><div className="text-lg font-bold font-mono mt-1">{fmtBRL(totMA)}</div></div>
+            <div className="card rounded-xl p-4 border-verde/40"><div className="text-[11px] uppercase tracking-wide text-marinho/50">Total</div><div className="text-lg font-bold font-mono mt-1 text-verde">{fmtBRL(total)}</div></div>
+          </div>
+        )}
+        {['aplicada', 'em_execucao'].includes(os.status) && <p className="text-xs text-marinho/60 -mt-2">Para alterar valores já aplicados ao orçamento, avise a FixIn pelas mensagens desta ordem.</p>}
         <OrdemPrestadorAcoes os={{ id: os.id, status: os.status }} itensIniciais={editavel ? itens : []} />
 
         {fase && (
