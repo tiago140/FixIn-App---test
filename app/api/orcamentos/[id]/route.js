@@ -5,7 +5,7 @@ import { calcularProximoStatusAutomatico, calcularTotalComMargem, fmtBRL, STATUS
 import { enviarEmailStatusOrcamento } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { destinatariosDoOrcamento } from '@/lib/destinatarios';
-import { liberarOrdensDoOrcamento, avisarPrestadorOS } from '@/lib/ordens';
+import { liberarOrdensDoOrcamento, avisarPrestadorOS, garantirOrdemDoOrcamento } from '@/lib/ordens';
 import { recalcularPagamentoOS } from '@/lib/ordensExec';
 
 // Pastas de arquivos de um orçamento: todos os buckets guardam tudo sob "<id do orçamento>/".
@@ -144,6 +144,9 @@ export async function PATCH(req, { params }) {
     // A ordem de serviço acompanha o orçamento na hora (quando há uma só ordem ativa; com ordens divididas não mexe).
     try { await sincronizarOrdemComOrcamento(id, paraInserir, antes?.numero); } catch (e) { console.error('sync OS', e?.message); }
   }
+
+  // Atribuiu prestador: a ordem de serviço já nasce pronta para editar os valores do repasse.
+  if (camposOrcamento.prestador_id) await garantirOrdemDoOrcamento(id);
 
   return NextResponse.json({ ok: true });
 }
