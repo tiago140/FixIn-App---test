@@ -21,6 +21,29 @@ export async function PATCH(req, { params }) {
   const agora = new Date().toISOString();
   const auditar = async (a, d) => { try { await admin.from('auditoria').insert({ acao: a, detalhe: `${os.numero} · ${d}`, alvo_tipo: 'ordem_servico', alvo_id: os.id, autor_id: user.id, autor_nome: profile.nome_completo, autor_role: profile.role }); } catch (e) {} };
 
+  if (acao === 'editar_valores') {
+    if (['paga', 'cancelada', 'recusada'].includes(os.status)) return NextResponse.json({ error: 'esta ordem não aceita mais alteração de valores' }, { status: 400 });
+    const novos = new Map((Array.isArray(body.itens) ? body.itens : []).map((i) => [String(i.id), i]));
+    let mudou = false;
+    for (const it of os.os_itens || []) {
+      const n = novos.get(String(it.id));
+      if (!n) continue;
+      const mo = Number(n.mo), ma = Number(n.ma);
+      if (!Number.isFinite(mo) || !Number.isFinite(ma) || mo < 0 || ma < 0) return NextResponse.json({ error: 'valores inválidos' }, { status: 400 });
+      if (mo !== Number(it.mo || 0) || ma !== Number(it.ma || 0)) { await admin.from('os_itens').update({ mo, ma }).eq('id', it.id); mudou = true; }
+    }
+    if (!mudou) return NextResponse.json({ ok: true });
+    const { data: itensNovos } = await admin.from('os_itens').select('mo, ma').eq('os_id', os.id);
+    const tMO = (itensNovos || []).reduce((s, i) => s + Number(i.mo || 0), 0), tMA = (itensNovos || []).reduce((s, i) => s + Number(i.ma || 0), 0);
+    const f = (v) => v.toFixed(2).replace('.', ',');
+    const texto = `A FixIn ajustou os valores da ordem: mão de obra R$ ${f(tMO)}, material R$ ${f(tMA)}, total R$ ${f(tMO + tMA)}.`;
+    await admin.from('os_mensagens').insert({ os_id: os.id, lado: 'equipe', autor_nome: 'FixIn (automático)', texto });
+    try { await avisarPrestadorOS(os, 'mensagem', texto); } catch (e) {}
+    try { await recalcularPagamentoOS(admin, os.id); } catch (e) {}
+    await auditar('Editou valores do repasse', `MO ${f(tMO)} · MA ${f(tMA)} · total ${f(tMO + tMA)}`);
+    return NextResponse.json({ ok: true });
+  }
+
   if (acao === 'chaves') {
     const c = String(body.chaves || '').replace(/\s+/g, ' ').trim().slice(0, 300) || null;
     await admin.from('ordens_servico').update({ chaves: c, atualizado_em: agora }).eq('id', os.id);

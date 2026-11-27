@@ -17,6 +17,9 @@ import Chat from '@/components/Chat';
 import { MASTER_TABS } from '@/lib/navTabs';
 import IniciarAcompanhamento from '@/components/IniciarAcompanhamento';
 import DividirOrdens from '@/components/DividirOrdens';
+import StatusOS from '@/components/StatusOS';
+import { totalItensOS } from '@/lib/ordensStatus';
+import { fmtBRL } from '@/lib/format';
 import { fmtDate, estaAtrasado, calcularTotalComMargem, STATUS_LABEL } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +63,7 @@ export default async function OrcamentoDetalhePage({ params }) {
   }));
   const total = calcularTotalComMargem(itens, orcamento.margem_percentual);
   const destino = await destinatariosDoOrcamento(supabase, params.id);
-  const { data: ordensDoOrc } = await supabase.from('ordens_servico').select('id, numero').eq('orcamento_id', params.id).order('criado_em');
+  const { data: ordensDoOrc } = await supabase.from('ordens_servico').select('id, numero, status, prestadores(nome), os_itens(mo, ma)').eq('orcamento_id', params.id).order('criado_em');
   const { data: acomp } = await supabase.from('acompanhamentos').select('id, etapa, percentual').eq('orcamento_id', params.id).maybeSingle();
 
   return (
@@ -81,6 +84,27 @@ export default async function OrcamentoDetalhePage({ params }) {
           }
         />
       </div>
+
+      {['aprovado', 'em_execucao', 'finalizado'].includes(orcamento.status) && (
+        <div className="mb-6 card rounded-xl p-4">
+          <div className="text-xs uppercase tracking-wide text-marinho/50 mb-2">Ordem de serviço</div>
+          {(ordensDoOrc || []).length > 0 ? (
+            <div className="space-y-2">
+              {ordensDoOrc.map((o) => (
+                <Link key={o.id} href={`/master/ordens/${o.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-linha px-4 py-3 hover:bg-papel">
+                  <span><b>{o.numero}</b> <span className="text-sm text-marinho/60">· {o.prestadores?.nome || 'sem prestador'}</span></span>
+                  <span className="flex items-center gap-3"><span className="font-mono text-sm font-semibold">{fmtBRL(totalItensOS(o.os_itens))}</span><StatusOS status={o.status} /></span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-sm text-marinho/70">Este serviço ainda não tem ordem de serviço para o prestador.</span>
+              <Link href={`/master/ordens/nova?orcamento=${orcamento.id}${orcamento.prestador_id ? `&prestador=${orcamento.prestador_id}` : ''}`} className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded-lg">Criar ordem de serviço</Link>
+            </div>
+          )}
+        </div>
+      )}
 
       {orcamento.status === 'pendente' && orcamento.solicitado_por && (() => {
         const qtd = (itens || []).length;

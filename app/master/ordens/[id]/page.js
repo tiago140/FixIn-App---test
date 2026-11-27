@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import EditarChaves from '@/components/EditarChaves';
+import EditarValoresRepasse from '@/components/EditarValoresRepasse';
 import { getProfile } from '@/lib/getProfile';
 import AppShell from '@/components/AppShell';
 import PageHeader from '@/components/PageHeader';
@@ -22,7 +23,7 @@ import { urlSite } from '@/lib/chamados';
 import { FileText } from 'lucide-react';
 import { MASTER_TABS } from '@/lib/navTabs';
 import { ORIGEM_OS, totalItensOS } from '@/lib/ordensStatus';
-import { fmtBRL, fmtDataHoraSP } from '@/lib/format';
+import { fmtBRL, fmtDataHoraSP, calcularTotalComMargem } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,14 @@ export default async function OrdemPage({ params }) {
   const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
   const itens = (os.os_itens || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   const total = totalItensOS(itens);
+  let recebido = null, variasOrdens = false;
+  if (os.orcamento_id) {
+    const { data: orc } = await supabase.from('orcamentos').select('margem_percentual, orcamento_itens(mo, ma)').eq('id', os.orcamento_id).maybeSingle();
+    if (orc) recebido = calcularTotalComMargem(orc.orcamento_itens || [], orc.margem_percentual);
+    const { count: nOrd } = await supabase.from('ordens_servico').select('id', { count: 'exact', head: true }).eq('orcamento_id', os.orcamento_id).not('status', 'in', '(cancelada,recusada)');
+    variasOrdens = (nOrd || 0) > 1;
+  }
+  const editavelValores = itens.length > 0 && !['paga', 'cancelada', 'recusada'].includes(os.status);
   const pago = (pagamentos || []).filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
   const emProcesso = (pagamentos || []).filter((p) => p.status === 'processando').reduce((s, p) => s + Number(p.valor), 0);
   const rodada = os.rodada || 0;
@@ -76,7 +85,8 @@ export default async function OrdemPage({ params }) {
             {os.recusa_motivo && <div className="sm:col-span-2 bg-erro/10 border border-erro/30 rounded-lg p-3"><span className="text-xs text-erro block font-semibold">Motivo da recusa</span>{os.recusa_motivo}</div>}
           </div>
 
-          <div className="card rounded-xl overflow-x-auto">
+          {editavelValores && <EditarValoresRepasse osId={os.id} itens={itens.map((i) => ({ id: i.id, ambiente: i.ambiente, servico: i.servico, descricao: i.descricao, mo: i.mo, ma: i.ma }))} recebido={recebido} varias={variasOrdens} />}
+          {!editavelValores && <div className="card rounded-xl overflow-x-auto">
             <div className="px-5 py-3 border-b border-linha font-semibold">Valores do prestador (custo)</div>
             {!itens.length ? <p className="p-5 text-sm text-marinho/50">O prestador ainda não enviou valores.</p> : (
               <table className="w-full text-sm">
@@ -97,7 +107,7 @@ export default async function OrdemPage({ params }) {
                 </tbody>
               </table>
             )}
-          </div>
+          </div>}
 
           {(fotosAtuais.length > 0 || os.status === 'conclusao_pendente') && (
             <div className="card p-5 rounded-xl space-y-3">
