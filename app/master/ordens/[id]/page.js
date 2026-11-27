@@ -33,25 +33,23 @@ export default async function OrdemPage({ params }) {
   if (profile.role !== 'master') redirect('/imobiliaria/dashboard');
 
   const { data: os } = await supabase.from('ordens_servico').select('*, prestadores(nome, telefone, email, pix_tipo, pix_chave), os_itens(*)').eq('id', params.id).maybeSingle();
-  const { data: laudoAss } = os ? await supabase.from('os_laudos_finalizacao').select('id').eq('os_id', os.id).eq('rodada', os.rodada || 0).maybeSingle() : { data: null };
   if (!os) notFound();
   if (profile.dono && os.status === 'aprovada') { try { await atualizarPixDaOrdem(createAdminClient(), os.id); } catch (e) {} }
-  const [{ data: fotos }, { data: notas }, { data: pagamentos }, { data: mensagens }] = await Promise.all([
+  const itens = (os.os_itens || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+  const total = totalItensOS(itens);
+  // Tudo em paralelo (antes eram consultas em fila e a tela demorava para abrir).
+  const [{ data: laudoAss }, { data: fotos }, { data: notas }, { data: pagamentos }, { data: mensagens }, { data: clientes }, { data: orc }, { count: nOrd }] = await Promise.all([
+    supabase.from('os_laudos_finalizacao').select('id').eq('os_id', os.id).eq('rodada', os.rodada || 0).maybeSingle(),
     supabase.from('os_fotos').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('os_notas').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
     supabase.from('pagamentos_prestador').select('*').eq('os_id', os.id).order('data_pagamento', { ascending: true }),
     supabase.from('os_mensagens').select('*').eq('os_id', os.id).order('criado_em', { ascending: true }),
+    supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa'),
+    os.orcamento_id ? supabase.from('orcamentos').select('margem_percentual, orcamento_itens(mo, ma)').eq('id', os.orcamento_id).maybeSingle() : Promise.resolve({ data: null }),
+    os.orcamento_id ? supabase.from('ordens_servico').select('id', { count: 'exact', head: true }).eq('orcamento_id', os.orcamento_id).not('status', 'in', '(cancelada,recusada)') : Promise.resolve({ count: 0 }),
   ]);
-  const { data: clientes } = await supabase.from('clientes').select('id, nome_empresa').eq('ativo', true).order('nome_empresa');
-  const itens = (os.os_itens || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-  const total = totalItensOS(itens);
-  let recebido = null, variasOrdens = false;
-  if (os.orcamento_id) {
-    const { data: orc } = await supabase.from('orcamentos').select('margem_percentual, orcamento_itens(mo, ma)').eq('id', os.orcamento_id).maybeSingle();
-    if (orc) recebido = calcularTotalComMargem(orc.orcamento_itens || [], orc.margem_percentual);
-    const { count: nOrd } = await supabase.from('ordens_servico').select('id', { count: 'exact', head: true }).eq('orcamento_id', os.orcamento_id).not('status', 'in', '(cancelada,recusada)');
-    variasOrdens = (nOrd || 0) > 1;
-  }
+  const recebido = orc ? calcularTotalComMargem(orc.orcamento_itens || [], orc.margem_percentual) : null;
+  const variasOrdens = (nOrd || 0) > 1;
   const editavelValores = itens.length > 0 && !['paga', 'cancelada', 'recusada'].includes(os.status);
   const pago = (pagamentos || []).filter((p) => (p.status || 'confirmado') === 'confirmado').reduce((s, p) => s + Number(p.valor), 0);
   const emProcesso = (pagamentos || []).filter((p) => p.status === 'processando').reduce((s, p) => s + Number(p.valor), 0);
