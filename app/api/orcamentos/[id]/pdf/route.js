@@ -19,7 +19,7 @@ export async function POST(req, { params }) {
 
   const { data: orcamento, error: erroOrc } = await supabase
     .from('orcamentos')
-    .select('*, clientes(nome_empresa, email, pagamento_provedor)')
+    .select('*, clientes(nome_empresa, email, pagamento_provedor, tikpag_habilitado)')
     .eq('id', id)
     .single();
 
@@ -51,7 +51,7 @@ export async function POST(req, { params }) {
   // tira a versão antiga (nome só com o número) para não ficar PDF duplicado
   if (caminhoAntigo !== caminhoArquivo) { try { await supabase.storage.from('orcamentos-pdfs').remove([caminhoAntigo]); } catch (e) {} }
   // ?v= evita o navegador/CDN mostrar uma versão ANTIGA do PDF (o nome do arquivo é sempre o mesmo para o mesmo orçamento)
-  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminhoArquivo)}?v=${Date.now()}&pg=3`;
+  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminhoArquivo)}?v=${Date.now()}&pg=4`;
 
   await supabase.from('orcamentos').update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() }).eq('id', id);
 
