@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { dadosPagamento, linkTikpag, MAX_PARCELAS_TIKPAG, MAX_PARTES, MIN_PARTE } from '@/lib/pagamentoOrcamento';
+import { dadosPagamento, linkTikpag, tikpagCheckoutBase, urlTikpagDoOrcamento, MAX_PARCELAS_TIKPAG, MAX_PARTES, MIN_PARTE } from '@/lib/pagamentoOrcamento';
 import { fmtBRL, fmtDate } from '@/lib/format';
 import { simularParcelas } from '@/lib/infinitepay';
 import DividirPagamento from '@/components/DividirPagamento';
@@ -53,6 +53,7 @@ export default async function PaginaPagar({ params }) {
             {d.linhaDigitavel && <BotaoCopiar texto={d.linhaDigitavel} rotulo="Copiar linha digitável" />}
             {d.boletoUrl && <a href={d.boletoUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-lg border border-marinho text-marinho py-2 text-sm font-medium">Baixar boleto (PDF)</a>}
           </section>)}
+          {d.provedor === 'infinitepay' && tikpagCheckoutBase() && (<a href={urlTikpagDoOrcamento(token)} className="block text-center rounded-lg border border-marinho text-marinho py-3 font-semibold">Parcelar em até {MAX_PARCELAS_TIKPAG}x com a TikPag</a>)}
           {tik && (<a href={tik} target="_blank" rel="noopener noreferrer" className="block text-center rounded-lg bg-marinho text-white py-3 font-semibold">Parcelar em até {MAX_PARCELAS_TIKPAG}x com a TikPag</a>)}
           {d.faturaUrl && d.provedor !== 'infinitepay' && <a href={d.faturaUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-sm text-marinho/70 underline">Pagar com cartão ou outras formas (fatura Asaas)</a>}
         </>)}

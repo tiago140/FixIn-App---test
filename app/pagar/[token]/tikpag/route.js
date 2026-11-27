@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(req, { params }) {
   const token = String(params.token || '');
   if (!/^[0-9a-f-]{36}$/i.test(token)) return NextResponse.redirect(new URL('/', req.url));
-  const d = await dadosPagamento(createAdminClient(), token);
+  // Só aqui (ao clicar) gera o boleto + Pix que a TikPag precisa; quem paga pela InfinitePay não cria cobrança extra sem pedir.
+  const d = await dadosPagamento(createAdminClient(), token, { forcarAsaas: true });
   const destino = d.estado === 'ok' ? linkTikpag(d) : null;
   return NextResponse.redirect(destino || urlPagamento(token), 302);
 }
