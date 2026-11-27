@@ -22,7 +22,7 @@ export async function POST(req, { params }) {
   }
   const admin = createAdminClient();
   const { data: ja } = await admin.from('orcamentos').select('pdf_url').eq('id', params.id).single();
-  if (ja?.pdf_url && String(ja.pdf_url).includes('pg=2')) return NextResponse.json({ ok: true, pdf_url: ja.pdf_url });
+  if (ja?.pdf_url && String(ja.pdf_url).includes('pg=3')) return NextResponse.json({ ok: true, pdf_url: ja.pdf_url });
   const { data: orcamento } = await admin.from('orcamentos').select('*, clientes(nome_empresa, email, pagamento_provedor)').eq('id', params.id).single();
   if (!orcamento) return NextResponse.json({ error: 'orçamento não encontrado' }, { status: 404 });
   const { data: itens } = await admin.from('orcamento_itens').select('*').eq('orcamento_id', params.id).order('ordem');
@@ -35,7 +35,7 @@ export async function POST(req, { params }) {
   const caminho = `${params.id}/${nomeSeguroStorage(nome)}`;
   const { error: erroUp } = await admin.storage.from('orcamentos-pdfs').upload(caminho, buf, { contentType: 'application/pdf', upsert: true, cacheControl: '0' });
   if (erroUp) return NextResponse.json({ error: 'erro ao salvar PDF: ' + erroUp.message }, { status: 500 });
-  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminho)}?v=${Date.now()}&pg=2`;
+  const pdfUrl = `${urlArquivo('orcamentos-pdfs', caminho)}?v=${Date.now()}&pg=3`;
   await admin.from('orcamentos').update({ pdf_url: pdfUrl }).eq('id', params.id);
   return NextResponse.json({ ok: true, pdf_url: pdfUrl, nome_arquivo: nome });
 }
